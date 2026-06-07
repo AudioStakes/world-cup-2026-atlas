@@ -1,6 +1,4 @@
-# AI Agent Rules
-
-These rules are mandatory for AI agents working on this repository.
+# World Cup 2026 Atlas
 
 ## Architecture rules
 
