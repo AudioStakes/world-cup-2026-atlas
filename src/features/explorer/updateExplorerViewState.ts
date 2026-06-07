@@ -41,7 +41,9 @@ export function updateExplorerViewState(
   return removeConflictingSelections(data, nextState, selectionUpdate.stateKey);
 }
 
-function getActionSelection(action: Exclude<ExplorerAction, { type: "clearAll" }>): SelectionUpdate {
+function getActionSelection(
+  action: Exclude<ExplorerAction, { type: "clearAll" }>,
+): SelectionUpdate {
   switch (action.type) {
     case "selectCountry":
       return { stateKey: "selectedCountryId", value: action.countryId };

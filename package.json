@@ -12,15 +12,20 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "format": "biome check --write .",
-    "format:check": "biome check .",
-    "lint": "biome lint .",
+
+    "fix": "biome check --write .",
+    "format": "pnpm fix",
+
     "check": "biome check .",
+    "lint": "biome lint .",
     "typecheck": "tsc --noEmit",
+
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "verify": "pnpm check && pnpm typecheck && pnpm test && pnpm build"
+
+    "verify": "pnpm check && pnpm typecheck && pnpm test && pnpm build",
+    "ready": "pnpm fix && pnpm verify"
   },
   "dependencies": {
     "@preact/signals": "^2.0.0",
