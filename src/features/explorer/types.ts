@@ -1,4 +1,12 @@
-import type { CountryId, GroupCode, LocalDateString, VenueId } from "../../domain/ids";
+import type {
+  CountryId,
+  GroupCode,
+  LocalDateString,
+  MatchId,
+  SlotId,
+  VenueId,
+} from "../../domain/ids";
+import type { MapPoint } from "../../domain/types";
 
 export type ExplorerSelectionType = "country" | "group" | "date" | "venue";
 
@@ -30,4 +38,126 @@ export const emptyExplorerViewState: NormalizedExplorerViewState = {
   selectedGroupCode: null,
   selectedDate: null,
   selectedVenueId: null,
+};
+
+export type FilterOptionAvailability = "available" | "outsideCurrentFilter";
+
+export type ExplorerViewModel = {
+  readonly viewState: NormalizedExplorerViewState;
+  readonly header: ExplorerHeaderViewModel;
+  readonly explorePanel: ExplorePanelViewModel;
+  readonly map: ExplorerMapViewModel;
+};
+
+export type ExplorerHeaderViewModel = {
+  readonly title: string;
+  readonly subtitle: string;
+  readonly urlStateLabel: string;
+  readonly canClear: boolean;
+};
+
+export type ExplorePanelViewModel = {
+  readonly helpText: string;
+  readonly venueHelpText: string;
+  readonly groupsAndTeams: GroupsAndTeamsViewModel;
+  readonly dateSelector: DateSelectorViewModel;
+  readonly result: ExplorerResultViewModel;
+};
+
+export type GroupsAndTeamsViewModel = {
+  readonly title: string;
+  readonly groups: readonly GroupTeamCardViewModel[];
+};
+
+export type GroupTeamCardViewModel = {
+  readonly groupCode: GroupCode;
+  readonly groupName: string;
+  readonly isSelected: boolean;
+  readonly isRelatedToSelectedCountry: boolean;
+  readonly availability: FilterOptionAvailability;
+  readonly teams: readonly GroupTeamRowViewModel[];
+};
+
+export type GroupTeamRowViewModel = {
+  readonly slotId: SlotId;
+  readonly countryId: CountryId | null;
+  readonly countryCode: string;
+  readonly countryName: string;
+  readonly flagEmoji: string;
+  readonly isSelected: boolean;
+  readonly availability: FilterOptionAvailability;
+};
+
+export type DateSelectorViewModel = {
+  readonly title: string;
+  readonly months: readonly DateMonthViewModel[];
+};
+
+export type DateMonthViewModel = {
+  readonly monthLabel: string;
+  readonly dates: readonly DateOptionViewModel[];
+};
+
+export type DateOptionViewModel = {
+  readonly date: LocalDateString;
+  readonly label: string;
+  readonly isSelected: boolean;
+  readonly availability: FilterOptionAvailability;
+  readonly hasFixture: boolean;
+};
+
+export type ExplorerResultType = "country" | "group" | "date" | "venue" | "empty";
+
+export type ExplorerResultViewModel = {
+  readonly type: ExplorerResultType;
+  readonly icon: string;
+  readonly title: string;
+  readonly subtitle: string;
+  readonly emptyMessage: string | null;
+  readonly matches: readonly MatchListItemViewModel[];
+  readonly routeSummary: CountryRouteSummaryViewModel | null;
+};
+
+export type MatchListItemViewModel = {
+  readonly matchId: MatchId;
+  readonly dateLabel: string;
+  readonly primaryText: string;
+  readonly secondaryText: string;
+  readonly venueId: VenueId;
+  readonly venueLabel: string;
+};
+
+export type CountryRouteSummaryViewModel = {
+  readonly visitedVenueCount: number;
+  readonly totalDistanceKm: number;
+  readonly totalDistanceLabel: string;
+};
+
+export type ExplorerMapViewModel = {
+  readonly venueMarkers: readonly VenueMarkerViewModel[];
+  readonly routes: readonly MapRouteViewModel[];
+};
+
+export type VenueMarkerState = "selected" | "highlighted" | "dimmed" | "normal";
+
+export type VenueMarkerViewModel = {
+  readonly venueId: VenueId;
+  readonly venueName: string;
+  readonly stadiumName: string;
+  readonly label: string;
+  readonly position: MapPoint;
+  readonly state: VenueMarkerState;
+};
+
+export type MapRouteKind = "groupStage" | "knockout";
+
+export type MapRouteViewModel = {
+  readonly kind: MapRouteKind;
+  readonly fromVenueId: VenueId;
+  readonly toVenueId: VenueId;
+  readonly from: MapPoint;
+  readonly to: MapPoint;
+  readonly distanceKm: number;
+  readonly distanceLabel: string;
+  readonly showDistanceLabel: boolean;
 };
