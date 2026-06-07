@@ -98,7 +98,9 @@ const result = await runCheck(check);
 
 if (!result.ok) {
   console.error(`Codex check failed: ${result.name}`);
-  console.error(`${result.command} ${result.args.join(" ")} exited with ${result.exitCode ?? "error"}.`);
+  console.error(
+    `${result.command} ${result.args.join(" ")} exited with ${result.exitCode ?? "error"}.`,
+  );
 
   if (result.output.length > 0) {
     console.error("");
