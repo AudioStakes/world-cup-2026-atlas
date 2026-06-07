@@ -1,10 +1,20 @@
 #!/usr/bin/env node
 import { spawn } from "node:child_process";
 
-const checks = [
-  ["fix", "pnpm", ["fix"]],
-  ["verify", "pnpm", ["verify"]],
-];
+const commandName = process.argv[2] ?? "verify";
+
+const commands = {
+  fix: ["fix", "pnpm", ["fix"]],
+  verify: ["verify", "pnpm", ["verify"]],
+};
+
+const check = commands[commandName];
+
+if (check === undefined) {
+  console.error(`Unknown Codex check: ${commandName}`);
+  console.error(`Expected one of: ${Object.keys(commands).join(", ")}`);
+  process.exit(1);
+}
 
 const importantLinePatterns = [
   /^\s*FAIL\s+/,
@@ -84,18 +94,16 @@ function runCheck([name, command, args]) {
   });
 }
 
-for (const check of checks) {
-  const result = await runCheck(check);
+const result = await runCheck(check);
 
-  if (!result.ok) {
-    console.error(`Codex stop check failed: ${result.name}`);
-    console.error(`${result.command} ${result.args.join(" ")} exited with ${result.exitCode ?? "error"}.`);
+if (!result.ok) {
+  console.error(`Codex check failed: ${result.name}`);
+  console.error(`${result.command} ${result.args.join(" ")} exited with ${result.exitCode ?? "error"}.`);
 
-    if (result.output.length > 0) {
-      console.error("");
-      console.error(result.output);
-    }
-
-    process.exit(1);
+  if (result.output.length > 0) {
+    console.error("");
+    console.error(result.output);
   }
+
+  process.exit(1);
 }
