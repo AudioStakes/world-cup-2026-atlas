@@ -1,0 +1,16 @@
+# Codex repository hooks for world-cup-2026-atlas.
+#
+# Intent:
+# - Keep Codex work aligned with AGENTS.md and docs/agent-instructions/*.
+# - Run the same local quality gate humans use before handing work off.
+#
+# Notes:
+# - `pnpm fix` may write Biome safe fixes.
+# - `pnpm verify` is the required read-only gate: check, typecheck, test, build.
+# - For significant UI work, run `pnpm verify:full` manually as instructed in AGENTS.md.
+
+[hooks.stop]
+command = "pnpm fix && pnpm verify"
+
+[hooks.user_prompt_submit]
+message = "Before editing, read AGENTS.md and the relevant files under docs/agent-instructions/. Keep queryExplorer() as the only UI-facing Explorer ViewModel source, prefer pure functions, and preserve synchronized group/country/date/venue selection behavior."
