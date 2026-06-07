@@ -12,19 +12,18 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-
     "fix": "biome check --write .",
     "format": "pnpm fix",
-
     "check": "biome check .",
     "lint": "biome lint .",
     "typecheck": "tsc --noEmit",
-
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
     "verify": "pnpm check && pnpm typecheck && pnpm test && pnpm build",
+    "verify:full": "pnpm verify && pnpm e2e",
     "ready": "pnpm fix && pnpm verify"
   },
   "dependencies": {
@@ -32,7 +31,8 @@
     "preact": "^10.26.9"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.2.4",
+    "@biomejs/biome": "2.4.16",
+    "@playwright/test": "1.56.1",
     "@preact/preset-vite": "^2.10.2",
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/preact": "^3.2.4",

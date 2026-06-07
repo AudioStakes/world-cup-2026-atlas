@@ -26,6 +26,7 @@ Preact UI
 - Biome
 - Vitest
 - Testing Library
+- Playwright
 - pnpm
 
 ## Development
@@ -40,6 +41,14 @@ pnpm dev
 Run this before handing work off:
 
 ```bash
+pnpm ready
+```
+
+`pnpm ready` runs Biome safe fixes, then `pnpm verify`.
+
+CI should run the read-only gate:
+
+```bash
 pnpm verify
 ```
 
@@ -50,21 +59,29 @@ pnpm verify
 3. `pnpm test`
 4. `pnpm build`
 
-Formatting is intentionally strict so work remains stable across human and AI contributors.
+For UI-heavy changes, install Playwright browsers once and run the full gate:
+
+```bash
+pnpm exec playwright install chromium
+pnpm verify:full
+```
 
 ## Scripts
 
 ```bash
-pnpm format        # write Biome formatting changes
-pnpm format:check  # check formatting only
-pnpm lint          # run Biome lint
-pnpm check         # run Biome format/lint/import checks
-pnpm typecheck     # run TypeScript strict checks
-pnpm test          # run unit tests once
-pnpm test:watch    # run Vitest watch mode
+pnpm fix          # write Biome safe fixes, formatting, and import organization
+pnpm format       # alias for pnpm fix
+pnpm lint         # run Biome lint only
+pnpm check        # run Biome format/lint/import checks without writing
+pnpm typecheck    # run TypeScript strict checks
+pnpm test         # run unit tests once
+pnpm test:watch   # run Vitest watch mode
 pnpm test:coverage # run Vitest coverage
-pnpm build         # build production assets
-pnpm verify        # run the required quality gate
+pnpm build        # build production assets
+pnpm verify       # run the required read-only quality gate
+pnpm e2e          # run Playwright smoke tests
+pnpm verify:full  # run verify and e2e
+pnpm ready        # run safe fixes and verify
 ```
 
 ## Product direction
