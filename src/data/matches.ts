@@ -1,4 +1,12 @@
-import { countryId, groupCode, localDate, localTime, matchId, slotId, venueId } from "../domain/ids";
+import {
+  countryId,
+  groupCode,
+  localDate,
+  localTime,
+  matchId,
+  slotId,
+  venueId,
+} from "../domain/ids";
 import type { Match } from "../domain/types";
 
 export const matches = [

@@ -1,15 +1,11 @@
 import preact from "@preact/preset-vite";
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [preact()],
   test: {
     environment: "jsdom",
-    setupFiles: ["./src/test/setup.ts"],
-    coverage: {
-      provider: "v8",
-      reporter: ["text", "html"],
-      exclude: ["dist/**", "coverage/**", "src/test/**"],
-    },
+    globals: true,
+    setupFiles: "./src/test/setup.ts",
   },
 });

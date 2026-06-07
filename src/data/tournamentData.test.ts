@@ -16,13 +16,34 @@ describe("tournament data", () => {
   });
 
   it("uses unique ids and codes", () => {
-    expectUnique(appData.countries.map((country) => country.id), "country ids");
-    expectUnique(appData.countries.map((country) => country.fifaCode), "country FIFA codes");
-    expectUnique(appData.groups.map((group) => group.code), "group codes");
-    expectUnique(appData.slotEntries.map((slotEntry) => slotEntry.slotId), "slot ids");
-    expectUnique(appData.venues.map((venue) => venue.id), "venue ids");
-    expectUnique(appData.matches.map((match) => match.id), "match ids");
-    expectUnique(appData.matches.map((match) => match.matchNumber), "match numbers");
+    expectUnique(
+      appData.countries.map((country) => country.id),
+      "country ids",
+    );
+    expectUnique(
+      appData.countries.map((country) => country.fifaCode),
+      "country FIFA codes",
+    );
+    expectUnique(
+      appData.groups.map((group) => group.code),
+      "group codes",
+    );
+    expectUnique(
+      appData.slotEntries.map((slotEntry) => slotEntry.slotId),
+      "slot ids",
+    );
+    expectUnique(
+      appData.venues.map((venue) => venue.id),
+      "venue ids",
+    );
+    expectUnique(
+      appData.matches.map((match) => match.id),
+      "match ids",
+    );
+    expectUnique(
+      appData.matches.map((match) => match.matchNumber),
+      "match numbers",
+    );
   });
 
   it("keeps slot entries aligned with groups", () => {

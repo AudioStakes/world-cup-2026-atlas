@@ -15,7 +15,11 @@ export type Indexes = {
 export function createIndexes(data: AppData): Indexes {
   const countriesById = createUniqueMap(data.countries, (country) => country.id, "country id");
   const groupsByCode = createUniqueMap(data.groups, (group) => group.code, "group code");
-  const slotEntriesBySlotId = createUniqueMap(data.slotEntries, (slotEntry) => slotEntry.slotId, "slot id");
+  const slotEntriesBySlotId = createUniqueMap(
+    data.slotEntries,
+    (slotEntry) => slotEntry.slotId,
+    "slot id",
+  );
   const venuesById = createUniqueMap(data.venues, (venue) => venue.id, "venue id");
   const matchesById = createUniqueMap(data.matches, (match) => match.id, "match id");
 

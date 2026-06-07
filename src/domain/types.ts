@@ -64,7 +64,14 @@ export type Venue = {
   readonly sourceNote?: string;
 };
 
-export type TournamentStage = "group" | "roundOf32" | "roundOf16" | "quarterFinal" | "semiFinal" | "thirdPlace" | "final";
+export type TournamentStage =
+  | "group"
+  | "roundOf32"
+  | "roundOf16"
+  | "quarterFinal"
+  | "semiFinal"
+  | "thirdPlace"
+  | "final";
 
 export type Match = {
   readonly id: MatchId;
