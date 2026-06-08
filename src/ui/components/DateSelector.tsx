@@ -60,14 +60,21 @@ function DateChip({ dateOption, onAction }: DateChipProps) {
         <span class="date-chip__meta">{dateOption.matchCountLabel}</span>
       ) : null}
       {dateOption.kickoffRangeLabel ? (
-        <span class="date-chip__time">{dateOption.kickoffRangeLabel}</span>
+        <span class="date-chip__time">
+          {dateOption.kickoffRangeLabel}
+          {dateOption.timeZoneSummaryLabel ? ` · ${dateOption.timeZoneSummaryLabel}` : ""}
+        </span>
       ) : null}
     </button>
   );
 }
 
 function createDateChipAriaLabel(dateOption: DateOptionViewModel): string {
-  const details = [dateOption.matchCountLabel, dateOption.kickoffRangeLabel].filter(Boolean);
+  const kickoffSummary =
+    dateOption.kickoffRangeLabel && dateOption.timeZoneSummaryLabel
+      ? `${dateOption.kickoffRangeLabel} ${dateOption.timeZoneSummaryLabel}`
+      : dateOption.kickoffRangeLabel;
+  const details = [dateOption.matchCountLabel, kickoffSummary].filter(Boolean);
 
   return details.length > 0
     ? `Select ${dateOption.label}, ${details.join(", ")}`

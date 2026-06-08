@@ -103,6 +103,7 @@ export type DateOptionViewModel = {
   readonly label: string;
   readonly matchCountLabel: string | null;
   readonly kickoffRangeLabel: string | null;
+  readonly timeZoneSummaryLabel: string | null;
   readonly isSelected: boolean;
   readonly availability: FilterOptionAvailability;
   readonly hasFixture: boolean;

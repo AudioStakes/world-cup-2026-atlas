@@ -1,6 +1,6 @@
 import type { LocalDateString } from "../../domain/ids";
 import { localDate } from "../../domain/ids";
-import type { AppData, Match } from "../../domain/types";
+import type { AppData, Match, Venue } from "../../domain/types";
 import { queryMatchesByViewState } from "../../queries/queryMatchesByViewState";
 import { formatDateLabel } from "./formatExplorerLabels";
 import type {
@@ -13,12 +13,14 @@ import type {
 
 const FIRST_TOURNAMENT_DATE = "2026-06-11";
 const LAST_TOURNAMENT_DATE = "2026-07-19";
+const timeZoneDisplayOrder = ["PT", "MT", "CT", "ET"] as const;
 
 export function createDateSelectorViewModel(
   data: AppData,
   viewState: NormalizedExplorerViewState,
 ): DateSelectorViewModel {
   const matchesByDate = createMatchesByDate(data.matches);
+  const venuesById = new Map(data.venues.map((venue) => [venue.id, venue] as const));
   const fixtureDateSet = new Set(data.matches.map((match) => match.date));
   const hitDateSet = new Set(
     queryMatchesByViewState(data, { ...viewState, selectedDate: null }).map((match) => match.date),
@@ -42,6 +44,7 @@ export function createDateSelectorViewModel(
       label: formatDateLabel(date),
       matchCountLabel: createMatchCountLabel(matchesForDate),
       kickoffRangeLabel: createKickoffRangeLabel(matchesForDate),
+      timeZoneSummaryLabel: createTimeZoneSummaryLabel(matchesForDate, venuesById),
       isSelected,
       availability: getAvailability(hasAnySelection, isSelected || isHit),
       hasFixture,
@@ -115,6 +118,31 @@ function createKickoffRangeLabel(matches: readonly Match[]): string | null {
   }
 
   return firstKickoff === lastKickoff ? firstKickoff : `${firstKickoff}–${lastKickoff}`;
+}
+
+function createTimeZoneSummaryLabel(
+  matches: readonly Match[],
+  venuesById: ReadonlyMap<Venue["id"], Venue>,
+): string | null {
+  if (matches.length === 0) {
+    return null;
+  }
+
+  const timeZoneAbbreviations = new Set(
+    matches
+      .map((match) => venuesById.get(match.venueId)?.timeZone.abbreviation)
+      .filter((abbreviation): abbreviation is Venue["timeZone"]["abbreviation"] =>
+        Boolean(abbreviation),
+      ),
+  );
+
+  if (timeZoneAbbreviations.size === 0) {
+    return null;
+  }
+
+  return timeZoneDisplayOrder
+    .filter((abbreviation) => timeZoneAbbreviations.has(abbreviation))
+    .join("/");
 }
 
 function createTournamentDates(): readonly LocalDateString[] {
