@@ -220,10 +220,7 @@ describe("stop_gate.mjs", () => {
 
     expect(result.status).toBe(0);
     expect(parseJsonOutput(result.stdout).decision).toBe("block");
-    expect(readLines(harness.pnpmLogPath)).toEqual([
-      "--silent fix",
-      "--silent verify:full",
-    ]);
+    expect(readLines(harness.pnpmLogPath)).toEqual(["--silent fix", "--silent verify:full"]);
   });
 });
 
