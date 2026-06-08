@@ -122,6 +122,8 @@ export type ExplorerResultViewModel = {
 
 export type MatchListItemViewModel = {
   readonly matchId: MatchId;
+  readonly matchNumberLabel: string;
+  readonly stageLabel: string;
   readonly dateLabel: string;
   readonly primaryText: string;
   readonly secondaryText: string;

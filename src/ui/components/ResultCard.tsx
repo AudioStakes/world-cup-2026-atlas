@@ -27,6 +27,9 @@ export function ResultCard({ result }: ResultCardProps) {
       <ol class="match-list">
         {result.matches.map((match) => (
           <li class="match-card" key={match.matchId}>
+            <p class="match-card__meta">
+              {match.matchNumberLabel} · {match.stageLabel}
+            </p>
             <p class="match-card__date">{match.dateLabel}</p>
             <p class="match-card__primary">{match.primaryText}</p>
             <p class="match-card__secondary">{match.secondaryText}</p>

@@ -6,7 +6,7 @@ import {
   getParticipantCountryId,
 } from "../../data/matchParticipants";
 import type { CountryId } from "../../domain/ids";
-import type { AppData, Country, Match, Venue } from "../../domain/types";
+import type { AppData, Country, Match, TournamentStage, Venue } from "../../domain/types";
 import type { Indexes } from "../../indexes/createIndexes";
 import { formatDateLabel, formatDistanceLabel, getRequiredCountry } from "./formatExplorerLabels";
 import type {
@@ -117,12 +117,41 @@ function createMatchListItem(
 
   return {
     matchId: match.id,
+    matchNumberLabel: `Match ${match.matchNumber}`,
+    stageLabel: formatStageLabel(match),
     dateLabel: formatDateLabel(match.date),
     primaryText: createMatchPrimaryText(indexes, viewState, match),
     secondaryText: `${match.kickoffLocal} local time`,
     venueId: venue.id,
     venueLabel: venue.name,
   };
+}
+
+function formatStageLabel(match: Match): string {
+  if (match.stage === "group" && "groupCode" in match && match.groupCode) {
+    return `Group ${match.groupCode}`;
+  }
+
+  return formatTournamentStageLabel(match.stage);
+}
+
+function formatTournamentStageLabel(stage: TournamentStage): string {
+  switch (stage) {
+    case "group":
+      return "Group stage";
+    case "roundOf32":
+      return "Round of 32";
+    case "roundOf16":
+      return "Round of 16";
+    case "quarterFinal":
+      return "Quarter-final";
+    case "semiFinal":
+      return "Semi-final";
+    case "thirdPlace":
+      return "Third-place match";
+    case "final":
+      return "Final";
+  }
 }
 
 function createMatchPrimaryText(
