@@ -1,6 +1,7 @@
 import { render } from "preact";
 import { App } from "./app/App";
 import "./styles.css";
+import "./map-label-polish.css";
 
 const appRoot = document.getElementById("app");
 

@@ -1,0 +1,119 @@
+/*
+ * Venue label placement overrides.
+ *
+ * The base map marker is anchored by the venue coordinate. The label is positioned independently
+ * so dense regions, especially the East Coast, can remain readable without changing venue data.
+ */
+
+.venue-marker {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  overflow: visible;
+  background: transparent;
+  box-shadow: none;
+}
+
+.venue-marker:hover {
+  background: transparent;
+  transform: translate(-50%, -50%);
+}
+
+.venue-marker__dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  transform: translate(-50%, -50%);
+}
+
+.venue-marker__label {
+  position: absolute;
+  top: 50%;
+  left: 22px;
+  max-width: 172px;
+  padding: 4px 7px;
+  border: 1px solid rgba(23, 32, 42, 0.08);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 8px 20px rgba(23, 32, 42, 0.1);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.venue-marker:hover .venue-marker__label,
+.venue-marker.is-highlighted .venue-marker__label,
+.venue-marker.is-selected .venue-marker__label {
+  color: var(--color-red);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow:
+    0 0 0 1px rgba(181, 31, 31, 0.16),
+    0 10px 22px rgba(181, 31, 31, 0.12);
+}
+
+.venue-marker.is-dimmed .venue-marker__label {
+  opacity: 0.7;
+}
+
+/* West Coast labels can safely extend to the right. */
+
+.venue-marker[data-venue-id="vancouver"] .venue-marker__label,
+.venue-marker[data-venue-id="seattle"] .venue-marker__label,
+.venue-marker[data-venue-id="san-francisco-bay-area"] .venue-marker__label,
+.venue-marker[data-venue-id="los-angeles"] .venue-marker__label {
+  left: 22px;
+}
+
+/* East Coast labels extend left to avoid clipping against the map edge. */
+
+.venue-marker[data-venue-id="toronto"] .venue-marker__label,
+.venue-marker[data-venue-id="boston"] .venue-marker__label,
+.venue-marker[data-venue-id="new-york-new-jersey"] .venue-marker__label,
+.venue-marker[data-venue-id="philadelphia"] .venue-marker__label,
+.venue-marker[data-venue-id="miami"] .venue-marker__label {
+  right: 22px;
+  left: auto;
+}
+
+/* Dense East Coast vertical offsets. */
+
+.venue-marker[data-venue-id="boston"] .venue-marker__label {
+  top: -4px;
+}
+
+.venue-marker[data-venue-id="new-york-new-jersey"] .venue-marker__label {
+  top: 18px;
+}
+
+.venue-marker[data-venue-id="philadelphia"] .venue-marker__label {
+  top: 40px;
+}
+
+.venue-marker[data-venue-id="toronto"] .venue-marker__label {
+  top: -18px;
+}
+
+.venue-marker[data-venue-id="miami"] .venue-marker__label {
+  top: 36px;
+}
+
+/* Central and southern venues use small offsets to keep route lines readable. */
+
+.venue-marker[data-venue-id="kansas-city"] .venue-marker__label {
+  top: -4px;
+}
+
+.venue-marker[data-venue-id="dallas"] .venue-marker__label {
+  top: 28px;
+}
+
+.venue-marker[data-venue-id="houston"] .venue-marker__label {
+  top: 42px;
+}
+
+.venue-marker[data-venue-id="monterrey"] .venue-marker__label,
+.venue-marker[data-venue-id="mexico-city"] .venue-marker__label,
+.venue-marker[data-venue-id="guadalajara"] .venue-marker__label {
+  top: 28px;
+}

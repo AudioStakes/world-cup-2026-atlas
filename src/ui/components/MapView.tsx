@@ -128,6 +128,7 @@ function VenueMarker({ venue, onAction }: VenueMarkerProps) {
       class={classNames("venue-marker", `is-${venue.state}`)}
       type="button"
       style={{ left: `${left}%`, top: `${top}%` }}
+      data-venue-id={venue.venueId}
       title={`${venue.venueName} — ${venue.stadiumName}`}
       aria-label={`Select venue ${venue.venueName}`}
       onClick={() => onAction({ type: "selectVenue", venueId: venue.venueId })}
