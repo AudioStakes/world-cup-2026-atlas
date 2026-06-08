@@ -5,12 +5,13 @@ import {
   getOpponentCountryId,
   getParticipantCountryId,
 } from "../../data/matchParticipants";
-import type { CountryId } from "../../domain/ids";
+import type { CountryId, GroupCode } from "../../domain/ids";
 import type {
   AppData,
   Country,
   HostCountryCode,
   Match,
+  SlotEntry,
   TournamentStage,
   Venue,
 } from "../../domain/types";
@@ -113,7 +114,7 @@ function createResultTitle(
     return {
       icon: "●",
       title: `Group ${viewState.selectedGroupCode}`,
-      subtitle: `${matchingMatches.length} matches`,
+      subtitle: createGroupSubtitle(indexes, viewState.selectedGroupCode, matchingMatches.length),
     };
   }
 
@@ -124,6 +125,24 @@ function createCountrySubtitle(country: Country, groupCode: string | null): stri
   const groupLabel = groupCode ? `Group ${groupCode}` : "Team";
 
   return `${groupLabel} · ${country.fifaCode} · ${country.confederation}`;
+}
+
+function createGroupSubtitle(indexes: Indexes, groupCode: GroupCode, matchCount: number): string {
+  const fifaCodes = getGroupSlotEntries(indexes, groupCode)
+    .map((slotEntry) =>
+      slotEntry.countryId ? indexes.countriesById.get(slotEntry.countryId)?.fifaCode : null,
+    )
+    .filter((fifaCode): fifaCode is string => Boolean(fifaCode));
+
+  return fifaCodes.length > 0
+    ? `${matchCount} matches · ${fifaCodes.join(" · ")}`
+    : `${matchCount} matches`;
+}
+
+function getGroupSlotEntries(indexes: Indexes, groupCode: GroupCode): readonly SlotEntry[] {
+  return Array.from(indexes.slotEntriesBySlotId.values())
+    .filter((slotEntry) => slotEntry.groupCode === groupCode)
+    .sort((left, right) => left.slotIndex - right.slotIndex);
 }
 
 function createVenueSubtitle(venue: Venue): string {

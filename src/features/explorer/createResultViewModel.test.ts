@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { appData } from "../../data/appData";
-import { countryId, localDate, venueId } from "../../domain/ids";
+import { countryId, groupCode, localDate, venueId } from "../../domain/ids";
 import { createIndexes } from "../../indexes/createIndexes";
 import { createResultViewModel } from "./createResultViewModel";
 import { emptyExplorerViewState } from "./types";
@@ -48,12 +48,34 @@ function createResultForVenue(venueKey: string) {
   );
 }
 
+function createResultForGroup(groupKey: string) {
+  const selectedGroupCode = groupCode(groupKey);
+  const matches = appData.matches.filter(
+    (match) =>
+      match.stage === "group" && "groupCode" in match && match.groupCode === selectedGroupCode,
+  );
+
+  return createResultViewModel(
+    appData,
+    indexes,
+    { ...emptyExplorerViewState, selectedGroupCode },
+    matches,
+  );
+}
+
 describe("createResultViewModel production metadata", () => {
   it("adds FIFA code and confederation to country result subtitles", () => {
     const result = createResultForCountry("jpn");
 
     expect(result.title).toBe("Japan");
     expect(result.subtitle).toBe("Group F · JPN · AFC");
+  });
+
+  it("adds group team FIFA codes to group result subtitles", () => {
+    const result = createResultForGroup("F");
+
+    expect(result.title).toBe("Group F");
+    expect(result.subtitle).toBe("6 matches · NED · JPN · SWE · TUN");
   });
 
   it("adds host country metadata to country result subtitles", () => {
