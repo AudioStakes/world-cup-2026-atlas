@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { DataStatus } from "../domain/types";
 import { appData } from "./appData";
+import { dataSources } from "./dataSources";
 
 type SourceTrackedRecord = {
   readonly dataStatus: DataStatus;
@@ -13,6 +14,14 @@ function getVisibleSourceTrackedRecords(): readonly SourceTrackedRecord[] {
 
 function getCompetitionDataRecords(): readonly SourceTrackedRecord[] {
   return [...appData.countries, ...appData.slotEntries, ...appData.matches];
+}
+
+function getKnownSourceIds(): ReadonlySet<string> {
+  return new Set(dataSources.map((source) => source.id));
+}
+
+function getSourceNoteId(sourceNote: string): string {
+  return sourceNote.split(":")[0]?.trim() ?? sourceNote;
 }
 
 describe("data status guardrails", () => {
@@ -45,5 +54,23 @@ describe("data status guardrails", () => {
 
     expect(venueStatuses).toEqual(new Set(["official"]));
     expect(appData.venues.every((venue) => Boolean(venue.sourceNote))).toBe(true);
+  });
+
+  it("keeps every visible production record traceable to a source note", () => {
+    const recordsWithoutSourceNote = getVisibleSourceTrackedRecords().filter(
+      (record) => !record.sourceNote,
+    );
+
+    expect(recordsWithoutSourceNote).toEqual([]);
+  });
+
+  it("keeps every source note linked to a known data source id", () => {
+    const knownSourceIds = getKnownSourceIds();
+    const unknownSourceNotes = getVisibleSourceTrackedRecords()
+      .map((record) => record.sourceNote)
+      .filter((sourceNote): sourceNote is string => Boolean(sourceNote))
+      .filter((sourceNote) => !knownSourceIds.has(getSourceNoteId(sourceNote)));
+
+    expect(unknownSourceNotes).toEqual([]);
   });
 });

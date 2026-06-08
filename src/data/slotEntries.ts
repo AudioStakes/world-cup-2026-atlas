@@ -1,6 +1,8 @@
 import { countryId, groupCode, slotId } from "../domain/ids";
 import type { GroupSlotIndex, SlotEntry } from "../domain/types";
 
+const groupCompositionSourceNote = "fifa-world-cup-26-groups";
+
 const groupAssignments = [
   ["A", ["mex", "rsa", "kor", "cze"]],
   ["B", ["can", "bos", "qat", "sui"]],
@@ -39,5 +41,6 @@ function createSlotEntry({ group, country, slotIndex }: CreateSlotEntryParams): 
     slotIndex,
     countryId: countryId(country),
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   };
 }

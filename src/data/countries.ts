@@ -1,6 +1,8 @@
 import { countryId } from "../domain/ids";
 import type { Country } from "../domain/types";
 
+const groupCompositionSourceNote = "fifa-world-cup-26-groups";
+
 export const countries = [
   {
     id: countryId("mex"),
@@ -10,6 +12,7 @@ export const countries = [
     flagEmoji: "🇲🇽",
     confederation: "CONCACAF",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("rsa"),
@@ -19,6 +22,7 @@ export const countries = [
     flagEmoji: "🇿🇦",
     confederation: "CAF",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("kor"),
@@ -28,6 +32,7 @@ export const countries = [
     flagEmoji: "🇰🇷",
     confederation: "AFC",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("cze"),
@@ -37,6 +42,7 @@ export const countries = [
     flagEmoji: "🇨🇿",
     confederation: "UEFA",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("can"),
@@ -46,6 +52,7 @@ export const countries = [
     flagEmoji: "🇨🇦",
     confederation: "CONCACAF",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("bos"),
@@ -55,6 +62,7 @@ export const countries = [
     flagEmoji: "🇧🇦",
     confederation: "UEFA",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("qat"),
@@ -64,6 +72,7 @@ export const countries = [
     flagEmoji: "🇶🇦",
     confederation: "AFC",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("sui"),
@@ -73,6 +82,7 @@ export const countries = [
     flagEmoji: "🇨🇭",
     confederation: "UEFA",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("bra"),
@@ -82,6 +92,7 @@ export const countries = [
     flagEmoji: "🇧🇷",
     confederation: "CONMEBOL",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("mar"),
@@ -91,6 +102,7 @@ export const countries = [
     flagEmoji: "🇲🇦",
     confederation: "CAF",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("hti"),
@@ -100,6 +112,7 @@ export const countries = [
     flagEmoji: "🇭🇹",
     confederation: "CONCACAF",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("sco"),
@@ -109,6 +122,7 @@ export const countries = [
     flagEmoji: "🏴",
     confederation: "UEFA",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("usa"),
@@ -118,6 +132,7 @@ export const countries = [
     flagEmoji: "🇺🇸",
     confederation: "CONCACAF",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("par"),
@@ -127,6 +142,7 @@ export const countries = [
     flagEmoji: "🇵🇾",
     confederation: "CONMEBOL",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("aus"),
@@ -136,6 +152,7 @@ export const countries = [
     flagEmoji: "🇦🇺",
     confederation: "AFC",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("tur"),
@@ -145,6 +162,7 @@ export const countries = [
     flagEmoji: "🇹🇷",
     confederation: "UEFA",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("ger"),
@@ -154,6 +172,7 @@ export const countries = [
     flagEmoji: "🇩🇪",
     confederation: "UEFA",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("cuw"),
@@ -163,6 +182,7 @@ export const countries = [
     flagEmoji: "🇨🇼",
     confederation: "CONCACAF",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("civ"),
@@ -172,6 +192,7 @@ export const countries = [
     flagEmoji: "🇨🇮",
     confederation: "CAF",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("ecu"),
@@ -181,6 +202,7 @@ export const countries = [
     flagEmoji: "🇪🇨",
     confederation: "CONMEBOL",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("ned"),
@@ -190,6 +212,7 @@ export const countries = [
     flagEmoji: "🇳🇱",
     confederation: "UEFA",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("jpn"),
@@ -199,6 +222,7 @@ export const countries = [
     flagEmoji: "🇯🇵",
     confederation: "AFC",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("swe"),
@@ -208,6 +232,7 @@ export const countries = [
     flagEmoji: "🇸🇪",
     confederation: "UEFA",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("tun"),
@@ -217,6 +242,7 @@ export const countries = [
     flagEmoji: "🇹🇳",
     confederation: "CAF",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("bel"),
@@ -226,6 +252,7 @@ export const countries = [
     flagEmoji: "🇧🇪",
     confederation: "UEFA",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("egy"),
@@ -235,6 +262,7 @@ export const countries = [
     flagEmoji: "🇪🇬",
     confederation: "CAF",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("irn"),
@@ -244,6 +272,7 @@ export const countries = [
     flagEmoji: "🇮🇷",
     confederation: "AFC",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("nzl"),
@@ -253,6 +282,7 @@ export const countries = [
     flagEmoji: "🇳🇿",
     confederation: "OFC",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("esp"),
@@ -262,6 +292,7 @@ export const countries = [
     flagEmoji: "🇪🇸",
     confederation: "UEFA",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("cpv"),
@@ -271,6 +302,7 @@ export const countries = [
     flagEmoji: "🇨🇻",
     confederation: "CAF",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("ksa"),
@@ -280,6 +312,7 @@ export const countries = [
     flagEmoji: "🇸🇦",
     confederation: "AFC",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("uru"),
@@ -289,6 +322,7 @@ export const countries = [
     flagEmoji: "🇺🇾",
     confederation: "CONMEBOL",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("fra"),
@@ -298,6 +332,7 @@ export const countries = [
     flagEmoji: "🇫🇷",
     confederation: "UEFA",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("sen"),
@@ -307,6 +342,7 @@ export const countries = [
     flagEmoji: "🇸🇳",
     confederation: "CAF",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("irq"),
@@ -316,6 +352,7 @@ export const countries = [
     flagEmoji: "🇮🇶",
     confederation: "AFC",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("nor"),
@@ -325,6 +362,7 @@ export const countries = [
     flagEmoji: "🇳🇴",
     confederation: "UEFA",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("arg"),
@@ -334,6 +372,7 @@ export const countries = [
     flagEmoji: "🇦🇷",
     confederation: "CONMEBOL",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("alg"),
@@ -343,6 +382,7 @@ export const countries = [
     flagEmoji: "🇩🇿",
     confederation: "CAF",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("aut"),
@@ -352,6 +392,7 @@ export const countries = [
     flagEmoji: "🇦🇹",
     confederation: "UEFA",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("jor"),
@@ -361,6 +402,7 @@ export const countries = [
     flagEmoji: "🇯🇴",
     confederation: "AFC",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("por"),
@@ -370,6 +412,7 @@ export const countries = [
     flagEmoji: "🇵🇹",
     confederation: "UEFA",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("cod"),
@@ -379,6 +422,7 @@ export const countries = [
     flagEmoji: "🇨🇩",
     confederation: "CAF",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("uzb"),
@@ -388,6 +432,7 @@ export const countries = [
     flagEmoji: "🇺🇿",
     confederation: "AFC",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("col"),
@@ -397,6 +442,7 @@ export const countries = [
     flagEmoji: "🇨🇴",
     confederation: "CONMEBOL",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("eng"),
@@ -406,6 +452,7 @@ export const countries = [
     flagEmoji: "🏴",
     confederation: "UEFA",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("cro"),
@@ -415,6 +462,7 @@ export const countries = [
     flagEmoji: "🇭🇷",
     confederation: "UEFA",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("gha"),
@@ -424,6 +472,7 @@ export const countries = [
     flagEmoji: "🇬🇭",
     confederation: "CAF",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
   {
     id: countryId("pan"),
@@ -433,5 +482,6 @@ export const countries = [
     flagEmoji: "🇵🇦",
     confederation: "CONCACAF",
     dataStatus: "provisional",
+    sourceNote: groupCompositionSourceNote,
   },
 ] as const satisfies readonly Country[];
