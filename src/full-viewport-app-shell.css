@@ -67,3 +67,37 @@ body {
     overflow: hidden;
   }
 }
+
+@media (max-height: 820px) and (min-width: 1181px) {
+  .atlas-shell {
+    padding: 12px;
+  }
+
+  .atlas-body {
+    gap: 14px;
+    padding-top: 12px;
+  }
+
+  .explore-panel {
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+    scrollbar-gutter: stable;
+  }
+
+  .panel-section,
+  .result-card {
+    flex: 0 0 auto;
+  }
+}
+
+@media (max-height: 760px) and (min-width: 1181px) {
+  .atlas-shell {
+    padding: 10px;
+  }
+
+  .atlas-body {
+    gap: 12px;
+    padding-top: 10px;
+  }
+}

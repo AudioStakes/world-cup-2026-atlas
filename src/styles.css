@@ -676,6 +676,147 @@ button:focus-visible {
   white-space: nowrap;
 }
 
+@media (max-height: 820px) and (min-width: 1181px) {
+  .explore-panel {
+    gap: 10px;
+  }
+
+  .explore-panel__intro {
+    padding-top: 0;
+    gap: 4px;
+  }
+
+  .explore-panel h1 {
+    font-size: 30px;
+    line-height: 0.98;
+  }
+
+  .explore-panel__intro p:not(.eyebrow) {
+    font-size: 13px;
+    line-height: 1.3;
+  }
+
+  .venue-tip {
+    display: none;
+  }
+
+  .panel-section,
+  .result-card {
+    display: block;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .section-heading {
+    padding: 8px 10px 4px;
+  }
+
+  .section-heading h2 {
+    font-size: 12px;
+  }
+
+  .group-team-grid {
+    gap: 6px;
+    padding: 0 10px 8px;
+  }
+
+  .group-team-card {
+    min-height: 88px;
+  }
+
+  .group-team-header-button {
+    min-height: 22px;
+    padding: 6px 9px 4px;
+  }
+
+  .group-team-row-button {
+    min-height: 16px;
+  }
+
+  .date-months {
+    padding: 0 10px 8px;
+  }
+
+  .date-month {
+    margin-bottom: 6px;
+  }
+
+  .date-month__label {
+    margin: 2px 0 4px;
+    font-size: 9px;
+  }
+
+  .date-chip-grid {
+    gap: 4px;
+  }
+
+  .date-chip {
+    min-height: 26px;
+    padding: 0 3px;
+    font-size: 9px;
+  }
+
+  .result-card {
+    padding: 10px;
+  }
+
+  .result-card__header {
+    gap: 8px;
+  }
+
+  .result-card h2 {
+    font-size: 20px;
+  }
+
+  .result-card__header p {
+    margin: 4px 0 0;
+    font-size: 11px;
+  }
+
+  .route-summary {
+    padding: 8px 10px;
+  }
+
+  .match-list {
+    gap: 5px;
+  }
+
+  .match-card {
+    padding: 9px 10px;
+  }
+
+  .match-card__date {
+    font-size: 11px;
+  }
+
+  .match-card__primary {
+    font-size: 14px;
+  }
+
+  .match-card__secondary,
+  .match-card__venue {
+    font-size: 11px;
+  }
+}
+
+@media (max-height: 760px) and (min-width: 1181px) {
+  .explore-panel h1 {
+    font-size: 28px;
+  }
+
+  .group-team-card {
+    min-height: 84px;
+  }
+
+  .date-chip {
+    min-height: 24px;
+  }
+
+  .match-card {
+    padding: 8px 10px;
+  }
+}
+
 @media (max-width: 1180px) {
   html,
   body {
