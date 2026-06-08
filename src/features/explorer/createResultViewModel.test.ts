@@ -78,6 +78,20 @@ describe("createResultViewModel production metadata", () => {
     expect(result.subtitle).toBe("6 matches · NED · JPN · SWE · TUN");
   });
 
+  it("adds kickoff range and time-zone summary to multi-match date result subtitles", () => {
+    const result = createResultForDate("2026-06-14");
+
+    expect(result.title).toBe("Jun 14");
+    expect(result.subtitle).toBe("4 matches · 12:00–20:00 · CT/ET");
+  });
+
+  it("adds singular kickoff metadata to one-match date result subtitles", () => {
+    const result = createResultForDate("2026-07-19");
+
+    expect(result.title).toBe("Jul 19");
+    expect(result.subtitle).toBe("1 match · 15:00 · ET");
+  });
+
   it("adds host country metadata to country result subtitles", () => {
     const result = createResultForCountry("usa");
 

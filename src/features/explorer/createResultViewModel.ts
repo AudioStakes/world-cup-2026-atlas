@@ -25,6 +25,8 @@ import type {
   NormalizedExplorerViewState,
 } from "./types";
 
+const timeZoneDisplayOrder = ["PT", "MT", "CT", "ET"] as const;
+
 export function createResultViewModel(
   data: AppData,
   indexes: Indexes,
@@ -106,7 +108,7 @@ function createResultTitle(
     return {
       icon: "📅",
       title: formatDateLabel(viewState.selectedDate),
-      subtitle: `${matchingMatches.length} matches`,
+      subtitle: createDateSubtitle(indexes, matchingMatches),
     };
   }
 
@@ -143,6 +145,56 @@ function getGroupSlotEntries(indexes: Indexes, groupCode: GroupCode): readonly S
   return Array.from(indexes.slotEntriesBySlotId.values())
     .filter((slotEntry) => slotEntry.groupCode === groupCode)
     .sort((left, right) => left.slotIndex - right.slotIndex);
+}
+
+function createDateSubtitle(indexes: Indexes, matches: readonly Match[]): string {
+  const matchCountLabel = matches.length === 1 ? "1 match" : `${matches.length} matches`;
+  const kickoffRangeLabel = createKickoffRangeLabel(matches);
+  const timeZoneSummaryLabel = createTimeZoneSummaryLabel(indexes, matches);
+
+  return [matchCountLabel, kickoffRangeLabel, timeZoneSummaryLabel].filter(Boolean).join(" · ");
+}
+
+function createKickoffRangeLabel(matches: readonly Match[]): string | null {
+  if (matches.length === 0) {
+    return null;
+  }
+
+  const kickoffTimes = matches
+    .map((match) => match.kickoffLocal)
+    .slice()
+    .sort();
+
+  const firstKickoff = kickoffTimes[0];
+  const lastKickoff = kickoffTimes.at(-1);
+
+  if (!firstKickoff || !lastKickoff) {
+    return null;
+  }
+
+  return firstKickoff === lastKickoff ? firstKickoff : `${firstKickoff}–${lastKickoff}`;
+}
+
+function createTimeZoneSummaryLabel(indexes: Indexes, matches: readonly Match[]): string | null {
+  if (matches.length === 0) {
+    return null;
+  }
+
+  const timeZoneAbbreviations = new Set(
+    matches
+      .map((match) => indexes.venuesById.get(match.venueId)?.timeZone.abbreviation)
+      .filter((abbreviation): abbreviation is Venue["timeZone"]["abbreviation"] =>
+        Boolean(abbreviation),
+      ),
+  );
+
+  if (timeZoneAbbreviations.size === 0) {
+    return null;
+  }
+
+  return timeZoneDisplayOrder
+    .filter((abbreviation) => timeZoneAbbreviations.has(abbreviation))
+    .join("/");
 }
 
 function createVenueSubtitle(venue: Venue): string {
