@@ -34,9 +34,9 @@ const commandPlans = {
 const checks = commandPlans[mode];
 
 if (checks === undefined) {
-  console.error(`Unknown Codex hook mode: ${mode}`);
-  console.error(`Expected one of: ${Object.keys(commandPlans).join(", ")}`);
-  process.exit(1);
+  failFatal(
+    `Unknown Codex hook mode: ${mode}\nExpected one of: ${Object.keys(commandPlans).join(", ")}`,
+  );
 }
 
 const importantLinePatterns = [
@@ -262,7 +262,10 @@ function parseStatusPaths(statusOutput) {
 
 function readRequiredFile(path, message) {
   if (!existsSync(path)) {
-    failWithMessage(message);
+    blockCompletion(
+      message,
+      "Run or restart the Codex session so the SessionStart hook captures the git baseline, then finish again.",
+    );
   }
 
   return readFileSync(path, "utf8").trim();
@@ -270,18 +273,12 @@ function readRequiredFile(path, message) {
 
 function getBaselineDirtyPaths() {
   return parseStatusPaths(
-    readRequiredFile(
-      baselineStatusPath,
-      `Missing Codex baseline: ${baselineStatusPath}. The SessionStart hook should capture it before editing.`,
-    ),
+    readRequiredFile(baselineStatusPath, `Missing Codex baseline: ${baselineStatusPath}.`),
   );
 }
 
 function getBaselineHead() {
-  return readRequiredFile(
-    baselineHeadPath,
-    `Missing Codex baseline HEAD: ${baselineHeadPath}. The SessionStart hook should capture it before editing.`,
-  );
+  return readRequiredFile(baselineHeadPath, `Missing Codex baseline HEAD: ${baselineHeadPath}.`);
 }
 
 function getGitContext() {
@@ -322,14 +319,16 @@ function getGitContext() {
 
 function assertCompletionGitState(context) {
   if (context.newDirtyPaths.length > 0) {
-    failWithMessage(
+    blockCompletion(
       [
         "New uncommitted changes remain since task start:",
         ...context.newDirtyPaths.map((path) => `- ${path}`),
-        "",
-        "Commit only task-owned changes, then finish again.",
-        "Do not stage or commit pre-existing dirty files unless explicitly requested.",
       ].join("\n"),
+      [
+        "Commit only task-owned changes.",
+        "Do not stage or commit pre-existing dirty files unless explicitly requested.",
+        "Then push, create or update the PR, and finish again.",
+      ].join(" "),
     );
   }
 
@@ -338,32 +337,61 @@ function assertCompletionGitState(context) {
   }
 
   if (context.branch === "main") {
-    failWithMessage(
-      "Do not finish committed task work on main. Create a non-main branch and commit there.",
+    blockCompletion(
+      "Committed task work is on main.",
+      "Create a non-main branch for the task work, move or recreate the task commit there, push it, create or update the PR, and finish again.",
     );
   }
 
   if (!context.upstream) {
-    failWithMessage("Current branch has no upstream. Push the branch before finishing.");
+    blockCompletion(
+      "Current branch has no upstream.",
+      "Push the current branch with upstream, create or update the PR, and finish again.",
+    );
   }
 
   if (/\[ahead \d+\]/.test(context.branchStatus)) {
-    failWithMessage("Current branch has unpushed commits. Push the branch before finishing.");
+    blockCompletion(
+      "Current branch has unpushed commits.",
+      "Push the current branch, create or update the PR, and finish again.",
+    );
   }
 
   if (!context.prUrl) {
-    failWithMessage("No pull request URL found. Create or update a PR before finishing.");
+    blockCompletion(
+      "No pull request URL found.",
+      "Create or update the pull request for the current branch, then finish again.",
+    );
   }
 }
 
-function failWithMessage(message) {
+function failFatal(message) {
+  console.error("Codex hook fatal error.");
+  console.error("");
   console.error(message);
+  process.exit(1);
+}
+
+function blockCompletion(reason, nextAction) {
+  console.log("Completion is blocked.");
+  console.log("");
+  console.log("Reason:");
+  console.log(reason);
+  console.log("");
+  console.log("Next action for Codex:");
+  console.log(nextAction);
+  console.log("");
+  console.log("Do not produce the final report yet.");
+  console.log("Continue the task, then finish again.");
   process.exit(1);
 }
 
 function readRequiredPrompt(path) {
   if (!existsSync(path)) {
-    failWithMessage(`Missing required Codex hook prompt: ${path}`);
+    blockCompletion(
+      `Missing required Codex hook prompt: ${path}`,
+      "Restore the missing hook prompt file, then finish again.",
+    );
   }
 
   return readFileSync(path, "utf8").trimEnd();
@@ -373,20 +401,28 @@ for (const check of checks) {
   const result = await runCheck(check);
 
   if (!result.ok) {
-    console.error(`${result.name} failed`);
+    console.log("Completion is blocked.");
+    console.log("");
+    console.log("Reason:");
+    console.log(`${result.name} failed`);
 
     if (result.output.length > 0) {
-      console.error("");
-      console.error(result.output);
+      console.log("");
+      console.log("Key output:");
+      console.log(result.output);
     }
 
     if (result.fullLogPath) {
-      console.error("");
-      console.error(`Full log: ${result.fullLogPath}`);
+      console.log("");
+      console.log(`Full log: ${result.fullLogPath}`);
     }
 
-    console.error("");
-    console.error("Fix the failure above, then continue. Do not change unrelated files.");
+    console.log("");
+    console.log("Next action for Codex:");
+    console.log("Fix the failure above, then continue. Do not change unrelated files.");
+    console.log("");
+    console.log("Do not produce the final report yet.");
+    console.log("Continue the task, then finish again.");
 
     process.exit(1);
   }
