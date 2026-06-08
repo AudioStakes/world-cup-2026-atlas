@@ -42,6 +42,11 @@ export type SlotEntry = {
 
 export type HostCountryCode = "CAN" | "MEX" | "USA";
 
+export type VenueTimeZone = {
+  readonly ianaName: string;
+  readonly abbreviation: "PT" | "MT" | "CT" | "ET";
+};
+
 export type GeoPoint = {
   readonly latitude: number;
   readonly longitude: number;
@@ -58,6 +63,7 @@ export type Venue = {
   readonly city: string;
   readonly countryCode: HostCountryCode;
   readonly stadiumName: string;
+  readonly timeZone: VenueTimeZone;
   readonly geoPoint: GeoPoint;
   readonly mapPoint: MapPoint;
   readonly dataStatus: DataStatus;

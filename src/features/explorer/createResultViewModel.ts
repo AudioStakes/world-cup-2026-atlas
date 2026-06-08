@@ -121,7 +121,7 @@ function createMatchListItem(
     stageLabel: formatStageLabel(match),
     dateLabel: formatDateLabel(match.date),
     primaryText: createMatchPrimaryText(indexes, viewState, match),
-    secondaryText: `${match.kickoffLocal} local time`,
+    secondaryText: `${match.kickoffLocal} ${venue.timeZone.abbreviation}`,
     venueId: venue.id,
     venueLabel: venue.name,
   };
@@ -197,7 +197,6 @@ function createCountryRouteSummary(
 ): CountryRouteSummaryViewModel | null {
   const routeMatches = data.matches
     .filter((match) => getMatchCountryIds(match).includes(countryId))
-
     .slice()
     .sort((a, b) => a.date.localeCompare(b.date) || a.matchNumber - b.matchNumber);
   const routeVenues = routeMatches
