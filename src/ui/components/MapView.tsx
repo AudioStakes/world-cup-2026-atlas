@@ -1,3 +1,4 @@
+import { EXPLORER_MAP_VIEWBOX } from "../../features/explorer/mapViewport";
 import type {
   ExplorerAction,
   ExplorerMapViewModel,
@@ -5,25 +6,20 @@ import type {
 } from "../../features/explorer/types";
 import { classNames } from "./classNames";
 
-const VIEWBOX = {
-  minX: 440,
-  minY: 120,
-  width: 900,
-  height: 910,
-} as const;
-
 type MapViewProps = {
   readonly map: ExplorerMapViewModel;
   readonly onAction: (action: ExplorerAction) => void;
 };
 
 export function MapView({ map, onAction }: MapViewProps) {
+  const viewBox = EXPLORER_MAP_VIEWBOX;
+
   return (
     <section class="map-panel" aria-label="North America venue map">
       <div class="map-canvas">
         <svg
           class="map-svg"
-          viewBox={`${VIEWBOX.minX} ${VIEWBOX.minY} ${VIEWBOX.width} ${VIEWBOX.height}`}
+          viewBox={`${viewBox.minX} ${viewBox.minY} ${viewBox.width} ${viewBox.height}`}
           role="img"
           aria-label="Stylized North America map with match venues"
         >
@@ -123,8 +119,9 @@ type VenueMarkerProps = {
 };
 
 function VenueMarker({ venue, onAction }: VenueMarkerProps) {
-  const left = ((venue.position.x - VIEWBOX.minX) / VIEWBOX.width) * 100;
-  const top = ((venue.position.y - VIEWBOX.minY) / VIEWBOX.height) * 100;
+  const viewBox = EXPLORER_MAP_VIEWBOX;
+  const left = ((venue.position.x - viewBox.minX) / viewBox.width) * 100;
+  const top = ((venue.position.y - viewBox.minY) / viewBox.height) * 100;
 
   return (
     <button
