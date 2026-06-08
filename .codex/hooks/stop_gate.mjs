@@ -475,7 +475,8 @@ function assertCompletionGitState(context) {
         ...context.newDirtyPaths.map((path) => `- ${path}`),
         "",
         "Commit only task-owned changes.",
-        "Do not stage or commit pre-existing dirty files unless explicitly requested.",
+        "Do not stage or commit unrelated pre-existing dirty changes.",
+        "If a pre-existing dirty file is explicitly in scope, commit only the task-required changes.",
         "Then push, create or update the PR, and finish again.",
       ].join("\n"),
     );

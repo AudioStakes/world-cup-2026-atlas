@@ -21,6 +21,7 @@
 
 - Treat pre-existing uncommitted changes as user-owned.
 - Do not stage, commit, revert, or edit pre-existing dirty files unless explicitly requested.
+- If a pre-existing dirty file is explicitly in the current task scope, you may edit and commit only the task-required changes to that file. Do not stage or commit unrelated pre-existing edits.
 - Stage only files changed for the current task.
 - Prefer explicit `git add <path>` over `git add .`.
 
