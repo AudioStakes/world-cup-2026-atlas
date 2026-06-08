@@ -1,6 +1,13 @@
 #!/usr/bin/env node
 import { spawn, spawnSync } from "node:child_process";
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join } from "node:path";
 
 const inputPayload = readStdinJson();
@@ -27,17 +34,10 @@ const instructionFeedbackPromptPath = join(
 );
 
 const commandPlans = {
-  fix: [
-    { name: "pnpm fix", command: "pnpm", args: ["--silent", "fix"], timeoutMs: 15 * 60 * 1000 },
-  ],
+  fix: [{ name: "pnpm fix", command: "pnpm", args: ["--silent", "fix"], timeoutMs: 15 * 60 * 1000 }],
   "verify:full": [
     { name: "pnpm fix", command: "pnpm", args: ["--silent", "fix"], timeoutMs: 15 * 60 * 1000 },
-    {
-      name: "pnpm verify:full",
-      command: "pnpm",
-      args: ["--silent", "verify:full"],
-      timeoutMs: 30 * 60 * 1000,
-    },
+    { name: "pnpm verify:full", command: "pnpm", args: ["--silent", "verify:full"], timeoutMs: 30 * 60 * 1000 },
   ],
 };
 
@@ -47,7 +47,6 @@ if (checks === undefined) {
     "Codex hook configuration error.",
     `Unknown Codex hook mode: ${mode}\nExpected one of: ${Object.keys(commandPlans).join(", ")}`,
   );
-  process.exit(0);
 }
 
 const importantLinePatterns = [
@@ -57,8 +56,15 @@ const importantLinePatterns = [
   /^\s*TypeError:/,
   /^\s*ReferenceError:/,
   /^\s*SyntaxError:/,
-  /^\s*npm ERR!/,
+  /^\s*TS\d+:/,
+  /^\s*error TS\d+:/,
+  /^\s*Biome\b/i,
+  /^\s*✖/,
+  /^\s*Running \d+ tests?/i,
+  /^\s*Test Files?/i,
+  /^\s*Tests?/i,
   /^\s*pnpm ERR!/,
+  /^\s*ERR_PNPM_/,
   /^\s*ERR!/,
 ];
 const maxLinesTotal = 96;
@@ -85,9 +91,7 @@ function resolveRepositoryRoot() {
     },
   });
 
-  return result.status === 0 && result.stdout.trim().length > 0
-    ? result.stdout.trim()
-    : process.cwd();
+  return result.status === 0 && result.stdout.trim().length > 0 ? result.stdout.trim() : process.cwd();
 }
 
 function writeJson(value) {
@@ -132,15 +136,7 @@ function getInputStrings(value) {
 }
 
 function isFinalReportResponse(value) {
-  return getInputStrings(value).some((item) =>
-    /Completion report instruction:|Review Notes:|残作業:/.test(item),
-  );
-}
-
-function writeFullLogHeader(fullLogPath, name, command, args) {
-  appendFileSync(fullLogPath, `[stop_gate] ${name}\n`);
-  appendFileSync(fullLogPath, `[stop_gate] command: ${command} ${args.join(" ")}\n`);
-  appendFileSync(fullLogPath, `[stop_gate] started: ${new Date().toISOString()}\n\n`);
+  return getInputStrings(value).some((text) => /Completion report instruction:|Review Notes:|残作業:/.test(text));
 }
 
 function createLogPath(name) {
@@ -156,7 +152,9 @@ function createRunLog(name, command, args) {
   mkdirSync(logDirectory, { recursive: true });
   const fullLogPath = createLogPath(name);
   writeFileSync(fullLogPath, "");
-  writeFullLogHeader(fullLogPath, name, command, args);
+  appendFileSync(fullLogPath, `[stop_gate] ${name}\n`);
+  appendFileSync(fullLogPath, `[stop_gate] command: ${command} ${args.join(" ")}\n`);
+  appendFileSync(fullLogPath, `[stop_gate] started: ${new Date().toISOString()}\n\n`);
   return fullLogPath;
 }
 
@@ -168,9 +166,7 @@ function compactOutput(output) {
 
   const selectedIndexes = new Set();
   const importantIndexes = lines
-    .map((line, index) =>
-      importantLinePatterns.some((pattern) => pattern.test(line)) ? index : -1,
-    )
+    .map((line, index) => (importantLinePatterns.some((pattern) => pattern.test(line)) ? index : -1))
     .filter((index) => index >= 0);
 
   for (const index of importantIndexes) {
@@ -289,11 +285,7 @@ function runCheck(check) {
     }
 
     child.on("close", (exitCode) => {
-      const fullOutput = `${stdout}\n${stderr}`;
-      appendFileSync(
-        fullLogPath,
-        `\n[exit ${exitCode ?? "null"}${timedOut ? ", timed out" : ""}]\n`,
-      );
+      appendFileSync(fullLogPath, `\n[exit ${exitCode ?? "null"}${timedOut ? ", timed out" : ""}]\n`);
       writeProgress(
         `${name} ${exitCode === 0 && !timedOut ? "completed successfully" : `finished with exit code ${exitCode}`}`,
       );
@@ -301,18 +293,13 @@ function runCheck(check) {
         name,
         ok: exitCode === 0 && !timedOut,
         exitCode,
-        output: compactOutput(fullOutput),
+        output: compactOutput(`${stdout}\n${stderr}`),
         fullLogPath,
         timedOut,
         timeoutMs,
       });
     });
   });
-}
-
-function writeFullLogPath(path, output) {
-  mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, output);
 }
 
 function runGit(args, options = {}) {
@@ -353,9 +340,7 @@ function runCommand(command, args, options = {}) {
     if (options.allowFailure) {
       return null;
     }
-    throw new Error(
-      (result.stderr || result.stdout || `${command} ${args.join(" ")} failed`).trim(),
-    );
+    throw new Error((result.stderr || result.stdout || `${command} ${args.join(" ")} failed`).trim());
   }
 
   return result.stdout.trimEnd();
@@ -412,15 +397,9 @@ function getGitContext() {
   const prUrl = hasTaskCommit
     ? runCommand("gh", ["pr", "view", "--json", "url", "--jq", ".url"], { allowFailure: true })
     : null;
-  const branchLine =
-    branchStatus
-      .split("\n")[0]
-      ?.replace(/^##\s+/, "")
-      .trim() ?? "unknown";
+  const branchLine = branchStatus.split("\n")[0]?.replace(/^##\s+/, "").trim() ?? "unknown";
   const branch = branchLine.split("...")[0]?.trim() || branchLine;
-  const upstream = branchLine.includes("...")
-    ? (branchLine.split("...")[1]?.split(" ")[0] ?? null)
-    : null;
+  const upstream = branchLine.includes("...") ? branchLine.split("...")[1]?.split(" ")[0] ?? null : null;
 
   return {
     branch,
@@ -504,7 +483,7 @@ function saveStopState(state) {
   mkdirSync(dirname(stopStatePath), { recursive: true });
   const temporaryPath = `${stopStatePath}.tmp`;
   writeFileSync(temporaryPath, `${JSON.stringify(state, null, 2)}\n`);
-  spawnSync("mv", [temporaryPath, stopStatePath]);
+  renameSync(temporaryPath, stopStatePath);
 }
 
 function loadStopState() {
@@ -514,7 +493,7 @@ function loadStopState() {
 
   try {
     const parsed = JSON.parse(readFileSync(stopStatePath, "utf8"));
-    return parsed && typeof parsed === "object" ? parsed : { entries: {} };
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : { entries: {} };
   } catch {
     return { entries: {} };
   }
@@ -564,50 +543,6 @@ function readRequiredPrompt(path) {
 }
 
 async function main() {
-  if (mode === "verify:full") {
-    const context = getGitContext();
-    const key = turnKey(inputPayload, context);
-
-    if (isFinalReportResponse(inputPayload) || wasFinalReportRequested(key)) {
-      writePass();
-      return;
-    }
-
-    assertCompletionGitState(context);
-
-    const completionPrompt = readRequiredPrompt(completionPromptPath);
-    const instructionFeedbackPrompt = readRequiredPrompt(instructionFeedbackPromptPath);
-
-    markFinalReportRequested(key);
-    writeBlock(
-      "Final response required.",
-      [
-        "Codex final report context:",
-        "- Verification: pnpm verify:full passed",
-        `- Branch: ${context.branch}`,
-        `- Latest commit: ${context.latestCommit}`,
-        `- Task changes: ${context.hasTaskCommit ? "committed" : "none"}`,
-        `- PR: ${context.prUrl ?? "not required because no task-owned changes were committed"}`,
-        "- Working tree: no new uncommitted task changes",
-        context.baselineDirtyPaths.length > 0
-          ? [
-              "- Pre-existing dirty files preserved:",
-              ...context.baselineDirtyPaths.map((path) => `- ${path}`),
-            ].join("\n")
-          : "",
-        "",
-        "Completion report instruction:",
-        completionPrompt,
-        "",
-        "Instruction feedback prompt:",
-        instructionFeedbackPrompt,
-      ]
-        .filter(Boolean)
-        .join("\n"),
-    );
-    return;
-  }
-
   for (const check of checks) {
     const result = await runCheck(check);
     if (!result.ok) {
@@ -628,36 +563,72 @@ async function main() {
             .filter(Boolean)
             .join("\n"),
         );
-      } else {
-        writeBlock(
-          "Completion is blocked.",
-          [
-            "Reason:",
-            `${result.name} failed`,
-            result.output.length > 0 ? `\nKey output:\n${result.output}` : "",
-            result.fullLogPath ? `\nFull log: ${result.fullLogPath}` : "",
-            "",
-            "Next action for Codex:",
-            "Fix the failure above, then continue. Do not change unrelated files.",
-            "",
-            "Do not produce the final report yet.",
-            "Continue the task, then finish again.",
-          ]
-            .filter(Boolean)
-            .join("\n"),
-        );
       }
 
-      return;
+      writeBlock(
+        "Completion is blocked.",
+        [
+          "Reason:",
+          `${result.name} failed`,
+          result.output.length > 0 ? `\nKey output:\n${result.output}` : "",
+          result.fullLogPath ? `\nFull log: ${result.fullLogPath}` : "",
+          "",
+          "Next action for Codex:",
+          "Fix the failure above, then continue. Do not change unrelated files.",
+          "",
+          "Do not produce the final report yet.",
+          "Continue the task, then finish again.",
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      );
     }
+  }
+
+  if (mode === "verify:full") {
+    const context = getGitContext();
+    const key = turnKey(inputPayload, context);
+
+    if (isFinalReportResponse(inputPayload) || wasFinalReportRequested(key)) {
+      writePass();
+    }
+
+    assertCompletionGitState(context);
+
+    const completionPrompt = readRequiredPrompt(completionPromptPath);
+    const instructionFeedbackPrompt = readRequiredPrompt(instructionFeedbackPromptPath);
+
+    markFinalReportRequested(key);
+    writeBlock(
+      "Final response required.",
+      [
+        "Codex final report context:",
+        "- Verification: pnpm verify:full passed",
+        `- Branch: ${context.branch}`,
+        `- Latest commit: ${context.latestCommit}`,
+        `- Task changes: ${context.hasTaskCommit ? "committed" : "none"}`,
+        `- PR: ${context.prUrl ?? "not required because no task-owned changes were committed"}`,
+        "- Working tree: no new uncommitted task changes",
+        context.baselineDirtyPaths.length > 0
+          ? ["- Pre-existing dirty files preserved:", ...context.baselineDirtyPaths.map((path) => `- ${path}`)].join(
+              "\n",
+            )
+          : "",
+        "",
+        "Completion report instruction:",
+        completionPrompt,
+        "",
+        "Instruction feedback prompt:",
+        instructionFeedbackPrompt,
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    );
   }
 
   writePass();
 }
 
 main().catch((error) => {
-  writeBlock(
-    "Codex hook configuration error.",
-    error instanceof Error ? error.message : String(error),
-  );
+  writeBlock("Codex hook configuration error.", error instanceof Error ? error.message : String(error));
 });
