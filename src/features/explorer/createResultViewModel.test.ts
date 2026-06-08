@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { appData } from "../../data/appData";
-import { localDate } from "../../domain/ids";
+import { localDate, venueId } from "../../domain/ids";
 import { createIndexes } from "../../indexes/createIndexes";
 import { createResultViewModel } from "./createResultViewModel";
 import { emptyExplorerViewState } from "./types";
@@ -14,6 +14,18 @@ function createResultForDate(date: string) {
     appData,
     indexes,
     { ...emptyExplorerViewState, selectedDate: localDate(date) },
+    matches,
+  );
+}
+
+function createResultForVenue(venueKey: string) {
+  const selectedVenueId = venueId(venueKey);
+  const matches = appData.matches.filter((match) => match.venueId === selectedVenueId);
+
+  return createResultViewModel(
+    appData,
+    indexes,
+    { ...emptyExplorerViewState, selectedVenueId },
     matches,
   );
 }
@@ -34,5 +46,19 @@ describe("createResultViewModel match metadata", () => {
     expect(final?.matchNumberLabel).toBe("Match 104");
     expect(final?.stageLabel).toBe("Final");
     expect(final?.secondaryText).toBe("15:00 ET");
+  });
+
+  it("adds production venue metadata to venue result subtitles", () => {
+    const result = createResultForVenue("dallas");
+
+    expect(result.title).toBe("Dallas");
+    expect(result.subtitle).toBe("AT&T Stadium · Arlington, USA · CT");
+  });
+
+  it("formats non-USA venue result subtitles with host country names", () => {
+    const result = createResultForVenue("vancouver");
+
+    expect(result.title).toBe("Vancouver");
+    expect(result.subtitle).toBe("BC Place · Vancouver, Canada · PT");
   });
 });

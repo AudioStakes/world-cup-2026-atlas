@@ -6,7 +6,14 @@ import {
   getParticipantCountryId,
 } from "../../data/matchParticipants";
 import type { CountryId } from "../../domain/ids";
-import type { AppData, Country, Match, TournamentStage, Venue } from "../../domain/types";
+import type {
+  AppData,
+  Country,
+  HostCountryCode,
+  Match,
+  TournamentStage,
+  Venue,
+} from "../../domain/types";
 import type { Indexes } from "../../indexes/createIndexes";
 import { formatDateLabel, formatDistanceLabel, getRequiredCountry } from "./formatExplorerLabels";
 import type {
@@ -86,7 +93,11 @@ function createResultTitle(
 
   if (resultType === "venue" && viewState.selectedVenueId) {
     const venue = getRequiredVenue(indexes, viewState.selectedVenueId);
-    return { icon: "📍", title: venue.name, subtitle: venue.stadiumName };
+    return {
+      icon: "📍",
+      title: venue.name,
+      subtitle: createVenueSubtitle(venue),
+    };
   }
 
   if (resultType === "date" && viewState.selectedDate) {
@@ -106,6 +117,23 @@ function createResultTitle(
   }
 
   return { icon: "🧭", title: "Start exploring", subtitle: "" };
+}
+
+function createVenueSubtitle(venue: Venue): string {
+  return `${venue.stadiumName} · ${venue.city}, ${formatHostCountryCode(venue.countryCode)} · ${
+    venue.timeZone.abbreviation
+  }`;
+}
+
+function formatHostCountryCode(countryCode: HostCountryCode): string {
+  switch (countryCode) {
+    case "CAN":
+      return "Canada";
+    case "MEX":
+      return "Mexico";
+    case "USA":
+      return "USA";
+  }
 }
 
 function createMatchListItem(
