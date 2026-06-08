@@ -53,6 +53,20 @@ describe("queryExplorer", () => {
     expect(groupA?.availability).toBe("outsideCurrentFilter");
   });
 
+  it("creates country-specific match copy without duplicating venue icons", () => {
+    const viewModel = queryExplorer(
+      appData,
+      indexes,
+      createViewState({ selectedCountryId: countryId("jpn") }),
+    );
+
+    const firstMatch = viewModel.explorePanel.result.matches[0];
+
+    expect(firstMatch?.primaryText).toMatch(/^vs /);
+    expect(firstMatch?.venueLabel).toBe("Seattle");
+    expect(firstMatch?.venueLabel).not.toContain("📍");
+  });
+
   it("uses date as the result target when only a date is selected", () => {
     const viewModel = queryExplorer(
       appData,

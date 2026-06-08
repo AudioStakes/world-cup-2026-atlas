@@ -115,7 +115,7 @@ function createMatchListItem(
     primaryText: createMatchPrimaryText(indexes, viewState, match),
     secondaryText: `${match.kickoffLocal} local time`,
     venueId: venue.id,
-    venueLabel: `📍 ${venue.name}`,
+    venueLabel: venue.name,
   };
 }
 
