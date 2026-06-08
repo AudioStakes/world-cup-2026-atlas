@@ -34,10 +34,17 @@ const instructionFeedbackPromptPath = join(
 );
 
 const commandPlans = {
-  fix: [{ name: "pnpm fix", command: "pnpm", args: ["--silent", "fix"], timeoutMs: 15 * 60 * 1000 }],
+  fix: [
+    { name: "pnpm fix", command: "pnpm", args: ["--silent", "fix"], timeoutMs: 15 * 60 * 1000 },
+  ],
   "verify:full": [
     { name: "pnpm fix", command: "pnpm", args: ["--silent", "fix"], timeoutMs: 15 * 60 * 1000 },
-    { name: "pnpm verify:full", command: "pnpm", args: ["--silent", "verify:full"], timeoutMs: 30 * 60 * 1000 },
+    {
+      name: "pnpm verify:full",
+      command: "pnpm",
+      args: ["--silent", "verify:full"],
+      timeoutMs: 30 * 60 * 1000,
+    },
   ],
 };
 
@@ -83,7 +90,6 @@ function readStdinJson() {
     return {};
   }
 
-
   try {
     const raw = readFileSync(0, "utf8").trim();
     return raw.length > 0 ? JSON.parse(raw) : {};
@@ -103,7 +109,9 @@ function resolveRepositoryRoot() {
     },
   });
 
-  return result.status === 0 && result.stdout.trim().length > 0 ? result.stdout.trim() : process.cwd();
+  return result.status === 0 && result.stdout.trim().length > 0
+    ? result.stdout.trim()
+    : process.cwd();
 }
 
 function writeJson(value) {
@@ -148,7 +156,9 @@ function getInputStrings(value) {
 }
 
 function isFinalReportResponse(value) {
-  return getInputStrings(value).some((text) => /Completion report instruction:|Review Notes:|残作業:/.test(text));
+  return getInputStrings(value).some((text) =>
+    /Completion report instruction:|Review Notes:|残作業:/.test(text),
+  );
 }
 
 function createLogPath(name) {
@@ -178,7 +188,9 @@ function compactOutput(output) {
 
   const selectedIndexes = new Set();
   const importantIndexes = lines
-    .map((line, index) => (importantLinePatterns.some((pattern) => pattern.test(line)) ? index : -1))
+    .map((line, index) =>
+      importantLinePatterns.some((pattern) => pattern.test(line)) ? index : -1,
+    )
     .filter((index) => index >= 0);
 
   for (const index of importantIndexes) {
@@ -297,7 +309,10 @@ function runCheck(check) {
     }
 
     child.on("close", (exitCode) => {
-      appendFileSync(fullLogPath, `\n[exit ${exitCode ?? "null"}${timedOut ? ", timed out" : ""}]\n`);
+      appendFileSync(
+        fullLogPath,
+        `\n[exit ${exitCode ?? "null"}${timedOut ? ", timed out" : ""}]\n`,
+      );
       writeProgress(
         `${name} ${exitCode === 0 && !timedOut ? "completed successfully" : `finished with exit code ${exitCode}`}`,
       );
@@ -352,7 +367,9 @@ function runCommand(command, args, options = {}) {
     if (options.allowFailure) {
       return null;
     }
-    throw new Error((result.stderr || result.stdout || `${command} ${args.join(" ")} failed`).trim());
+    throw new Error(
+      (result.stderr || result.stdout || `${command} ${args.join(" ")} failed`).trim(),
+    );
   }
 
   return result.stdout.trimEnd();
@@ -409,9 +426,15 @@ function getGitContext() {
   const prUrl = hasTaskCommit
     ? runCommand("gh", ["pr", "view", "--json", "url", "--jq", ".url"], { allowFailure: true })
     : null;
-  const branchLine = branchStatus.split("\n")[0]?.replace(/^##\s+/, "").trim() ?? "unknown";
+  const branchLine =
+    branchStatus
+      .split("\n")[0]
+      ?.replace(/^##\s+/, "")
+      .trim() ?? "unknown";
   const branch = branchLine.split("...")[0]?.trim() || branchLine;
-  const upstream = branchLine.includes("...") ? branchLine.split("...")[1]?.split(" ")[0] ?? null : null;
+  const upstream = branchLine.includes("...")
+    ? (branchLine.split("...")[1]?.split(" ")[0] ?? null)
+    : null;
 
   return {
     branch,
@@ -505,7 +528,9 @@ function loadStopState() {
 
   try {
     const parsed = JSON.parse(readFileSync(stopStatePath, "utf8"));
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : { entries: {} };
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? parsed
+      : { entries: {} };
   } catch {
     return { entries: {} };
   }
@@ -622,9 +647,10 @@ async function main() {
         `- PR: ${context.prUrl ?? "not required because no task-owned changes were committed"}`,
         "- Working tree: no new uncommitted task changes",
         context.baselineDirtyPaths.length > 0
-          ? ["- Pre-existing dirty files preserved:", ...context.baselineDirtyPaths.map((path) => `- ${path}`)].join(
-              "\n",
-            )
+          ? [
+              "- Pre-existing dirty files preserved:",
+              ...context.baselineDirtyPaths.map((path) => `- ${path}`),
+            ].join("\n")
           : "",
         "",
         "Completion report instruction:",
@@ -642,5 +668,8 @@ async function main() {
 }
 
 main().catch((error) => {
-  writeBlock("Codex hook configuration error.", error instanceof Error ? error.message : String(error));
+  writeBlock(
+    "Codex hook configuration error.",
+    error instanceof Error ? error.message : String(error),
+  );
 });
