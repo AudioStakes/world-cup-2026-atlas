@@ -10,6 +10,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "map:data": "node scripts/download-natural-earth-map-data.mjs",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "fix": "biome check --write .",

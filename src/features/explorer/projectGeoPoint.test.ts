@@ -1,6 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { northAmericaMapBounds, northAmericaMapPolygons } from "../../data/northAmericaMapData";
-import { projectGeoPointToExplorerMap } from "./projectGeoPoint";
+import {
+  type NaturalEarthMapFeature,
+  northAmericaMapBounds,
+  northAmericaMapFeatures,
+} from "../../data/northAmericaMapData";
+import { createSvgPathsFromGeoGeometry, projectGeoPointToExplorerMap } from "./projectGeoPoint";
+
+function getRequiredMapFeature(featureId: string): NaturalEarthMapFeature {
+  const feature = northAmericaMapFeatures.find((candidate) => candidate.id === featureId);
+
+  if (!feature) {
+    throw new Error(`Missing map feature: ${featureId}`);
+  }
+
+  return feature;
+}
 
 describe("projectGeoPointToExplorerMap", () => {
   it("projects western longitudes left of eastern longitudes", () => {
@@ -29,9 +43,11 @@ describe("projectGeoPointToExplorerMap", () => {
     expect(vancouver.y).toBeLessThan(mexicoCity.y);
   });
 
-  it("keeps map data as real geographic coordinates before projection", () => {
-    const usa = northAmericaMapPolygons.find((polygon) => polygon.id === "united-states-mainland");
+  it("creates SVG paths from downloaded Natural Earth geometry", () => {
+    const usa = getRequiredMapFeature("natural-earth-usa");
 
-    expect(usa?.points[0]).toEqual({ latitude: 48.9, longitude: -124.7 });
+    expect(
+      createSvgPathsFromGeoGeometry(usa.geometry, northAmericaMapBounds).length,
+    ).toBeGreaterThan(0);
   });
 });

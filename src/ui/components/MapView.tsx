@@ -1,6 +1,6 @@
-import { northAmericaMapBounds, northAmericaMapPolygons } from "../../data/northAmericaMapData";
+import { northAmericaMapBounds, northAmericaMapFeatures } from "../../data/northAmericaMapData";
 import { EXPLORER_MAP_VIEWBOX } from "../../features/explorer/mapViewport";
-import { createSvgPathFromGeoPoints } from "../../features/explorer/projectGeoPoint";
+import { createSvgPathsFromGeoGeometry } from "../../features/explorer/projectGeoPoint";
 import type {
   ExplorerAction,
   ExplorerMapViewModel,
@@ -23,7 +23,7 @@ export function MapView({ map, onAction }: MapViewProps) {
           class="map-svg"
           viewBox={`${viewBox.minX} ${viewBox.minY} ${viewBox.width} ${viewBox.height}`}
           role="img"
-          aria-label="North America map with World Cup 2026 match venues"
+          aria-label="Natural Earth map of North America with World Cup 2026 match venues"
         >
           <title>World Cup 2026 host venues across North America</title>
           <defs>
@@ -100,19 +100,23 @@ function MapBackground() {
   return (
     <g class="map-background">
       <rect class="map-frame" x="440" y="120" width="900" height="910" rx="42" />
-      {northAmericaMapPolygons.map((polygon) => (
-        <path
-          key={polygon.id}
-          class={classNames(
-            polygon.kind === "land" && "country-shape",
-            polygon.id === "canada-mainland" && "canada-shape",
-            polygon.id === "united-states-mainland" && "usa-shape",
-            polygon.id === "mexico-mainland" && "mexico-shape",
-            polygon.kind === "water" && "map-lake",
-          )}
-          d={`${createSvgPathFromGeoPoints(polygon.points, northAmericaMapBounds)} Z`}
-        />
-      ))}
+      {northAmericaMapFeatures.flatMap((feature) =>
+        createSvgPathsFromGeoGeometry(feature.geometry, northAmericaMapBounds).map(
+          (pathData, pathIndex) => (
+            <path
+              key={`${feature.id}-${pathIndex}`}
+              class={classNames(
+                feature.kind === "land" && "country-shape",
+                feature.id === "natural-earth-can" && "canada-shape",
+                feature.id === "natural-earth-usa" && "usa-shape",
+                feature.id === "natural-earth-mex" && "mexico-shape",
+                feature.kind === "water" && "map-lake",
+              )}
+              d={pathData}
+            />
+          ),
+        ),
+      )}
 
       <text class="country-label canada-label" x="705" y="335">
         CANADA

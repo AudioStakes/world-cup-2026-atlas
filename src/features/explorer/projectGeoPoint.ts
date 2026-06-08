@@ -8,9 +8,19 @@ export type GeoBounds = {
   readonly south: number;
 };
 
+type GeoJsonGeometry =
+  | {
+      readonly type: "Polygon";
+      readonly coordinates: readonly (readonly (readonly [number, number])[])[];
+    }
+  | {
+      readonly type: "MultiPolygon";
+      readonly coordinates: readonly (readonly (readonly (readonly [number, number])[])[])[];
+    };
+
 const defaultPadding = {
-  x: 58,
-  y: 58,
+  x: 48,
+  y: 48,
 } as const;
 
 export function projectGeoPointToExplorerMap(
@@ -29,13 +39,25 @@ export function projectGeoPointToExplorerMap(
   };
 }
 
-export function createSvgPathFromGeoPoints(points: readonly GeoPoint[], bounds: GeoBounds): string {
-  return points
-    .map((point, index) => {
-      const projectedPoint = projectGeoPointToExplorerMap(point, bounds);
+export function createSvgPathsFromGeoGeometry(
+  geometry: GeoJsonGeometry,
+  bounds: GeoBounds,
+): readonly string[] {
+  const rings = geometry.type === "Polygon" ? geometry.coordinates : geometry.coordinates.flat();
+
+  return rings.map((ring) => createSvgPathFromGeoRing(ring, bounds));
+}
+
+function createSvgPathFromGeoRing(
+  ring: readonly (readonly [number, number])[],
+  bounds: GeoBounds,
+): string {
+  return `${ring
+    .map(([longitude, latitude], index) => {
+      const projectedPoint = projectGeoPointToExplorerMap({ latitude, longitude }, bounds);
       return `${index === 0 ? "M" : "L"}${projectedPoint.x} ${projectedPoint.y}`;
     })
-    .join(" ");
+    .join(" ")} Z`;
 }
 
 function roundMapCoordinate(value: number): number {
