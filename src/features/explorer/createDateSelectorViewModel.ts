@@ -1,6 +1,6 @@
 import type { LocalDateString } from "../../domain/ids";
 import { localDate } from "../../domain/ids";
-import type { AppData } from "../../domain/types";
+import type { AppData, Match } from "../../domain/types";
 import { queryMatchesByViewState } from "../../queries/queryMatchesByViewState";
 import { formatDateLabel } from "./formatExplorerLabels";
 import type {
@@ -18,6 +18,7 @@ export function createDateSelectorViewModel(
   data: AppData,
   viewState: NormalizedExplorerViewState,
 ): DateSelectorViewModel {
+  const matchesByDate = createMatchesByDate(data.matches);
   const fixtureDateSet = new Set(data.matches.map((match) => match.date));
   const hitDateSet = new Set(
     queryMatchesByViewState(data, { ...viewState, selectedDate: null }).map((match) => match.date),
@@ -35,9 +36,12 @@ export function createDateSelectorViewModel(
     const isSelected = viewState.selectedDate === date;
     const hasFixture = fixtureDateSet.has(date);
     const isHit = hitDateSet.has(date);
+    const matchesForDate = matchesByDate.get(date) ?? [];
     const option: DateOptionViewModel = {
       date,
       label: formatDateLabel(date),
+      matchCountLabel: createMatchCountLabel(matchesForDate),
+      kickoffRangeLabel: createKickoffRangeLabel(matchesForDate),
       isSelected,
       availability: getAvailability(hasAnySelection, isSelected || isHit),
       hasFixture,
@@ -58,6 +62,59 @@ export function createDateSelectorViewModel(
       dates,
     })),
   };
+}
+
+function createMatchesByDate(
+  matches: readonly Match[],
+): ReadonlyMap<LocalDateString, readonly Match[]> {
+  const matchesByDate = new Map<LocalDateString, Match[]>();
+
+  for (const match of matches) {
+    const existingMatches = matchesByDate.get(match.date);
+
+    if (existingMatches) {
+      existingMatches.push(match);
+    } else {
+      matchesByDate.set(match.date, [match]);
+    }
+  }
+
+  for (const matchesForDate of matchesByDate.values()) {
+    matchesForDate.sort(
+      (left, right) =>
+        left.kickoffLocal.localeCompare(right.kickoffLocal) || left.matchNumber - right.matchNumber,
+    );
+  }
+
+  return matchesByDate;
+}
+
+function createMatchCountLabel(matches: readonly Match[]): string | null {
+  if (matches.length === 0) {
+    return null;
+  }
+
+  return matches.length === 1 ? "1 match" : `${matches.length} matches`;
+}
+
+function createKickoffRangeLabel(matches: readonly Match[]): string | null {
+  if (matches.length === 0) {
+    return null;
+  }
+
+  const kickoffTimes = matches
+    .map((match) => match.kickoffLocal)
+    .slice()
+    .sort();
+
+  const firstKickoff = kickoffTimes[0];
+  const lastKickoff = kickoffTimes.at(-1);
+
+  if (!firstKickoff || !lastKickoff) {
+    return null;
+  }
+
+  return firstKickoff === lastKickoff ? firstKickoff : `${firstKickoff}–${lastKickoff}`;
 }
 
 function createTournamentDates(): readonly LocalDateString[] {

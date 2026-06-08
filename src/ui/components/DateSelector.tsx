@@ -52,10 +52,24 @@ function DateChip({ dateOption, onAction }: DateChipProps) {
       )}
       type="button"
       aria-pressed={dateOption.isSelected}
-      aria-label={`Select ${dateOption.label}`}
+      aria-label={createDateChipAriaLabel(dateOption)}
       onClick={() => onAction({ type: "selectDate", date: dateOption.date })}
     >
-      {dateOption.label}
+      <span class="date-chip__date">{dateOption.label}</span>
+      {dateOption.matchCountLabel ? (
+        <span class="date-chip__meta">{dateOption.matchCountLabel}</span>
+      ) : null}
+      {dateOption.kickoffRangeLabel ? (
+        <span class="date-chip__time">{dateOption.kickoffRangeLabel}</span>
+      ) : null}
     </button>
   );
+}
+
+function createDateChipAriaLabel(dateOption: DateOptionViewModel): string {
+  const details = [dateOption.matchCountLabel, dateOption.kickoffRangeLabel].filter(Boolean);
+
+  return details.length > 0
+    ? `Select ${dateOption.label}, ${details.join(", ")}`
+    : `Select ${dateOption.label}`;
 }

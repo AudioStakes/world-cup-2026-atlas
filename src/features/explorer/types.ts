@@ -101,6 +101,8 @@ export type DateMonthViewModel = {
 export type DateOptionViewModel = {
   readonly date: LocalDateString;
   readonly label: string;
+  readonly matchCountLabel: string | null;
+  readonly kickoffRangeLabel: string | null;
   readonly isSelected: boolean;
   readonly availability: FilterOptionAvailability;
   readonly hasFixture: boolean;
