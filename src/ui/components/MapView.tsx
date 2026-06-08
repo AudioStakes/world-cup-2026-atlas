@@ -1,4 +1,6 @@
+import { northAmericaMapBounds, northAmericaMapPolygons } from "../../data/northAmericaMapData";
 import { EXPLORER_MAP_VIEWBOX } from "../../features/explorer/mapViewport";
+import { createSvgPathFromGeoPoints } from "../../features/explorer/projectGeoPoint";
 import type {
   ExplorerAction,
   ExplorerMapViewModel,
@@ -21,7 +23,7 @@ export function MapView({ map, onAction }: MapViewProps) {
           class="map-svg"
           viewBox={`${viewBox.minX} ${viewBox.minY} ${viewBox.width} ${viewBox.height}`}
           role="img"
-          aria-label="Stylized North America map with match venues"
+          aria-label="North America map with World Cup 2026 match venues"
         >
           <title>World Cup 2026 host venues across North America</title>
           <defs>
@@ -98,53 +100,27 @@ function MapBackground() {
   return (
     <g class="map-background">
       <rect class="map-frame" x="440" y="120" width="900" height="910" rx="42" />
+      {northAmericaMapPolygons.map((polygon) => (
+        <path
+          key={polygon.id}
+          class={classNames(
+            polygon.kind === "land" && "country-shape",
+            polygon.id === "canada-mainland" && "canada-shape",
+            polygon.id === "united-states-mainland" && "usa-shape",
+            polygon.id === "mexico-mainland" && "mexico-shape",
+            polygon.kind === "water" && "map-lake",
+          )}
+          d={`${createSvgPathFromGeoPoints(polygon.points, northAmericaMapBounds)} Z`}
+        />
+      ))}
 
-      <path
-        class="country-shape canada-shape"
-        d="M508 272 C572 188 694 151 818 166 C948 181 1064 220 1160 294 C1252 365 1300 443 1286 509 C1266 605 1146 642 1018 622 C888 601 793 566 682 600 C592 628 499 605 474 520 C449 436 456 341 508 272 Z"
-      />
-      <path
-        class="country-shape usa-shape"
-        d="M505 522 C590 485 711 470 832 493 C936 512 1024 552 1124 541 C1206 531 1273 543 1292 592 C1312 645 1244 696 1134 713 C1026 730 929 708 836 688 C745 668 662 713 580 682 C513 657 472 585 505 522 Z"
-      />
-      <path
-        class="country-shape mexico-shape"
-        d="M690 712 C756 681 836 699 890 750 C943 800 966 884 924 946 C885 1004 803 1006 744 956 C690 911 650 791 690 712 Z"
-      />
-
-      <path
-        class="coastline-detail west-coast"
-        d="M550 292 C524 357 515 426 514 500 C514 560 534 622 581 682"
-      />
-      <path
-        class="coastline-detail east-coast"
-        d="M1160 294 C1218 352 1254 420 1246 484 C1239 544 1205 595 1160 640 C1126 675 1116 697 1134 713"
-      />
-      <path
-        class="coastline-detail gulf-coast"
-        d="M835 688 C882 720 943 742 1006 727 C1056 716 1103 699 1134 713"
-      />
-      <path class="coastline-detail mexico-west" d="M690 712 C710 758 714 836 744 956" />
-
-      <path class="map-border-line" d="M610 555 C705 518 822 522 915 571" />
-      <path class="map-border-line" d="M860 798 C881 829 902 875 924 946" />
-
-      <path
-        class="map-lake"
-        d="M1074 448 C1102 428 1145 432 1161 459 C1138 474 1094 475 1074 448 Z"
-      />
-      <path
-        class="map-lake"
-        d="M1121 486 C1144 474 1176 483 1185 507 C1158 514 1133 507 1121 486 Z"
-      />
-
-      <text class="country-label canada-label" x="700" y="310">
+      <text class="country-label canada-label" x="705" y="335">
         CANADA
       </text>
-      <text class="country-label usa-label" x="760" y="600">
+      <text class="country-label usa-label" x="760" y="630">
         UNITED STATES
       </text>
-      <text class="country-label mexico-label" x="770" y="900">
+      <text class="country-label mexico-label" x="795" y="910">
         MEXICO
       </text>
     </g>
