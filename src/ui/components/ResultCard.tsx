@@ -19,7 +19,7 @@ export function ResultCard({ result }: ResultCardProps) {
       </div>
       {result.routeSummary ? (
         <div class="route-summary">
-          <span>{result.routeSummary.visitedVenueCount} venues</span>
+          <span>{result.routeSummary.itineraryLabel}</span>
           <strong>{result.routeSummary.totalDistanceLabel}</strong>
         </div>
       ) : null}

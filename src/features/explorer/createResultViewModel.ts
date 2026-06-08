@@ -325,12 +325,27 @@ function createCountryRouteSummary(
     if (!nextVenue) return sum;
     return sum + calculateDistanceKm(venue.geoPoint, nextVenue.geoPoint);
   }, 0);
+  const visitedVenueCount = new Set(routeVenues.map((venue) => venue.id)).size;
+  const matchCount = routeMatches.length;
 
   return {
-    visitedVenueCount: new Set(routeVenues.map((venue) => venue.id)).size,
+    matchCount,
+    visitedVenueCount,
+    itineraryLabel: `${formatCount(matchCount, "match")} · ${formatCount(
+      visitedVenueCount,
+      "venue",
+    )}`,
     totalDistanceKm,
     totalDistanceLabel: formatDistanceLabel(totalDistanceKm),
   };
+}
+
+function formatCount(count: number, noun: "match" | "venue"): string {
+  if (noun === "match") {
+    return `${count} ${count === 1 ? "match" : "matches"}`;
+  }
+
+  return `${count} ${count === 1 ? "venue" : "venues"}`;
 }
 
 function findCountryGroupCode(indexes: Indexes, countryId: CountryId): string | null {

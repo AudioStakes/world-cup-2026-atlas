@@ -136,7 +136,9 @@ export type MatchListItemViewModel = {
 };
 
 export type CountryRouteSummaryViewModel = {
+  readonly matchCount: number;
   readonly visitedVenueCount: number;
+  readonly itineraryLabel: string;
   readonly totalDistanceKm: number;
   readonly totalDistanceLabel: string;
 };
