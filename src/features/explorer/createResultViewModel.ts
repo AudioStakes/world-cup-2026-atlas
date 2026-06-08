@@ -84,10 +84,11 @@ function createResultTitle(
   if (resultType === "country" && viewState.selectedCountryId) {
     const country = getRequiredCountry(indexes, viewState.selectedCountryId);
     const groupCode = findCountryGroupCode(indexes, viewState.selectedCountryId);
+
     return {
       icon: country.flagEmoji,
       title: country.name,
-      subtitle: groupCode ? `Group ${groupCode}` : "Team",
+      subtitle: createCountrySubtitle(country, groupCode),
     };
   }
 
@@ -117,6 +118,12 @@ function createResultTitle(
   }
 
   return { icon: "🧭", title: "Start exploring", subtitle: "" };
+}
+
+function createCountrySubtitle(country: Country, groupCode: string | null): string {
+  const groupLabel = groupCode ? `Group ${groupCode}` : "Team";
+
+  return `${groupLabel} · ${country.fifaCode} · ${country.confederation}`;
 }
 
 function createVenueSubtitle(venue: Venue): string {

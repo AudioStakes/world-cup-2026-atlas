@@ -1,11 +1,29 @@
 import { describe, expect, it } from "vitest";
 import { appData } from "../../data/appData";
-import { localDate, venueId } from "../../domain/ids";
+import { countryId, localDate, venueId } from "../../domain/ids";
 import { createIndexes } from "../../indexes/createIndexes";
 import { createResultViewModel } from "./createResultViewModel";
 import { emptyExplorerViewState } from "./types";
 
 const indexes = createIndexes(appData);
+
+function createResultForCountry(countryKey: string) {
+  const selectedCountryId = countryId(countryKey);
+  const matches = appData.matches.filter(
+    (match) =>
+      match.homeParticipant.type === "slot" &&
+      match.awayParticipant.type === "slot" &&
+      (match.homeParticipant.countryId === selectedCountryId ||
+        match.awayParticipant.countryId === selectedCountryId),
+  );
+
+  return createResultViewModel(
+    appData,
+    indexes,
+    { ...emptyExplorerViewState, selectedCountryId },
+    matches,
+  );
+}
 
 function createResultForDate(date: string) {
   const matches = appData.matches.filter((match) => match.date === localDate(date));
@@ -30,7 +48,21 @@ function createResultForVenue(venueKey: string) {
   );
 }
 
-describe("createResultViewModel match metadata", () => {
+describe("createResultViewModel production metadata", () => {
+  it("adds FIFA code and confederation to country result subtitles", () => {
+    const result = createResultForCountry("jpn");
+
+    expect(result.title).toBe("Japan");
+    expect(result.subtitle).toBe("Group F · JPN · AFC");
+  });
+
+  it("adds host country metadata to country result subtitles", () => {
+    const result = createResultForCountry("usa");
+
+    expect(result.title).toBe("United States");
+    expect(result.subtitle).toBe("Group D · USA · CONCACAF");
+  });
+
   it("adds match number and group labels for group-stage matches", () => {
     const result = createResultForDate("2026-06-14");
     const japanMatch = result.matches.find((match) => match.matchNumberLabel === "Match 11");
