@@ -1,3 +1,0 @@
-## Retrospective セクションのみ日本語で出力。新規作業はせず、main answer の反復/修正/要約もしない。
-根拠は prompt/messages/tool calls/stdout/stderr/errors/diffs/tests/final reply に明示されたものだけ。推測は禁止。
-対象は明確な根拠のある重要項目のみ：1 Missing/ambiguous, 2 Difficult to find, 3 Unneeded info, 4 Helpful upfront context。各カテゴリ最大2件、空なら省略。全空なら ## Retrospective\n- None.

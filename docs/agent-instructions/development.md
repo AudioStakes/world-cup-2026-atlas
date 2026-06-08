@@ -18,6 +18,12 @@ Explorer ViewModel
 Preact UI
 ```
 
+## Agent Operating Principle
+
+Repository instructions and hooks exist to reduce agent cognitive load.
+Per-task prompts should focus only on task-specific goals, scope, and review targets.
+Stable development rules, validation commands, delivery rules, and report format belong in repository instructions, not repeated task prompts.
+
 ## Rules
 
 - Prefer pure functions for state transitions, indexes, queries, filtering, sorting, and calculations.

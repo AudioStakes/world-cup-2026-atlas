@@ -1,0 +1,7 @@
+## Instruction Feedback のみ日本語で出力。新規作業・要約は禁止。
+対象: AGENTS.md / docs / hooks / task prompt。根拠が明示されたもののみ。推測禁止。
+各カテゴリ最大2件。空なら省略。全空なら「## Instruction Feedback\n- None.」
+
+1 Helpful: Codexの作業負荷を下げたもの。
+2 Friction: 負荷を上げた、迷わせた、探しにくかった、不要だったもの。
+3 Improve: 次回以降の負荷を下げるために変更すべきもの。
