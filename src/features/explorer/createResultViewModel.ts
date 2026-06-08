@@ -1,5 +1,10 @@
 import { calculateDistanceKm } from "../../calculations/calculateDistanceKm";
-import { getMatchCountryIds, getOpponentCountryId } from "../../data/matchParticipants";
+import {
+  formatParticipantLabel,
+  getMatchCountryIds,
+  getOpponentCountryId,
+  getParticipantCountryId,
+} from "../../data/matchParticipants";
 import type { CountryId } from "../../domain/ids";
 import type { AppData, Country, Match, Venue } from "../../domain/types";
 import type { Indexes } from "../../indexes/createIndexes";
@@ -135,18 +140,25 @@ function createMatchPrimaryText(
     return `vs ${opponent.flagEmoji} ${opponent.name}`;
   }
 
-  const [homeCountryId, awayCountryId] = getMatchCountryIds(match);
-  const homeCountry = getMatchCountry(indexes, homeCountryId);
-  const awayCountry = getMatchCountry(indexes, awayCountryId);
-  return `${formatCountry(homeCountry)} vs ${formatCountry(awayCountry)}`;
+  return `${formatParticipant(indexes, match.homeParticipant)} vs ${formatParticipant(
+    indexes,
+    match.awayParticipant,
+  )}`;
+}
+
+function formatParticipant(indexes: Indexes, participant: Match["homeParticipant"]): string {
+  const countryId = getParticipantCountryId(participant);
+  const country = getMatchCountry(indexes, countryId ?? undefined);
+
+  if (country) {
+    return `${country.flagEmoji} ${country.name}`;
+  }
+
+  return formatParticipantLabel(participant);
 }
 
 function getMatchCountry(indexes: Indexes, countryId: CountryId | undefined): Country | null {
   return countryId ? (indexes.countriesById.get(countryId) ?? null) : null;
-}
-
-function formatCountry(country: Country | null): string {
-  return country ? `${country.flagEmoji} ${country.name}` : "TBD";
 }
 
 function createCountryRouteSummary(

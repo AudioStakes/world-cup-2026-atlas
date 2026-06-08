@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { SlotId } from "../domain/ids";
+import type { GroupCode, SlotId } from "../domain/ids";
 import { countryId } from "../domain/ids";
+import type { Match } from "../domain/types";
 import { appData } from "./appData";
 import { getMatchCountryIds, getParticipantSlotId } from "./matchParticipants";
 
@@ -19,9 +20,13 @@ const completeFixtureGroupCodes = [
   "L",
 ] as const;
 
+function getMatchGroupCode(match: Match): GroupCode | null {
+  return "groupCode" in match && match.groupCode ? match.groupCode : null;
+}
+
 function getGroupMatches(groupCode: string) {
   return appData.matches
-    .filter((match) => match.groupCode === groupCode)
+    .filter((match) => getMatchGroupCode(match) === groupCode)
     .slice()
     .sort((left, right) => left.matchNumber - right.matchNumber);
 }

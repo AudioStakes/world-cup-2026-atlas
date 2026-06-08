@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { CountryId, SlotId } from "../domain/ids";
+import type { CountryId, GroupCode, SlotId } from "../domain/ids";
 import { countryId } from "../domain/ids";
+import type { Match } from "../domain/types";
 import { appData } from "./appData";
 
 function expectUniqueValues(label: string, values: readonly string[]) {
@@ -20,6 +21,10 @@ function getParticipantSlotIds(match: (typeof appData.matches)[number]): readonl
   return [match.homeParticipant, match.awayParticipant]
     .filter((participant) => participant.type === "slot")
     .map((participant) => participant.slotId);
+}
+
+function getMatchGroupCode(match: Match): GroupCode | null {
+  return "groupCode" in match && match.groupCode ? match.groupCode : null;
 }
 
 describe("tournament data integrity", () => {
@@ -118,10 +123,9 @@ describe("tournament data integrity", () => {
     for (const match of appData.matches) {
       expect(venueIds.has(match.venueId), `${match.id} should reference a known venue`).toBe(true);
 
-      if (match.groupCode) {
-        expect(groupCodes.has(match.groupCode), `${match.id} should reference a known group`).toBe(
-          true,
-        );
+      const groupCode = getMatchGroupCode(match);
+      if (groupCode) {
+        expect(groupCodes.has(groupCode), `${match.id} should reference a known group`).toBe(true);
       }
 
       for (const participant of [match.homeParticipant, match.awayParticipant]) {
@@ -146,9 +150,9 @@ describe("tournament data integrity", () => {
         }
 
         if (participant.type === "thirdPlaceQualifier") {
-          for (const groupCode of participant.candidateGroupCodes) {
+          for (const candidateGroupCode of participant.candidateGroupCodes) {
             expect(
-              groupCodes.has(groupCode),
+              groupCodes.has(candidateGroupCode),
               `${match.id} should reference a known third-place candidate group`,
             ).toBe(true);
           }

@@ -1,10 +1,15 @@
 import { describe, expect, it } from "vitest";
-import type { SlotId } from "../domain/ids";
+import type { GroupCode, SlotId } from "../domain/ids";
+import type { Match } from "../domain/types";
 import { appData } from "./appData";
 import { getMatchCountryIds, getParticipantSlotId } from "./matchParticipants";
 
 function expectUnique<TValue>(values: readonly TValue[], label: string): void {
   expect(new Set(values).size, `${label} should be unique`).toBe(values.length);
+}
+
+function getMatchGroupCode(match: Match): GroupCode | null {
+  return "groupCode" in match && match.groupCode ? match.groupCode : null;
 }
 
 describe("tournament data", () => {
@@ -82,8 +87,9 @@ describe("tournament data", () => {
         expect(countryIds.has(countryId)).toBe(true);
       }
 
-      if (match.groupCode) {
-        expect(groupCodes.has(match.groupCode)).toBe(true);
+      const groupCode = getMatchGroupCode(match);
+      if (groupCode) {
+        expect(groupCodes.has(groupCode)).toBe(true);
       }
     }
   });

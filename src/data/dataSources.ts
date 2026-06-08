@@ -57,6 +57,17 @@ export const dataSources = [
       "Used as the current structured import reference for all 72 group-stage fixtures while the official FIFA structured schedule URL is captured.",
   },
   {
+    id: "wikipedia-2026-world-cup-knockout-stage",
+    title: "2026 FIFA World Cup knockout stage",
+    publisher: "Wikipedia",
+    reliability: "trustedSecondary",
+    purposes: ["fixtures", "competition-format", "venues"],
+    url: "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_knockout_stage",
+    accessedOn: "2026-06-08",
+    notes:
+      "Used as the current structured import reference for Match 73-104 while direct FIFA match report URLs are captured.",
+  },
+  {
     id: "fifa-world-cup-26-groups",
     title: "FIFA World Cup 26 groups",
     publisher: "FIFA",

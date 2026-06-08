@@ -71,3 +71,28 @@ export function getOpponentCountryId(match: Match, selectedCountryId: CountryId)
   if (awayCountryId === selectedCountryId) return homeCountryId;
   return null;
 }
+
+export function formatParticipantLabel(participant: MatchParticipant): string {
+  switch (participant.type) {
+    case "slot":
+      return "TBD";
+    case "groupPlacement":
+      return `${formatPlacement(participant.placement)} Group ${participant.groupCode}`;
+    case "thirdPlaceQualifier":
+      return `3rd Group ${participant.candidateGroupCodes.join("/")}`;
+    case "matchWinner":
+      return `Winner Match ${formatMatchNumber(participant.matchId)}`;
+    case "matchLoser":
+      return `Loser Match ${formatMatchNumber(participant.matchId)}`;
+  }
+}
+
+function formatPlacement(placement: GroupPlacement): string {
+  if (placement === 1) return "Winner";
+  if (placement === 2) return "Runner-up";
+  return "3rd";
+}
+
+function formatMatchNumber(matchId: MatchId): string {
+  return matchId.replace("match-", "").replace(/^0+/, "");
+}

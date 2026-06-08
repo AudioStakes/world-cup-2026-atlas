@@ -17,6 +17,6 @@ describe("createIndexes", () => {
 
     expect(indexes.matchesByCountryId.get(countryId("jpn"))?.length).toBe(3);
     expect(indexes.matchesByGroupCode.get(groupCode("F"))?.length).toBe(6);
-    expect(indexes.matchesByVenueId.get(venueId("dallas"))?.length).toBe(5);
+    expect(indexes.matchesByVenueId.get(venueId("dallas"))?.length).toBe(9);
   });
 });
