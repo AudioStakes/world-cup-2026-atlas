@@ -13,4 +13,8 @@ test-results/
 playwright-report/
 blob-report/
 
+# Codex hook runtime state
+.codex/hooks/logs/
+.codex/state/
+
 tmp/

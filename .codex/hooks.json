@@ -19,7 +19,7 @@
           {
             "type": "command",
             "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/stop_gate.mjs\" verify:full",
-            "timeout": 600,
+            "timeout": 900,
             "statusMessage": "Running final verification"
           }
         ]

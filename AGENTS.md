@@ -17,8 +17,19 @@
 - [Testing](docs/agent-instructions/testing.md)
 - [Docs and Domain](docs/agent-instructions/docs-and-domain.md)
 
+## Git Safety
+
+- Treat pre-existing uncommitted changes as user-owned.
+- Do not stage, commit, revert, or edit pre-existing dirty files unless explicitly requested.
+- Stage only files changed for the current task.
+- Prefer explicit `git add <path>` over `git add .`.
+
 ## Delivery Rules
 
+- If the task changes files, commit the final task changes before finishing.
+- If the task changes files, create a pull request or update the existing one.
+- If there are no task-owned file changes, do not create an empty commit or empty pull request.
+- If you are on `main` and need to commit, switch to a non-`main` branch before committing.
 - Final reports should be minimal and mechanical.
 - Do not invent custom report formats in task prompts.
 - Follow the final report and instruction feedback prompts emitted by repository hooks.
@@ -47,7 +58,7 @@ rtk pytest tests/       rtk cargo test          rtk test <cmd>
 rtk tsc                 rtk lint                rtk cargo build
 rtk prettier --check    rtk mypy                rtk ruff check
 
-# Analysis (70-90% savings)
+# Analysis (70-90%)
 rtk err <cmd>           rtk log <file>          rtk json <file>
 rtk summary <cmd>       rtk deps                rtk env
 
