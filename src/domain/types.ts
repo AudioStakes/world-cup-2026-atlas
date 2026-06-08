@@ -73,6 +73,32 @@ export type TournamentStage =
   | "thirdPlace"
   | "final";
 
+export type GroupPlacement = 1 | 2 | 3;
+
+export type MatchParticipant =
+  | {
+      readonly type: "slot";
+      readonly slotId: SlotId;
+      readonly countryId?: CountryId;
+    }
+  | {
+      readonly type: "groupPlacement";
+      readonly groupCode: GroupCode;
+      readonly placement: GroupPlacement;
+    }
+  | {
+      readonly type: "thirdPlaceQualifier";
+      readonly candidateGroupCodes: readonly GroupCode[];
+    }
+  | {
+      readonly type: "matchWinner";
+      readonly matchId: MatchId;
+    }
+  | {
+      readonly type: "matchLoser";
+      readonly matchId: MatchId;
+    };
+
 export type Match = {
   readonly id: MatchId;
   readonly matchNumber: number;
@@ -81,10 +107,8 @@ export type Match = {
   readonly kickoffLocal: LocalTimeString;
   readonly groupCode?: GroupCode;
   readonly venueId: VenueId;
-  readonly homeSlotId: SlotId;
-  readonly awaySlotId: SlotId;
-  readonly homeCountryId?: CountryId;
-  readonly awayCountryId?: CountryId;
+  readonly homeParticipant: MatchParticipant;
+  readonly awayParticipant: MatchParticipant;
   readonly dataStatus: DataStatus;
   readonly sourceNote?: string;
 };

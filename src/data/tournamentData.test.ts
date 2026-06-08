@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import type { SlotId } from "../domain/ids";
 import { appData } from "./appData";
+import { getMatchCountryIds, getParticipantSlotId } from "./matchParticipants";
 
 function expectUnique<TValue>(values: readonly TValue[], label: string): void {
   expect(new Set(values).size, `${label} should be unique`).toBe(values.length);
@@ -61,7 +63,7 @@ describe("tournament data", () => {
     }
   });
 
-  it("keeps matches linked to known slots, venues, groups, and countries", () => {
+  it("keeps matches linked to known participants, venues, groups, and countries", () => {
     const countryIds = new Set(appData.countries.map((country) => country.id));
     const groupCodes = new Set(appData.groups.map((group) => group.code));
     const slotIds = new Set(appData.slotEntries.map((slotEntry) => slotEntry.slotId));
@@ -69,20 +71,33 @@ describe("tournament data", () => {
 
     for (const match of appData.matches) {
       expect(venueIds.has(match.venueId)).toBe(true);
-      expect(slotIds.has(match.homeSlotId)).toBe(true);
-      expect(slotIds.has(match.awaySlotId)).toBe(true);
+
+      for (const participant of [match.homeParticipant, match.awayParticipant]) {
+        if (participant.type === "slot") {
+          expect(slotIds.has(participant.slotId)).toBe(true);
+        }
+      }
+
+      for (const countryId of getMatchCountryIds(match)) {
+        expect(countryIds.has(countryId)).toBe(true);
+      }
 
       if (match.groupCode) {
         expect(groupCodes.has(match.groupCode)).toBe(true);
       }
+    }
+  });
 
-      if (match.homeCountryId) {
-        expect(countryIds.has(match.homeCountryId)).toBe(true);
-      }
+  it("keeps group-stage matches linked to two known slots", () => {
+    const slotIds = new Set(appData.slotEntries.map((slotEntry) => slotEntry.slotId));
 
-      if (match.awayCountryId) {
-        expect(countryIds.has(match.awayCountryId)).toBe(true);
-      }
+    for (const match of appData.matches.filter((candidate) => candidate.stage === "group")) {
+      const matchSlotIds = [match.homeParticipant, match.awayParticipant]
+        .map((participant) => getParticipantSlotId(participant))
+        .filter((slotId): slotId is SlotId => Boolean(slotId));
+
+      expect(matchSlotIds).toHaveLength(2);
+      expect(matchSlotIds.every((slotId) => slotIds.has(slotId))).toBe(true);
     }
   });
 });

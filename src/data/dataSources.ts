@@ -46,6 +46,17 @@ export const dataSources = [
       "Primary source target for match dates, venues, kick-off times, match numbers, and knockout structure. Use the exact official schedule page or PDF URL once it is captured in the data import notes.",
   },
   {
+    id: "fourfourtwo-world-cup-2026-fixtures-group-stage",
+    title: "World Cup 2026 fixtures in full: The complete schedule",
+    publisher: "FourFourTwo",
+    reliability: "trustedSecondary",
+    purposes: ["fixtures", "groups", "venues"],
+    url: "https://www.fourfourtwo.com/competition/world-cup-2026-fixtures-and-results",
+    accessedOn: "2026-06-08",
+    notes:
+      "Used as the current structured import reference for all 72 group-stage fixtures while the official FIFA structured schedule URL is captured.",
+  },
+  {
     id: "fifa-world-cup-26-groups",
     title: "FIFA World Cup 26 groups",
     publisher: "FIFA",

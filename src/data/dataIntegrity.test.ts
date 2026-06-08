@@ -1,8 +1,25 @@
 import { describe, expect, it } from "vitest";
+import type { CountryId, SlotId } from "../domain/ids";
+import { countryId } from "../domain/ids";
 import { appData } from "./appData";
 
 function expectUniqueValues(label: string, values: readonly string[]) {
   expect(new Set(values).size, `${label} should be unique`).toBe(values.length);
+}
+
+function getParticipantCountryIds(match: (typeof appData.matches)[number]): readonly CountryId[] {
+  return [match.homeParticipant, match.awayParticipant]
+    .filter((participant) => participant.type === "slot")
+    .map((participant) => participant.countryId)
+    .filter((participantCountryId): participantCountryId is CountryId =>
+      Boolean(participantCountryId),
+    );
+}
+
+function getParticipantSlotIds(match: (typeof appData.matches)[number]): readonly SlotId[] {
+  return [match.homeParticipant, match.awayParticipant]
+    .filter((participant) => participant.type === "slot")
+    .map((participant) => participant.slotId);
 }
 
 describe("tournament data integrity", () => {
@@ -91,22 +108,14 @@ describe("tournament data integrity", () => {
     }
   });
 
-  it("keeps matches referencing known slots, countries, groups, and venues", () => {
+  it("keeps matches referencing known participants, groups, and venues", () => {
     const slotIds = new Set(appData.slotEntries.map((slotEntry) => slotEntry.slotId));
     const countryIds = new Set(appData.countries.map((country) => country.id));
     const groupCodes = new Set(appData.groups.map((group) => group.code));
     const venueIds = new Set(appData.venues.map((venue) => venue.id));
+    const matchIds = new Set(appData.matches.map((match) => match.id));
 
     for (const match of appData.matches) {
-      expect(slotIds.has(match.homeSlotId), `${match.id} should reference a known home slot`).toBe(
-        true,
-      );
-      expect(slotIds.has(match.awaySlotId), `${match.id} should reference a known away slot`).toBe(
-        true,
-      );
-      expect(match.homeSlotId, `${match.id} should not use the same slot twice`).not.toBe(
-        match.awaySlotId,
-      );
       expect(venueIds.has(match.venueId), `${match.id} should reference a known venue`).toBe(true);
 
       if (match.groupCode) {
@@ -115,42 +124,68 @@ describe("tournament data integrity", () => {
         );
       }
 
-      if (match.homeCountryId) {
-        expect(
-          countryIds.has(match.homeCountryId),
-          `${match.id} should reference a known home country`,
-        ).toBe(true);
-      }
+      for (const participant of [match.homeParticipant, match.awayParticipant]) {
+        if (participant.type === "slot") {
+          expect(slotIds.has(participant.slotId), `${match.id} should reference a known slot`).toBe(
+            true,
+          );
 
-      if (match.awayCountryId) {
-        expect(
-          countryIds.has(match.awayCountryId),
-          `${match.id} should reference a known away country`,
-        ).toBe(true);
+          if (participant.countryId) {
+            expect(
+              countryIds.has(participant.countryId),
+              `${match.id} should reference a known participant country`,
+            ).toBe(true);
+          }
+        }
+
+        if (participant.type === "groupPlacement") {
+          expect(
+            groupCodes.has(participant.groupCode),
+            `${match.id} should reference a known participant group`,
+          ).toBe(true);
+        }
+
+        if (participant.type === "thirdPlaceQualifier") {
+          for (const groupCode of participant.candidateGroupCodes) {
+            expect(
+              groupCodes.has(groupCode),
+              `${match.id} should reference a known third-place candidate group`,
+            ).toBe(true);
+          }
+        }
+
+        if (participant.type === "matchWinner" || participant.type === "matchLoser") {
+          expect(
+            matchIds.has(participant.matchId),
+            `${match.id} should reference a known prior match`,
+          ).toBe(true);
+        }
       }
     }
   });
 
-  it("keeps assigned match countries aligned with their slots", () => {
+  it("keeps assigned group-stage match countries aligned with their slots", () => {
     const countryIdBySlotId = new Map(
       appData.slotEntries.map((slotEntry) => [slotEntry.slotId, slotEntry.countryId]),
     );
 
-    for (const match of appData.matches) {
-      const homeSlotCountryId = countryIdBySlotId.get(match.homeSlotId);
-      const awaySlotCountryId = countryIdBySlotId.get(match.awaySlotId);
+    for (const match of appData.matches.filter((candidate) => candidate.stage === "group")) {
+      for (const participant of [match.homeParticipant, match.awayParticipant]) {
+        if (participant.type !== "slot" || !participant.countryId) continue;
 
-      if (match.homeCountryId && homeSlotCountryId) {
-        expect(match.homeCountryId, `${match.id} home country should match home slot`).toBe(
-          homeSlotCountryId,
+        expect(participant.countryId, `${match.id} country should match slot`).toBe(
+          countryIdBySlotId.get(participant.slotId),
         );
       }
+    }
+  });
 
-      if (match.awayCountryId && awaySlotCountryId) {
-        expect(match.awayCountryId, `${match.id} away country should match away slot`).toBe(
-          awaySlotCountryId,
-        );
-      }
+  it("keeps group-stage matches using two different slots", () => {
+    for (const match of appData.matches.filter((candidate) => candidate.stage === "group")) {
+      const slotIds = getParticipantSlotIds(match);
+
+      expect(slotIds).toHaveLength(2);
+      expect(slotIds[0], `${match.id} should not use the same slot twice`).not.toBe(slotIds[1]);
     }
   });
 
@@ -161,5 +196,12 @@ describe("tournament data integrity", () => {
       expect(venue.geoPoint.longitude, `${venue.name} longitude`).toBeGreaterThanOrEqual(-180);
       expect(venue.geoPoint.longitude, `${venue.name} longitude`).toBeLessThanOrEqual(180);
     }
+  });
+
+  it("can derive country ids from slot participants", () => {
+    const countryIds = appData.matches.flatMap((match) => getParticipantCountryIds(match));
+
+    expect(countryIds).toContain(countryId("jpn"));
+    expect(countryIds).toContain(countryId("mex"));
   });
 });

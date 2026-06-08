@@ -1,4 +1,5 @@
 import { calculateDistanceKm } from "../../calculations/calculateDistanceKm";
+import { getMatchCountryIds, getOpponentCountryId } from "../../data/matchParticipants";
 import type { CountryId } from "../../domain/ids";
 import type { AppData, Country, Match, Venue } from "../../domain/types";
 import type { Indexes } from "../../indexes/createIndexes";
@@ -134,15 +135,10 @@ function createMatchPrimaryText(
     return `vs ${opponent.flagEmoji} ${opponent.name}`;
   }
 
-  const homeCountry = getMatchCountry(indexes, match.homeCountryId);
-  const awayCountry = getMatchCountry(indexes, match.awayCountryId);
+  const [homeCountryId, awayCountryId] = getMatchCountryIds(match);
+  const homeCountry = getMatchCountry(indexes, homeCountryId);
+  const awayCountry = getMatchCountry(indexes, awayCountryId);
   return `${formatCountry(homeCountry)} vs ${formatCountry(awayCountry)}`;
-}
-
-function getOpponentCountryId(match: Match, selectedCountryId: CountryId): CountryId | null {
-  if (match.homeCountryId === selectedCountryId) return match.awayCountryId ?? null;
-  if (match.awayCountryId === selectedCountryId) return match.homeCountryId ?? null;
-  return null;
 }
 
 function getMatchCountry(indexes: Indexes, countryId: CountryId | undefined): Country | null {
@@ -159,7 +155,7 @@ function createCountryRouteSummary(
   countryId: CountryId,
 ): CountryRouteSummaryViewModel | null {
   const routeMatches = data.matches
-    .filter((match) => match.homeCountryId === countryId || match.awayCountryId === countryId)
+    .filter((match) => getMatchCountryIds(match).includes(countryId))
 
     .slice()
     .sort((a, b) => a.date.localeCompare(b.date) || a.matchNumber - b.matchNumber);

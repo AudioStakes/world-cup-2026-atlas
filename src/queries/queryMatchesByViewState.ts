@@ -1,3 +1,4 @@
+import { matchHasCountry } from "../data/matchParticipants";
 import type { AppData, Match } from "../domain/types";
 import type { NormalizedExplorerViewState } from "../features/explorer/types";
 
@@ -6,11 +7,7 @@ export function queryMatchesByViewState(
   viewState: NormalizedExplorerViewState,
 ): readonly Match[] {
   return data.matches.filter((match) => {
-    if (
-      viewState.selectedCountryId &&
-      match.homeCountryId !== viewState.selectedCountryId &&
-      match.awayCountryId !== viewState.selectedCountryId
-    ) {
+    if (viewState.selectedCountryId && !matchHasCountry(match, viewState.selectedCountryId)) {
       return false;
     }
 

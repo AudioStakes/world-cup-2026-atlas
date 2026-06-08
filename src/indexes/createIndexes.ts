@@ -1,3 +1,4 @@
+import { getMatchCountryIds } from "../data/matchParticipants";
 import type { CountryId, GroupCode, MatchId, SlotId, VenueId } from "../domain/ids";
 import type { AppData, Country, Group, Match, SlotEntry, Venue } from "../domain/types";
 
@@ -34,12 +35,8 @@ export function createIndexes(data: AppData): Indexes {
       appendToMap(matchesByGroupCode, match.groupCode, match);
     }
 
-    if (match.homeCountryId) {
-      appendToMap(matchesByCountryId, match.homeCountryId, match);
-    }
-
-    if (match.awayCountryId) {
-      appendToMap(matchesByCountryId, match.awayCountryId, match);
+    for (const countryId of getMatchCountryIds(match)) {
+      appendToMap(matchesByCountryId, countryId, match);
     }
   }
 

@@ -1,3 +1,4 @@
+import { getMatchCountryIds } from "../../data/matchParticipants";
 import type { CountryId, GroupCode } from "../../domain/ids";
 import type { AppData, Match } from "../../domain/types";
 import type { Indexes } from "../../indexes/createIndexes";
@@ -99,12 +100,8 @@ function getMatchesForAvailability(
 }
 
 function appendMatchCountries(countryIds: Set<CountryId>, match: Match): void {
-  if (match.homeCountryId) {
-    countryIds.add(match.homeCountryId);
-  }
-
-  if (match.awayCountryId) {
-    countryIds.add(match.awayCountryId);
+  for (const countryId of getMatchCountryIds(match)) {
+    countryIds.add(countryId);
   }
 }
 
