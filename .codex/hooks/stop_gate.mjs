@@ -515,6 +515,25 @@ function assertCompletionGitState(context) {
   }
 }
 
+function assertFixDidNotCreateDirtyPaths(beforePaths, context) {
+  const beforePathSet = new Set(beforePaths);
+  const createdDirtyPaths = context.newDirtyPaths.filter((path) => !beforePathSet.has(path));
+  if (createdDirtyPaths.length === 0) {
+    return;
+  }
+
+  blockCompletion(
+    "pnpm fix created or exposed formatting changes:",
+    [
+      ...createdDirtyPaths.map((path) => `- ${path}`),
+      "",
+      "Stage and commit only task-owned formatting changes.",
+      "Do not stage or commit unrelated pre-existing dirty changes.",
+      "Then finish again.",
+    ].join("\n"),
+  );
+}
+
 function saveStopState(state) {
   mkdirSync(dirname(stopStatePath), { recursive: true });
   const temporaryPath = `${stopStatePath}.tmp`;
@@ -582,6 +601,8 @@ function readRequiredPrompt(path) {
 
 async function main() {
   for (const check of checks) {
+    const dirtyPathsBeforeCheck =
+      mode === "verify:full" && check.name === "pnpm fix" ? getGitContext().currentDirtyPaths : [];
     const result = await runCheck(check);
     if (!result.ok) {
       if (result.timedOut) {
@@ -620,6 +641,10 @@ async function main() {
           .filter(Boolean)
           .join("\n"),
       );
+    }
+
+    if (mode === "verify:full" && check.name === "pnpm fix") {
+      assertFixDidNotCreateDirtyPaths(dirtyPathsBeforeCheck, getGitContext());
     }
   }
 

@@ -210,6 +210,40 @@ describe("stop_gate.mjs", () => {
     );
   });
 
+  it("blocks when pnpm fix creates task-owned formatting diffs before verify:full", () => {
+    const harness = createHarness();
+    initializeRepo(harness);
+    captureBaseline(harness.root);
+    runGit(harness.root, ["checkout", "-b", "task-formatting"]);
+    writeFileSync(join(harness.root, "task-formatting.txt"), "tracked\n");
+    runGit(harness.root, ["add", "task-formatting.txt"]);
+    runGit(harness.root, ["commit", "-m", "Add formatting target"]);
+    runGit(harness.root, ["push", "-u", "origin", "task-formatting"]);
+
+    const result = runHook(
+      harness,
+      "verify:full",
+      {},
+      {
+        FAKE_GH_URL: "https://example.test/pr/654",
+        FAKE_PNPM_FIX_WRITE_PATH: join(harness.root, "task-formatting.txt"),
+        FAKE_PNPM_FIX_WRITE_CONTENT: "formatted\n",
+      },
+    );
+    const payload = parseJsonOutput(result.stdout);
+
+    expect(result.status).toBe(0);
+    expect(payload.decision).toBe("block");
+    expect(payload.reason).toContain("pnpm fix created or exposed formatting changes:");
+    expect(payload.reason).toContain("task-formatting.txt");
+    expect(payload.reason).toContain("Stage and commit only task-owned formatting changes.");
+    expect(payload.reason).toContain(
+      "Do not stage or commit unrelated pre-existing dirty changes.",
+    );
+    expect(payload.reason).toContain("Then finish again.");
+    expect(readLines(harness.pnpmLogPath)).toEqual(["--silent fix"]);
+  });
+
   it("returns an empty JSON object after the final report response", () => {
     const harness = createHarness();
     initializeRepo(harness);
@@ -249,7 +283,7 @@ describe("stop_gate.mjs", () => {
       "--silent fix",
       "--silent verify:full",
     ]);
-  });
+  }, 10000);
 
   it("does not hang when run directly without stdin", () => {
     const harness = createHarness();
@@ -330,6 +364,9 @@ function installFakePnpm(binDir: string): void {
     join(binDir, "pnpm"),
     `#!/bin/sh
 echo "$*" >> "$FAKE_PNPM_LOG"
+if [ "$2" = "fix" ] && [ -n "$FAKE_PNPM_FIX_WRITE_PATH" ]; then
+  printf "%s" "$FAKE_PNPM_FIX_WRITE_CONTENT" >> "$FAKE_PNPM_FIX_WRITE_PATH"
+fi
 if [ -n "$FAKE_PNPM_STDOUT" ]; then
   printf '%b\\n' "$FAKE_PNPM_STDOUT"
 else
