@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="World Cup 2026 Atlas">
-  <rect width="64" height="64" rx="18" fill="#f8fbfe"/>
-  <path d="M18 45c6-12 14-24 28-30" fill="none" stroke="#17202a" stroke-width="4" stroke-linecap="round"/>
-  <path d="M21 22c7 5 15 8 25 8" fill="none" stroke="#17202a" stroke-width="3" stroke-linecap="round" opacity=".35"/>
-  <circle cx="22" cy="43" r="5" fill="#b51f1f"/>
-  <circle cx="43" cy="17" r="5" fill="#b51f1f"/>
-  <circle cx="38" cy="31" r="4" fill="#17202a" opacity=".72"/>
-</svg>
