@@ -83,6 +83,8 @@ export type GroupTeamRowViewModel = {
   readonly countryId: CountryId | null;
   readonly countryCode: string;
   readonly countryName: string;
+  readonly confederationLabel: string | null;
+  readonly countryMetaLabel: string;
   readonly flagEmoji: string;
   readonly isSelected: boolean;
   readonly availability: FilterOptionAvailability;

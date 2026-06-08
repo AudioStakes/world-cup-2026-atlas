@@ -1,6 +1,6 @@
 import { getMatchCountryIds } from "../../data/matchParticipants";
 import type { CountryId, GroupCode } from "../../domain/ids";
-import type { AppData, Match } from "../../domain/types";
+import type { AppData, Country, Match } from "../../domain/types";
 import type { Indexes } from "../../indexes/createIndexes";
 import { queryMatchesByViewState } from "../../queries/queryMatchesByViewState";
 import type {
@@ -47,12 +47,16 @@ export function createGroupsAndTeamsViewModel(
             countryId && viewState.selectedCountryId && countryId === viewState.selectedCountryId,
           );
           const isCountryHit = Boolean(countryId && hitSets.countryIds.has(countryId));
+          const countryCode = country?.fifaCode ?? slotId;
+          const confederationLabel = country?.confederation ?? null;
 
           return {
             slotId,
             countryId,
-            countryCode: country?.fifaCode ?? slotId,
+            countryCode,
             countryName: country?.name ?? `Slot ${slotId}`,
+            confederationLabel,
+            countryMetaLabel: createCountryMetaLabel(countryCode, country),
             flagEmoji: country?.flagEmoji ?? "🏳️",
             isSelected: isCountrySelected,
             availability: getAvailability(hasAnySelection, isCountrySelected || isCountryHit),
@@ -61,6 +65,10 @@ export function createGroupsAndTeamsViewModel(
       };
     }),
   };
+}
+
+function createCountryMetaLabel(countryCode: string, country: Country | undefined): string {
+  return country ? `${countryCode} · ${country.confederation}` : countryCode;
 }
 
 type HitSets = {
@@ -77,7 +85,7 @@ function createHitSets(data: AppData, viewState: NormalizedExplorerViewState): H
   });
 
   getMatchesForAvailability(data, viewState, "group").forEach((match) => {
-    if (match.groupCode) {
+    if ("groupCode" in match && match.groupCode) {
       groupHits.add(match.groupCode);
     }
   });
