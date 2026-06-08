@@ -1,0 +1,43 @@
+/*
+ * Route rendering polish.
+ *
+ * Keep route lines below venue markers but above the base map. The route arrow should show the
+ * match travel direction without overpowering selected venue pins.
+ */
+
+.map-route-line {
+  stroke: rgba(23, 32, 42, 0.54);
+  stroke-linecap: round;
+  stroke-width: 3.2;
+}
+
+.map-route-line.is-knockout {
+  stroke: rgba(181, 31, 31, 0.46);
+  stroke-dasharray: 8 8;
+}
+
+.map-route-arrow {
+  fill: rgba(23, 32, 42, 0.54);
+}
+
+.map-route-arrow.is-knockout {
+  fill: rgba(181, 31, 31, 0.46);
+}
+
+.map-route-label-bg {
+  fill: rgba(255, 255, 255, 0.88);
+  stroke: rgba(23, 32, 42, 0.08);
+  stroke-width: 1;
+}
+
+.map-route-label {
+  fill: rgba(23, 32, 42, 0.72);
+  stroke: none;
+  font-size: 15px;
+  font-weight: 950;
+  letter-spacing: -0.02em;
+}
+
+.map-route-label-group {
+  filter: drop-shadow(0 8px 14px rgba(23, 32, 42, 0.09));
+}

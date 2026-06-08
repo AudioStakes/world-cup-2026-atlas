@@ -24,6 +24,30 @@ export function MapView({ map, onAction }: MapViewProps) {
           aria-label="Stylized North America map with match venues"
         >
           <title>World Cup 2026 host venues across North America</title>
+          <defs>
+            <marker
+              id="route-arrow"
+              markerWidth="10"
+              markerHeight="10"
+              refX="8"
+              refY="5"
+              orient="auto"
+              markerUnits="strokeWidth"
+            >
+              <path class="map-route-arrow" d="M0 0 L10 5 L0 10 Z" />
+            </marker>
+            <marker
+              id="route-arrow-knockout"
+              markerWidth="10"
+              markerHeight="10"
+              refX="8"
+              refY="5"
+              orient="auto"
+              markerUnits="strokeWidth"
+            >
+              <path class="map-route-arrow is-knockout" d="M0 0 L10 5 L0 10 Z" />
+            </marker>
+          </defs>
           <MapBackground />
           {map.routes.map((route) => (
             <g key={`${route.fromVenueId}-${route.toVenueId}`} class="map-route-group">
@@ -33,15 +57,29 @@ export function MapView({ map, onAction }: MapViewProps) {
                 y1={route.from.y}
                 x2={route.to.x}
                 y2={route.to.y}
+                marker-end={
+                  route.kind === "knockout" ? "url(#route-arrow-knockout)" : "url(#route-arrow)"
+                }
               />
               {route.showDistanceLabel ? (
-                <text
-                  class="map-route-label"
-                  x={(route.from.x + route.to.x) / 2}
-                  y={(route.from.y + route.to.y) / 2 - 8}
-                >
-                  {route.distanceLabel}
-                </text>
+                <g class="map-route-label-group">
+                  <rect
+                    class="map-route-label-bg"
+                    x={(route.from.x + route.to.x) / 2 - 42}
+                    y={(route.from.y + route.to.y) / 2 - 29}
+                    width="84"
+                    height="24"
+                    rx="12"
+                  />
+                  <text
+                    class="map-route-label"
+                    x={(route.from.x + route.to.x) / 2}
+                    y={(route.from.y + route.to.y) / 2 - 12}
+                    text-anchor="middle"
+                  >
+                    {route.distanceLabel}
+                  </text>
+                </g>
               ) : null}
             </g>
           ))}
