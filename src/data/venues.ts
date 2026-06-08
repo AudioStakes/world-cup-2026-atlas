@@ -1,6 +1,9 @@
 import { venueId } from "../domain/ids";
 import type { Venue } from "../domain/types";
 
+const venueSourceNote =
+  "venue-stadium-official-pages: host city, stadium name, and coordinate seed data";
+
 export const venues = [
   {
     id: venueId("vancouver"),
@@ -11,6 +14,7 @@ export const venues = [
     geoPoint: { latitude: 49.2768, longitude: -123.1119 },
     mapPoint: { x: 556.0, y: 299.2 },
     dataStatus: "official",
+    sourceNote: venueSourceNote,
   },
   {
     id: venueId("seattle"),
@@ -21,6 +25,7 @@ export const venues = [
     geoPoint: { latitude: 47.5952, longitude: -122.3316 },
     mapPoint: { x: 553.93, y: 333.56 },
     dataStatus: "official",
+    sourceNote: venueSourceNote,
   },
   {
     id: venueId("san-francisco-bay-area"),
@@ -31,6 +36,7 @@ export const venues = [
     geoPoint: { latitude: 37.403, longitude: -121.9702 },
     mapPoint: { x: 497.95, y: 529.74 },
     dataStatus: "official",
+    sourceNote: venueSourceNote,
   },
   {
     id: venueId("los-angeles"),
@@ -41,6 +47,7 @@ export const venues = [
     geoPoint: { latitude: 33.9535, longitude: -118.3392 },
     mapPoint: { x: 535.37, y: 611.53 },
     dataStatus: "official",
+    sourceNote: venueSourceNote,
   },
   {
     id: venueId("guadalajara"),
@@ -51,6 +58,7 @@ export const venues = [
     geoPoint: { latitude: 20.6819, longitude: -103.4622 },
     mapPoint: { x: 757.93, y: 910.81 },
     dataStatus: "official",
+    sourceNote: venueSourceNote,
   },
   {
     id: venueId("mexico-city"),
@@ -61,6 +69,7 @@ export const venues = [
     geoPoint: { latitude: 19.3029, longitude: -99.1505 },
     mapPoint: { x: 837.92, y: 941.69 },
     dataStatus: "official",
+    sourceNote: venueSourceNote,
   },
   {
     id: venueId("monterrey"),
@@ -71,6 +80,7 @@ export const venues = [
     geoPoint: { latitude: 25.6682, longitude: -100.2446 },
     mapPoint: { x: 820.88, y: 818.04 },
     dataStatus: "official",
+    sourceNote: venueSourceNote,
   },
   {
     id: venueId("dallas"),
@@ -81,6 +91,7 @@ export const venues = [
     geoPoint: { latitude: 32.7473, longitude: -97.0945 },
     mapPoint: { x: 879.07, y: 679.54 },
     dataStatus: "official",
+    sourceNote: venueSourceNote,
   },
   {
     id: venueId("houston"),
@@ -91,6 +102,7 @@ export const venues = [
     geoPoint: { latitude: 29.6847, longitude: -95.4107 },
     mapPoint: { x: 907.76, y: 740.57 },
     dataStatus: "official",
+    sourceNote: venueSourceNote,
   },
   {
     id: venueId("kansas-city"),
@@ -101,6 +113,7 @@ export const venues = [
     geoPoint: { latitude: 39.0489, longitude: -94.4839 },
     mapPoint: { x: 921.1, y: 553.28 },
     dataStatus: "official",
+    sourceNote: venueSourceNote,
   },
   {
     id: venueId("atlanta"),
@@ -111,6 +124,7 @@ export const venues = [
     geoPoint: { latitude: 33.7554, longitude: -84.4008 },
     mapPoint: { x: 1089.51, y: 647.5 },
     dataStatus: "official",
+    sourceNote: venueSourceNote,
   },
   {
     id: venueId("miami"),
@@ -121,6 +135,7 @@ export const venues = [
     geoPoint: { latitude: 25.958, longitude: -80.2389 },
     mapPoint: { x: 1178.01, y: 790.22 },
     dataStatus: "official",
+    sourceNote: venueSourceNote,
   },
   {
     id: venueId("toronto"),
@@ -131,6 +146,7 @@ export const venues = [
     geoPoint: { latitude: 43.6332, longitude: -79.4186 },
     mapPoint: { x: 1134.74, y: 440.47 },
     dataStatus: "official",
+    sourceNote: venueSourceNote,
   },
   {
     id: venueId("boston"),
@@ -141,6 +157,7 @@ export const venues = [
     geoPoint: { latitude: 42.0909, longitude: -71.2643 },
     mapPoint: { x: 1254.15, y: 444.41 },
     dataStatus: "official",
+    sourceNote: venueSourceNote,
   },
   {
     id: venueId("new-york-new-jersey"),
@@ -151,6 +168,7 @@ export const venues = [
     geoPoint: { latitude: 40.8135, longitude: -74.0745 },
     mapPoint: { x: 1222.1, y: 479.41 },
     dataStatus: "official",
+    sourceNote: venueSourceNote,
   },
   {
     id: venueId("philadelphia"),
@@ -161,5 +179,6 @@ export const venues = [
     geoPoint: { latitude: 39.9008, longitude: -75.1675 },
     mapPoint: { x: 1210.87, y: 500.93 },
     dataStatus: "official",
+    sourceNote: venueSourceNote,
   },
 ] as const satisfies readonly Venue[];

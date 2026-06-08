@@ -16,12 +16,12 @@ function getCompetitionDataRecords(): readonly SourceTrackedRecord[] {
 }
 
 describe("data status guardrails", () => {
-  it("does not mark competition data as official without a source note", () => {
-    const officialCompetitionRecordsWithoutSourceNote = getCompetitionDataRecords().filter(
+  it("does not mark any visible data as official without a source note", () => {
+    const officialRecordsWithoutSourceNote = getVisibleSourceTrackedRecords().filter(
       (record) => record.dataStatus === "official" && !record.sourceNote,
     );
 
-    expect(officialCompetitionRecordsWithoutSourceNote).toEqual([]);
+    expect(officialRecordsWithoutSourceNote).toEqual([]);
   });
 
   it("does not keep placeholder records in the visible tournament dataset", () => {
@@ -40,9 +40,10 @@ describe("data status guardrails", () => {
     expect(competitionDataStatuses).toEqual(new Set(["provisional"]));
   });
 
-  it("allows the current venue seed data to remain official while source notes are migrated", () => {
+  it("keeps the current venue seed data official with source notes", () => {
     const venueStatuses = new Set(appData.venues.map((venue) => venue.dataStatus));
 
     expect(venueStatuses).toEqual(new Set(["official"]));
+    expect(appData.venues.every((venue) => Boolean(venue.sourceNote))).toBe(true);
   });
 });
