@@ -180,6 +180,31 @@ describe("stop_gate.mjs", () => {
     expect(payload.reason).not.toContain("Pre-existing dirty files preserved:");
   });
 
+  it("blocks with the uncommitted-diff guidance when task-owned dirty files remain", () => {
+    const harness = createHarness();
+    initializeRepo(harness);
+    captureBaseline(harness.root);
+    runGit(harness.root, ["checkout", "-b", "task-dirty"]);
+    writeFileSync(join(harness.root, "task-dirty.txt"), "dirty\n");
+
+    const result = runHook(harness, "verify:full", {}, {
+      FAKE_GH_URL: "https://example.test/pr/999",
+    });
+    const payload = parseJsonOutput(result.stdout);
+
+    expect(result.status).toBe(0);
+    expect(payload.decision).toBe("block");
+    expect(payload.reason).toContain("New uncommitted changes remain since task start:");
+    expect(payload.reason).toContain("task-dirty.txt");
+    expect(payload.reason).toContain("Commit only task-owned changes.");
+    expect(payload.reason).toContain(
+      "Do not stage or commit unrelated pre-existing dirty changes.",
+    );
+    expect(payload.reason).toContain(
+      "If a pre-existing dirty file is explicitly in scope, commit only the task-required changes.",
+    );
+  });
+
   it("returns an empty JSON object after the final report response", () => {
     const harness = createHarness();
     initializeRepo(harness);
