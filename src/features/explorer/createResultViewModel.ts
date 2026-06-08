@@ -198,9 +198,15 @@ function createTimeZoneSummaryLabel(indexes: Indexes, matches: readonly Match[])
 }
 
 function createVenueSubtitle(venue: Venue): string {
-  return `${venue.stadiumName} · ${venue.city}, ${formatHostCountryCode(venue.countryCode)} · ${
-    venue.timeZone.abbreviation
-  }`;
+  return `${venue.stadiumName} · ${createVenueCityLabel(venue)} · ${venue.timeZone.abbreviation}`;
+}
+
+function createVenueDetailLabel(venue: Venue): string {
+  return `${venue.stadiumName} · ${createVenueCityLabel(venue)} · ${venue.timeZone.abbreviation}`;
+}
+
+function createVenueCityLabel(venue: Venue): string {
+  return `${venue.city}, ${formatHostCountryCode(venue.countryCode)}`;
 }
 
 function formatHostCountryCode(countryCode: HostCountryCode): string {
@@ -230,6 +236,7 @@ function createMatchListItem(
     secondaryText: `${match.kickoffLocal} ${venue.timeZone.abbreviation}`,
     venueId: venue.id,
     venueLabel: venue.name,
+    venueDetailLabel: createVenueDetailLabel(venue),
   };
 }
 

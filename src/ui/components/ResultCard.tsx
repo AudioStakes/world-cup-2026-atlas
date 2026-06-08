@@ -33,7 +33,9 @@ export function ResultCard({ result }: ResultCardProps) {
             <p class="match-card__date">{match.dateLabel}</p>
             <p class="match-card__primary">{match.primaryText}</p>
             <p class="match-card__secondary">{match.secondaryText}</p>
-            <p class="match-card__venue">📍 {match.venueLabel}</p>
+            <p class="match-card__venue">
+              📍 {match.venueLabel} · {match.venueDetailLabel}
+            </p>
           </li>
         ))}
       </ol>

@@ -105,15 +105,19 @@ describe("createResultViewModel production metadata", () => {
 
     expect(japanMatch?.stageLabel).toBe("Group F");
     expect(japanMatch?.secondaryText).toBe("15:00 CT");
+    expect(japanMatch?.venueLabel).toBe("Dallas");
+    expect(japanMatch?.venueDetailLabel).toBe("AT&T Stadium · Arlington, USA · CT");
   });
 
-  it("adds final stage labels and time zone abbreviations for knockout matches", () => {
+  it("adds final stage labels and venue details for knockout matches", () => {
     const result = createResultForDate("2026-07-19");
     const final = result.matches[0];
 
     expect(final?.matchNumberLabel).toBe("Match 104");
     expect(final?.stageLabel).toBe("Final");
     expect(final?.secondaryText).toBe("15:00 ET");
+    expect(final?.venueLabel).toBe("New York / New Jersey");
+    expect(final?.venueDetailLabel).toBe("MetLife Stadium · East Rutherford, USA · ET");
   });
 
   it("adds production venue metadata to venue result subtitles", () => {

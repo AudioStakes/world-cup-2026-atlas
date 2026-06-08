@@ -132,6 +132,7 @@ export type MatchListItemViewModel = {
   readonly secondaryText: string;
   readonly venueId: VenueId;
   readonly venueLabel: string;
+  readonly venueDetailLabel: string;
 };
 
 export type CountryRouteSummaryViewModel = {
