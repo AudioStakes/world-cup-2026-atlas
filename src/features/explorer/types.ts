@@ -149,7 +149,11 @@ export type VenueMarkerViewModel = {
   readonly venueId: VenueId;
   readonly venueName: string;
   readonly stadiumName: string;
+  readonly cityLabel: string;
+  readonly timeZoneLabel: string;
   readonly label: string;
+  readonly tooltipLabel: string;
+  readonly ariaLabel: string;
   readonly position: MapPoint;
   readonly state: VenueMarkerState;
 };

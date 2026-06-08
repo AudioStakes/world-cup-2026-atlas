@@ -1,6 +1,6 @@
 import { calculateDistanceKm } from "../../calculations/calculateDistanceKm";
 import type { CountryId, VenueId } from "../../domain/ids";
-import type { AppData, Match, Venue } from "../../domain/types";
+import type { AppData, HostCountryCode, Match, Venue } from "../../domain/types";
 import type { Indexes } from "../../indexes/createIndexes";
 import { queryMatchesByViewState } from "../../queries/queryMatchesByViewState";
 import { formatDistanceLabel } from "./formatExplorerLabels";
@@ -24,7 +24,11 @@ export function createMapViewModel(
       venueId: venue.id,
       venueName: venue.name,
       stadiumName: venue.stadiumName,
+      cityLabel: createVenueCityLabel(venue),
+      timeZoneLabel: venue.timeZone.abbreviation,
       label: getVenueMarkerLabel(venue),
+      tooltipLabel: createVenueTooltipLabel(venue),
+      ariaLabel: createVenueAriaLabel(venue),
       position: venue.mapPoint,
       state: getVenueMarkerState(viewState, highlightedVenueIds, venue.id),
     })),
@@ -67,7 +71,6 @@ function createCountryRoutes(
     selectedDate: null,
     selectedVenueId: null,
   })
-
     .slice()
     .sort((a, b) => a.date.localeCompare(b.date) || a.matchNumber - b.matchNumber)
     .map((match) => indexes.venuesById.get(match.venueId))
@@ -98,4 +101,31 @@ function getVenueMarkerLabel(venue: Venue): string {
   if (venue.id === "san-francisco-bay-area") return "SF Bay";
   if (venue.id === "new-york-new-jersey") return "New York";
   return venue.name;
+}
+
+function createVenueTooltipLabel(venue: Venue): string {
+  return `${venue.name} — ${venue.stadiumName}, ${createVenueCityLabel(venue)} · ${
+    venue.timeZone.abbreviation
+  }`;
+}
+
+function createVenueAriaLabel(venue: Venue): string {
+  return `Select venue ${venue.name}, ${venue.stadiumName}, ${createVenueCityLabel(venue)}, ${
+    venue.timeZone.abbreviation
+  }`;
+}
+
+function createVenueCityLabel(venue: Venue): string {
+  return `${venue.city}, ${formatHostCountryCode(venue.countryCode)}`;
+}
+
+function formatHostCountryCode(countryCode: HostCountryCode): string {
+  switch (countryCode) {
+    case "CAN":
+      return "Canada";
+    case "MEX":
+      return "Mexico";
+    case "USA":
+      return "USA";
+  }
 }
