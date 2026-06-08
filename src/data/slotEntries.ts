@@ -3,17 +3,17 @@ import type { GroupSlotIndex, SlotEntry } from "../domain/types";
 
 const groupAssignments = [
   ["A", ["mex", "rsa", "kor", "cze"]],
-  ["B", ["can", "qat", "ita", "sui"]],
-  ["C", ["bra", "mar", "hon", "sco"]],
+  ["B", ["can", "bos", "qat", "sui"]],
+  ["C", ["bra", "mar", "hti", "sco"]],
   ["D", ["usa", "par", "aus", "tur"]],
-  ["E", ["ger", "civ", "ecu", "crc"]],
+  ["E", ["ger", "cuw", "civ", "ecu"]],
   ["F", ["ned", "jpn", "swe", "tun"]],
   ["G", ["bel", "egy", "irn", "nzl"]],
   ["H", ["esp", "cpv", "ksa", "uru"]],
-  ["I", ["fra", "sen", "alg", "aut"]],
-  ["J", ["arg", "jor", "cro", "gha"]],
-  ["K", ["por", "uzb", "jam", "col"]],
-  ["L", ["eng", "pan", "pol", "chn"]],
+  ["I", ["fra", "sen", "irq", "nor"]],
+  ["J", ["arg", "alg", "aut", "jor"]],
+  ["K", ["por", "cod", "uzb", "col"]],
+  ["L", ["eng", "cro", "gha", "pan"]],
 ] as const;
 
 export const slotEntries = groupAssignments.flatMap(([group, countries]) =>
