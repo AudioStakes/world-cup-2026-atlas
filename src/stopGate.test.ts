@@ -33,9 +33,9 @@ afterEach(() => {
   }
 });
 
-// These tests spawn stop_gate.mjs in temporary git repositories with fake pnpm/gh binaries.
-// They use a longer timeout than unit tests to cover process startup, git initialization, and fake CLI setup overhead.
-// Keep this timeout explicit so future process-based cases do not rely on Vitest defaults.
+// Process-based integration tests keep an explicit shared timeout.
+// This file spawns stop_gate.mjs in temporary git repositories with fake pnpm/gh binaries,
+// so process startup, git initialization, and fake CLI setup add overhead beyond unit tests.
 describe("stop_gate.mjs", { timeout: STOP_GATE_INTEGRATION_TIMEOUT_MS }, () => {
   it("keeps the verify:full control flow and renameSync hardening in the source", () => {
     const source = readFileSync(hookPath, "utf8");
