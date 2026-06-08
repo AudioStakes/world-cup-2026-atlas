@@ -15,8 +15,8 @@ describe("createIndexes", () => {
   it("indexes matches by country, group, and venue", () => {
     const indexes = createIndexes(appData);
 
-    expect(indexes.matchesByCountryId.get(countryId("jpn"))?.length).toBe(4);
-    expect(indexes.matchesByGroupCode.get(groupCode("F"))?.length).toBe(3);
-    expect(indexes.matchesByVenueId.get(venueId("seattle"))?.length).toBe(2);
+    expect(indexes.matchesByCountryId.get(countryId("jpn"))?.length).toBe(3);
+    expect(indexes.matchesByGroupCode.get(groupCode("F"))?.length).toBe(6);
+    expect(indexes.matchesByVenueId.get(venueId("dallas"))?.length).toBe(2);
   });
 });

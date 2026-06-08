@@ -40,7 +40,7 @@ describe("queryExplorer", () => {
       (group) => group.groupCode === groupCode("F"),
     );
     const japan = groupF?.teams.find((team) => team.countryId === countryId("jpn"));
-    const serbia = groupF?.teams.find((team) => team.countryId === countryId("srb"));
+    const sweden = groupF?.teams.find((team) => team.countryId === countryId("swe"));
 
     const groupA = viewModel.explorePanel.groupsAndTeams.groups.find(
       (group) => group.groupCode === groupCode("A"),
@@ -48,7 +48,7 @@ describe("queryExplorer", () => {
 
     expect(japan?.isSelected).toBe(true);
     expect(japan?.availability).toBe("available");
-    expect(serbia?.availability).toBe("available");
+    expect(sweden?.availability).toBe("available");
     expect(groupF?.availability).toBe("available");
     expect(groupA?.availability).toBe("outsideCurrentFilter");
   });
@@ -62,8 +62,8 @@ describe("queryExplorer", () => {
 
     const firstMatch = viewModel.explorePanel.result.matches[0];
 
-    expect(firstMatch?.primaryText).toMatch(/^vs /);
-    expect(firstMatch?.venueLabel).toBe("Seattle");
+    expect(firstMatch?.primaryText).toBe("vs 🇳🇱 Netherlands");
+    expect(firstMatch?.venueLabel).toBe("Dallas");
     expect(firstMatch?.venueLabel).not.toContain("📍");
   });
 
@@ -82,14 +82,12 @@ describe("queryExplorer", () => {
     const viewModel = queryExplorer(
       appData,
       indexes,
-      createViewState({ selectedVenueId: venueId("seattle") }),
+      createViewState({ selectedVenueId: venueId("dallas") }),
     );
 
     expect(viewModel.explorePanel.result.type).toBe("venue");
 
-    const seattle = viewModel.map.venueMarkers.find(
-      (venue) => venue.venueId === venueId("seattle"),
-    );
-    expect(seattle?.state).toBe("selected");
+    const dallas = viewModel.map.venueMarkers.find((venue) => venue.venueId === venueId("dallas"));
+    expect(dallas?.state).toBe("selected");
   });
 });

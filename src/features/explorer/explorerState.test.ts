@@ -23,15 +23,15 @@ function makeState(
 describe("explorer URL state", () => {
   it("parses known query parameters into a normalized view state", () => {
     const viewState = parseExplorerSearchParams(
-      "?country=JPN&group=f&date=2026-06-11&venue=Seattle",
+      "?country=JPN&group=f&date=2026-06-14&venue=Dallas",
       indexes,
     );
 
     expect(viewState).toEqual({
       selectedCountryId: countryId("jpn"),
       selectedGroupCode: groupCode("F"),
-      selectedDate: localDate("2026-06-11"),
-      selectedVenueId: venueId("seattle"),
+      selectedDate: localDate("2026-06-14"),
+      selectedVenueId: venueId("dallas"),
     });
   });
 
@@ -39,12 +39,12 @@ describe("explorer URL state", () => {
     const serialized = serializeExplorerSearchParams(
       makeState({
         selectedCountryId: countryId("jpn"),
-        selectedDate: localDate("2026-06-11"),
-        selectedVenueId: venueId("seattle"),
+        selectedDate: localDate("2026-06-14"),
+        selectedVenueId: venueId("dallas"),
       }),
     );
 
-    expect(serialized).toBe("?country=jpn&date=2026-06-11&venue=seattle");
+    expect(serialized).toBe("?country=jpn&date=2026-06-14&venue=dallas");
   });
 
   it("uses URL parameters before the default A1 fallback", () => {
@@ -79,11 +79,11 @@ describe("queryMatchesByViewState", () => {
       appData,
       makeState({
         selectedCountryId: countryId("jpn"),
-        selectedDate: localDate("2026-06-11"),
+        selectedDate: localDate("2026-06-14"),
       }),
     );
 
-    expect(matches.map((match) => match.id)).toEqual(["match-002"]);
+    expect(matches.map((match) => match.id)).toEqual(["match-011"]);
   });
 });
 
@@ -108,11 +108,11 @@ describe("updateExplorerViewState", () => {
     const currentState = makeState({ selectedCountryId: countryId("jpn") });
     const nextState = updateExplorerViewState(appData, indexes, currentState, {
       type: "selectDate",
-      date: localDate("2026-06-11"),
+      date: localDate("2026-06-14"),
     });
 
     expect(nextState).toEqual(
-      makeState({ selectedCountryId: countryId("jpn"), selectedDate: localDate("2026-06-11") }),
+      makeState({ selectedCountryId: countryId("jpn"), selectedDate: localDate("2026-06-14") }),
     );
   });
 
@@ -120,10 +120,10 @@ describe("updateExplorerViewState", () => {
     const currentState = makeState({ selectedCountryId: countryId("jpn") });
     const nextState = updateExplorerViewState(appData, indexes, currentState, {
       type: "selectDate",
-      date: localDate("2026-06-12"),
+      date: localDate("2026-06-11"),
     });
 
-    expect(nextState).toEqual(makeState({ selectedDate: localDate("2026-06-12") }));
+    expect(nextState).toEqual(makeState({ selectedDate: localDate("2026-06-11") }));
   });
 
   it("prioritizes a newly selected venue and removes conflicting country selection", () => {
@@ -139,7 +139,7 @@ describe("updateExplorerViewState", () => {
   it("clears all selections", () => {
     const currentState = makeState({
       selectedCountryId: countryId("jpn"),
-      selectedDate: localDate("2026-06-11"),
+      selectedDate: localDate("2026-06-14"),
     });
 
     expect(updateExplorerViewState(appData, indexes, currentState, { type: "clearAll" })).toEqual(
