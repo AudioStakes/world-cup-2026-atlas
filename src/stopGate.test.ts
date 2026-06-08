@@ -53,9 +53,9 @@ describe("stop_gate.mjs", { timeout: STOP_GATE_INTEGRATION_TIMEOUT_MS }, () => {
     expect(source.indexOf('if (mode === "verify:full")')).toBeLessThan(
       source.indexOf("for (const check of checks)"),
     );
-    expect(
-      source.indexOf("if (shouldSkipVerification(context, key))"),
-    ).toBeGreaterThan(source.indexOf('if (mode === "verify:full")'));
+    expect(source.indexOf("if (shouldSkipVerification(context, key))")).toBeGreaterThan(
+      source.indexOf('if (mode === "verify:full")'),
+    );
   });
 
   it("runs pnpm fix before pnpm verify:full and keeps progress on stderr", () => {
@@ -305,10 +305,7 @@ describe("stop_gate.mjs", { timeout: STOP_GATE_INTEGRATION_TIMEOUT_MS }, () => {
     expect(parseJsonOutput(first.stdout).decision).toBe("block");
     expect(second.status).toBe(0);
     expect(second.stdout.trim()).toBe("{}");
-    expect(readLines(harness.pnpmLogPath)).toEqual([
-      "--silent fix",
-      "--silent verify:full",
-    ]);
+    expect(readLines(harness.pnpmLogPath)).toEqual(["--silent fix", "--silent verify:full"]);
   });
 
   it("does not hang when run directly without stdin", () => {
