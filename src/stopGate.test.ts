@@ -208,6 +208,23 @@ describe("stop_gate.mjs", () => {
       "--silent verify:full",
     ]);
   });
+
+  it("does not hang when run directly without stdin", () => {
+    const harness = createHarness();
+    initializeRepo(harness);
+    captureBaseline(harness.root);
+
+    const result = runHook(harness, "verify:full", undefined, {
+      FAKE_GH_URL: "https://example.test/pr/789",
+    });
+
+    expect(result.status).toBe(0);
+    expect(parseJsonOutput(result.stdout).decision).toBe("block");
+    expect(readLines(harness.pnpmLogPath)).toEqual([
+      "--silent fix",
+      "--silent verify:full",
+    ]);
+  });
 });
 
 function createHarness(): RepoHarness {
@@ -314,12 +331,11 @@ function writeExecutable(path: string, content: string): void {
 function runHook(
   harness: RepoHarness,
   mode: "fix" | "verify:full",
-  payload: unknown,
+  payload?: unknown,
   extraEnv: Record<string, string> = {},
 ): HookRunResult {
   const result = spawnSync(process.execPath, [hookPath, mode], {
     cwd: harness.root,
-    input: JSON.stringify(payload),
     encoding: "utf8",
     env: {
       ...process.env,
@@ -328,6 +344,7 @@ function runHook(
       FAKE_PNPM_LOG: harness.pnpmLogPath,
       CODEX_HOOK_VERBOSE: "1",
     },
+    ...(payload === undefined ? {} : { input: JSON.stringify(payload) }),
   });
 
   return {

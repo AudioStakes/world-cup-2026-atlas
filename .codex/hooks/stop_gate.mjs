@@ -79,6 +79,11 @@ const contextRadius = 2;
 const tailLines = 24;
 
 function readStdinJson() {
+  if (process.stdin.isTTY || !process.stdin.readable) {
+    return {};
+  }
+
+
   try {
     const raw = readFileSync(0, "utf8").trim();
     return raw.length > 0 ? JSON.parse(raw) : {};
