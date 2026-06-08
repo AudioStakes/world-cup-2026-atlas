@@ -36,3 +36,11 @@ Preact UI
 - Group, country, date, and venue surfaces should remain clickable selection controls.
 - Selection changes should update all dependent UI surfaces consistently: cards, chips, result panel, map highlight, and route display.
 - Prefer accessible native controls or explicit button semantics for clickable UI.
+
+## UI Change Scope
+
+- For visual polish tasks, prefer CSS-only changes unless the requested behavior requires ViewModel or component changes.
+- Do not change tournament data, Natural Earth map data, projection logic, or venue coordinates during visual-only tasks.
+- Do not modify selection, filtering, URL state, or route logic unless the task explicitly asks for behavior changes.
+- Keep full-viewport app shell behavior intact unless the task is specifically about layout.
+- Preserve the existing map rendering architecture: Natural Earth map data, projected venue positions, SVG-positioned semantic venue buttons.

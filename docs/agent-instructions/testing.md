@@ -24,3 +24,18 @@ Tests should describe observable behavior through public interfaces and user-vis
 - Prefer ViewModel tests when UI rendering details are not the core concern.
 - Use Playwright for end-to-end interaction flows.
 - Focus on selection logic, filtering correctness, and cross-surface synchronization.
+
+## UI Review Viewports
+
+For PC-oriented UI changes, check these viewports when practical:
+
+- 1280x720
+- 1366x768
+- 1440x900
+
+For Explorer UI changes, check representative routes:
+
+- /
+- /?country=jpn
+- /?venue=dallas
+- /?date=2026-06-14
