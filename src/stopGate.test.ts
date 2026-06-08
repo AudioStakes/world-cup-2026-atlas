@@ -187,9 +187,14 @@ describe("stop_gate.mjs", () => {
     runGit(harness.root, ["checkout", "-b", "task-dirty"]);
     writeFileSync(join(harness.root, "task-dirty.txt"), "dirty\n");
 
-    const result = runHook(harness, "verify:full", {}, {
-      FAKE_GH_URL: "https://example.test/pr/999",
-    });
+    const result = runHook(
+      harness,
+      "verify:full",
+      {},
+      {
+        FAKE_GH_URL: "https://example.test/pr/999",
+      },
+    );
     const payload = parseJsonOutput(result.stdout);
 
     expect(result.status).toBe(0);
