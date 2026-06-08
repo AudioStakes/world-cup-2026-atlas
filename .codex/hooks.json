@@ -18,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$(git rev-parse --show-toplevel)/.codex/hooks/stop_gate.py\"",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/stop_gate.mjs\" verify:full",
             "timeout": 600,
             "statusMessage": "Running final verification"
           }
