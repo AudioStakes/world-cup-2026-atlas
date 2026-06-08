@@ -119,9 +119,14 @@ describe("stop_gate.mjs", () => {
     const payload = parseJsonOutput(result.stdout);
 
     expect(payload.reason).toContain("Final response required.");
-    expect(payload.reason).toContain(
-      "PR: not required because no task-owned changes were committed",
-    );
+    expect(payload.reason).toContain("Report data:");
+    expect(payload.reason).toContain("PR: 変更なし・PR不要");
+    expect(payload.reason).not.toContain("Codex final report context:");
+    expect(payload.reason).not.toContain("Branch:");
+    expect(payload.reason).not.toContain("Latest commit:");
+    expect(payload.reason).not.toContain("Verification:");
+    expect(payload.reason).not.toContain("Working tree:");
+    expect(payload.reason).not.toContain("Pre-existing dirty files preserved:");
     expect(payload.reason).not.toContain("Current branch has no upstream.");
   });
 
@@ -163,9 +168,16 @@ describe("stop_gate.mjs", () => {
 
     expect(payload.decision).toBe("block");
     expect(payload.reason).toContain("Final response required.");
+    expect(payload.reason).toContain("Report data:");
     expect(payload.reason).toContain("Completion report instruction:");
     expect(payload.reason).toContain("Instruction feedback prompt:");
-    expect(payload.reason).toContain("https://example.test/pr/123");
+    expect(payload.reason).toContain("- PR: https://example.test/pr/123");
+    expect(payload.reason).not.toContain("Codex final report context:");
+    expect(payload.reason).not.toContain("Branch:");
+    expect(payload.reason).not.toContain("Latest commit:");
+    expect(payload.reason).not.toContain("Verification:");
+    expect(payload.reason).not.toContain("Working tree:");
+    expect(payload.reason).not.toContain("Pre-existing dirty files preserved:");
   });
 
   it("returns an empty JSON object after the final report response", () => {

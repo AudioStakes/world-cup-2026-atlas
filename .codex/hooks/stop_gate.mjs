@@ -639,19 +639,8 @@ async function main() {
     writeBlock(
       "Final response required.",
       [
-        "Codex final report context:",
-        "- Verification: pnpm verify:full passed",
-        `- Branch: ${context.branch}`,
-        `- Latest commit: ${context.latestCommit}`,
-        `- Task changes: ${context.hasTaskCommit ? "committed" : "none"}`,
-        `- PR: ${context.prUrl ?? "not required because no task-owned changes were committed"}`,
-        "- Working tree: no new uncommitted task changes",
-        context.baselineDirtyPaths.length > 0
-          ? [
-              "- Pre-existing dirty files preserved:",
-              ...context.baselineDirtyPaths.map((path) => `- ${path}`),
-            ].join("\n")
-          : "",
+        "Report data:",
+        context.hasTaskCommit ? `- PR: ${context.prUrl}` : "- PR: 変更なし・PR不要",
         "",
         "Completion report instruction:",
         completionPrompt,
