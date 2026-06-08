@@ -5,6 +5,7 @@ import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 const hookPath = resolve(process.cwd(), ".codex/hooks/stop_gate.mjs");
+const STOP_GATE_INTEGRATION_TIMEOUT_MS = 30_000;
 const tempRoots: string[] = [];
 
 type HookRunResult = {
@@ -32,7 +33,10 @@ afterEach(() => {
   }
 });
 
-describe("stop_gate.mjs", () => {
+// These tests spawn stop_gate.mjs in temporary git repositories with fake pnpm/gh binaries.
+// They use a longer timeout than unit tests to cover process startup and git initialization overhead.
+// Keep this timeout explicit so future process-based cases do not rely on Vitest defaults.
+describe("stop_gate.mjs", { timeout: STOP_GATE_INTEGRATION_TIMEOUT_MS }, () => {
   it("keeps the verify:full control flow and renameSync hardening in the source", () => {
     const source = readFileSync(hookPath, "utf8");
 
@@ -283,7 +287,7 @@ describe("stop_gate.mjs", () => {
       "--silent fix",
       "--silent verify:full",
     ]);
-  }, 10000);
+  });
 
   it("does not hang when run directly without stdin", () => {
     const harness = createHarness();
