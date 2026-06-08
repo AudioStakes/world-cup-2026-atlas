@@ -1,7 +1,16 @@
-## Instruction Feedback のみ日本語で出力。新規作業・要約は禁止。
-対象: AGENTS.md / docs / hooks / task prompt。根拠が明示されたもののみ。推測禁止。
-各カテゴリ最大2件。空なら省略。全空なら「## Instruction Feedback\n- None.」
+## AIエージェントを使わなくてよかった作業 のみ日本語で出力。新規作業・要約は禁止。
+今回のタスク evidence に基づき、AIエージェント不要だった作業を列挙する。一般論は禁止。該当なしなら「該当なし」と書く。
 
-1 Helpful: Codexの作業負荷を下げたもの。
-2 Friction: 負荷を上げた、迷わせた、探しにくかった、不要だったもの。
-3 Improve: 次回以降の負荷を下げるために変更すべきもの。
+確認観点:
+
+* rule/script/test/lint/format/static analysis で済む作業
+* template/固定文/構造化出力で済む作業
+* grep/search/parser で済む探索・抽出
+* 小さいモデル/単発LLMで済む分類・要約・変換
+* subagent/MCP/tool/automation/skill が不要または時期尚早だった作業
+* task/thread/context が肥大した箇所
+* caching/batching/parallelization/単純な実装で負荷を減らせた箇所
+
+各項目は1行で書く:
+
+* 対象: ... / 代替: ... / evidence: ...

@@ -5,6 +5,14 @@ import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 const hookPath = resolve(process.cwd(), ".codex/hooks/stop_gate.mjs");
+const completionPromptPath = resolve(
+  process.cwd(),
+  ".codex/hooks/prompts/stop_completion_report.txt",
+);
+const instructionFeedbackPromptPath = resolve(
+  process.cwd(),
+  ".codex/hooks/prompts/stop_instruction_feedback.txt",
+);
 const STOP_GATE_INTEGRATION_TIMEOUT_MS = 30_000;
 const tempRoots: string[] = [];
 
@@ -316,11 +324,11 @@ function createHarness(): RepoHarness {
 
   writeFileSync(
     join(root, ".codex", "hooks", "prompts", "stop_completion_report.txt"),
-    "日本語で簡潔に完了報告のみ出力。新規作業は禁止。\n",
+    readFileSync(completionPromptPath, "utf8"),
   );
   writeFileSync(
     join(root, ".codex", "hooks", "prompts", "stop_instruction_feedback.txt"),
-    "指示への改善点があれば簡潔に述べる。\n",
+    readFileSync(instructionFeedbackPromptPath, "utf8"),
   );
 
   installFakePnpm(binDir);
