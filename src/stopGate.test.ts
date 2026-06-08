@@ -27,6 +27,17 @@ afterEach(() => {
 });
 
 describe("stop_gate.mjs", () => {
+  it("keeps the verify:full control flow and renameSync hardening in the source", () => {
+    const source = readFileSync(hookPath, "utf8");
+
+    expect(source).toContain("renameSync(");
+    expect(source).not.toContain('spawnSync("mv"');
+    expect(source.indexOf("for (const check of checks)")).toBeLessThan(source.indexOf('if (mode === "verify:full")'));
+    expect(source.indexOf('if (isFinalReportResponse(inputPayload) || wasFinalReportRequested(key))')).toBeGreaterThan(
+      source.indexOf('if (mode === "verify:full")'),
+    );
+  });
+
   it("runs pnpm fix before pnpm verify:full and keeps progress on stderr", () => {
     const harness = createHarness();
     initializeRepo(harness);
@@ -57,6 +68,38 @@ describe("stop_gate.mjs", () => {
     expect(payload.reason).toContain("pnpm verify:full failed");
     expect(payload.reason).toContain("Next action for Codex:");
     expect(readLines(harness.pnpmLogPath)).toEqual(["--silent fix", "--silent verify:full"]);
+  });
+
+  it("keeps important TypeScript, Biome, Playwright, and pnpm lines in compacted failure output", () => {
+    const harness = createHarness();
+    initializeRepo(harness);
+    captureBaseline(harness.root);
+
+    const noisyOutput = [
+      ...Array.from({ length: 60 }, (_, index) => `noise ${index + 1}`),
+      "error TS2322: Type 'string' is not assignable to type 'number'.",
+      "Biome checked 12 files in 3ms. No fixes applied.",
+      "Found 1 error.",
+      "Timed out 5000ms waiting for expect(locator).toBeVisible()",
+      "ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL Command failed with exit code 1.",
+      ...Array.from({ length: 60 }, (_, index) => `tail ${index + 1}`),
+    ].join("\n");
+
+    const result = runHook(
+      harness,
+      "verify:full",
+      {},
+      {
+        FAKE_PNPM_FAIL_VERIFY: "1",
+        FAKE_PNPM_VERIFY_STDERR: noisyOutput,
+      },
+    );
+    const payload = parseJsonOutput(result.stdout);
+
+    expect(payload.reason).toContain("error TS2322:");
+    expect(payload.reason).toContain("Biome checked 12 files");
+    expect(payload.reason).toContain("Timed out 5000ms waiting for expect");
+    expect(payload.reason).toContain("ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL");
   });
 
   it("does not require PR or upstream when there are no task-owned changes", () => {
@@ -201,8 +244,18 @@ function installFakePnpm(binDir: string): void {
     join(binDir, "pnpm"),
     `#!/bin/sh
 echo "$*" >> "$FAKE_PNPM_LOG"
-echo "pnpm stdout: $*"
-echo "pnpm stderr: $*" >&2
+if [ -n "$FAKE_PNPM_STDOUT" ]; then
+  printf '%b\\n' "$FAKE_PNPM_STDOUT"
+else
+  echo "pnpm stdout: $*"
+fi
+if [ "$2" = "verify:full" ] && [ -n "$FAKE_PNPM_VERIFY_STDERR" ]; then
+  printf '%b\\n' "$FAKE_PNPM_VERIFY_STDERR" >&2
+elif [ -n "$FAKE_PNPM_STDERR" ]; then
+  printf '%b\\n' "$FAKE_PNPM_STDERR" >&2
+else
+  echo "pnpm stderr: $*" >&2
+fi
 if [ "$2" = "verify:full" ] && [ "$FAKE_PNPM_FAIL_VERIFY" = "1" ]; then
   exit 1
 fi
