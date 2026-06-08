@@ -85,12 +85,12 @@ export function MapView({ map, onAction }: MapViewProps) {
               ) : null}
             </g>
           ))}
+          <g class="venue-marker-layer" aria-label="Venue markers">
+            {map.venueMarkers.map((venue) => (
+              <VenueMarker key={venue.venueId} venue={venue} onAction={onAction} />
+            ))}
+          </g>
         </svg>
-        <div class="venue-marker-layer">
-          {map.venueMarkers.map((venue) => (
-            <VenueMarker key={venue.venueId} venue={venue} onAction={onAction} />
-          ))}
-        </div>
       </div>
     </section>
   );
@@ -136,23 +136,29 @@ type VenueMarkerProps = {
   readonly onAction: (action: ExplorerAction) => void;
 };
 
-function VenueMarker({ venue, onAction }: VenueMarkerProps) {
-  const viewBox = EXPLORER_MAP_VIEWBOX;
-  const left = ((venue.position.x - viewBox.minX) / viewBox.width) * 100;
-  const top = ((venue.position.y - viewBox.minY) / viewBox.height) * 100;
+const markerWidth = 160;
+const markerHeight = 42;
 
+function VenueMarker({ venue, onAction }: VenueMarkerProps) {
   return (
-    <button
-      class={classNames("venue-marker", `is-${venue.state}`)}
-      type="button"
-      style={{ left: `${left}%`, top: `${top}%` }}
-      data-venue-id={venue.venueId}
-      title={venue.tooltipLabel}
-      aria-label={venue.ariaLabel}
-      onClick={() => onAction({ type: "selectVenue", venueId: venue.venueId })}
+    <foreignObject
+      class="venue-marker-object"
+      x={venue.position.x - 13}
+      y={venue.position.y - markerHeight / 2}
+      width={markerWidth}
+      height={markerHeight}
     >
-      <span class="venue-marker__dot" aria-hidden="true" />
-      <span class="venue-marker__label">{venue.label}</span>
-    </button>
+      <button
+        class={classNames("venue-marker", `is-${venue.state}`)}
+        type="button"
+        data-venue-id={venue.venueId}
+        title={venue.tooltipLabel}
+        aria-label={venue.ariaLabel}
+        onClick={() => onAction({ type: "selectVenue", venueId: venue.venueId })}
+      >
+        <span class="venue-marker__dot" aria-hidden="true" />
+        <span class="venue-marker__label">{venue.label}</span>
+      </button>
+    </foreignObject>
   );
 }

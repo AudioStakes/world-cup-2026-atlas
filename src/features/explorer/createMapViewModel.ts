@@ -1,9 +1,11 @@
 import { calculateDistanceKm } from "../../calculations/calculateDistanceKm";
+import { northAmericaMapBounds } from "../../data/northAmericaMapData";
 import type { CountryId, VenueId } from "../../domain/ids";
 import type { AppData, HostCountryCode, Match, Venue } from "../../domain/types";
 import type { Indexes } from "../../indexes/createIndexes";
 import { queryMatchesByViewState } from "../../queries/queryMatchesByViewState";
 import { formatDistanceLabel } from "./formatExplorerLabels";
+import { projectGeoPointToExplorerMap } from "./projectGeoPoint";
 import type {
   ExplorerMapViewModel,
   MapRouteViewModel,
@@ -29,13 +31,17 @@ export function createMapViewModel(
       label: getVenueMarkerLabel(venue),
       tooltipLabel: createVenueTooltipLabel(venue),
       ariaLabel: createVenueAriaLabel(venue),
-      position: venue.mapPoint,
+      position: projectVenueToMapPoint(venue),
       state: getVenueMarkerState(viewState, highlightedVenueIds, venue.id),
     })),
     routes: shouldShowCountryRoute(viewState)
       ? createCountryRoutes(data, indexes, viewState.selectedCountryId)
       : [],
   };
+}
+
+function projectVenueToMapPoint(venue: Venue) {
+  return projectGeoPointToExplorerMap(venue.geoPoint, northAmericaMapBounds);
 }
 
 function getVenueMarkerState(
@@ -87,8 +93,8 @@ function createCountryRoutes(
         kind: "groupStage" as const,
         fromVenueId: fromVenue.id,
         toVenueId: toVenue.id,
-        from: fromVenue.mapPoint,
-        to: toVenue.mapPoint,
+        from: projectVenueToMapPoint(fromVenue),
+        to: projectVenueToMapPoint(toVenue),
         distanceKm,
         distanceLabel: formatDistanceLabel(distanceKm),
         showDistanceLabel: true,
