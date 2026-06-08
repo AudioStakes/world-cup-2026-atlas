@@ -50,11 +50,11 @@ describe("stop_gate.mjs", { timeout: STOP_GATE_INTEGRATION_TIMEOUT_MS }, () => {
 
     expect(source).toContain("renameSync(");
     expect(source).not.toContain('spawnSync("mv"');
-    expect(source.indexOf("for (const check of checks)")).toBeLessThan(
-      source.indexOf('if (mode === "verify:full")'),
+    expect(source.indexOf('if (mode === "verify:full")')).toBeLessThan(
+      source.indexOf("for (const check of checks)"),
     );
     expect(
-      source.indexOf("if (isFinalReportResponse(inputPayload) || wasFinalReportRequested(key))"),
+      source.indexOf("if (shouldSkipVerification(context, key))"),
     ).toBeGreaterThan(source.indexOf('if (mode === "verify:full")'));
   });
 
@@ -62,6 +62,11 @@ describe("stop_gate.mjs", { timeout: STOP_GATE_INTEGRATION_TIMEOUT_MS }, () => {
     const harness = createHarness();
     initializeRepo(harness);
     captureBaseline(harness.root);
+    runGit(harness.root, ["checkout", "-b", "task-progress"]);
+    writeFileSync(join(harness.root, "task.txt"), "progress\n");
+    runGit(harness.root, ["add", "task.txt"]);
+    runGit(harness.root, ["commit", "-m", "Add progress task"]);
+    runGit(harness.root, ["push", "-u", "origin", "task-progress"]);
 
     const result = runHook(harness, "verify:full", {});
 
@@ -78,6 +83,11 @@ describe("stop_gate.mjs", { timeout: STOP_GATE_INTEGRATION_TIMEOUT_MS }, () => {
     const harness = createHarness();
     initializeRepo(harness);
     captureBaseline(harness.root);
+    runGit(harness.root, ["checkout", "-b", "task-fail"]);
+    writeFileSync(join(harness.root, "task.txt"), "fail\n");
+    runGit(harness.root, ["add", "task.txt"]);
+    runGit(harness.root, ["commit", "-m", "Add fail task"]);
+    runGit(harness.root, ["push", "-u", "origin", "task-fail"]);
 
     const result = runHook(harness, "verify:full", {}, { FAKE_PNPM_FAIL_VERIFY: "1" });
     const payload = parseJsonOutput(result.stdout);
@@ -94,6 +104,11 @@ describe("stop_gate.mjs", { timeout: STOP_GATE_INTEGRATION_TIMEOUT_MS }, () => {
     const harness = createHarness();
     initializeRepo(harness);
     captureBaseline(harness.root);
+    runGit(harness.root, ["checkout", "-b", "task-noisy-fail"]);
+    writeFileSync(join(harness.root, "task.txt"), "noisy\n");
+    runGit(harness.root, ["add", "task.txt"]);
+    runGit(harness.root, ["commit", "-m", "Add noisy fail task"]);
+    runGit(harness.root, ["push", "-u", "origin", "task-noisy-fail"]);
 
     const noisyOutput = [
       ...Array.from({ length: 60 }, (_, index) => `noise ${index + 1}`),
@@ -140,6 +155,7 @@ describe("stop_gate.mjs", { timeout: STOP_GATE_INTEGRATION_TIMEOUT_MS }, () => {
     expect(payload.reason).not.toContain("Working tree:");
     expect(payload.reason).not.toContain("Pre-existing dirty files preserved:");
     expect(payload.reason).not.toContain("Current branch has no upstream.");
+    expect(readLines(harness.pnpmLogPath)).toEqual([]);
   });
 
   it("blocks with a Codex next action when task changes exist on a branch without upstream", () => {
@@ -292,8 +308,6 @@ describe("stop_gate.mjs", { timeout: STOP_GATE_INTEGRATION_TIMEOUT_MS }, () => {
     expect(readLines(harness.pnpmLogPath)).toEqual([
       "--silent fix",
       "--silent verify:full",
-      "--silent fix",
-      "--silent verify:full",
     ]);
   });
 
@@ -308,7 +322,7 @@ describe("stop_gate.mjs", { timeout: STOP_GATE_INTEGRATION_TIMEOUT_MS }, () => {
 
     expect(result.status).toBe(0);
     expect(parseJsonOutput(result.stdout).decision).toBe("block");
-    expect(readLines(harness.pnpmLogPath)).toEqual(["--silent fix", "--silent verify:full"]);
+    expect(readLines(harness.pnpmLogPath)).toEqual([]);
   });
 });
 

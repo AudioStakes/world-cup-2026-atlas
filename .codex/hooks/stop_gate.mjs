@@ -534,6 +534,14 @@ function assertFixDidNotCreateDirtyPaths(beforePaths, context) {
   );
 }
 
+function shouldSkipVerification(context, key) {
+  if (isFinalReportResponse(inputPayload) || wasFinalReportRequested(key)) {
+    return true;
+  }
+
+  return !context.hasTaskCommit && context.newDirtyPaths.length === 0;
+}
+
 function saveStopState(state) {
   mkdirSync(dirname(stopStatePath), { recursive: true });
   const temporaryPath = `${stopStatePath}.tmp`;
@@ -600,6 +608,36 @@ function readRequiredPrompt(path) {
 }
 
 async function main() {
+  if (mode === "verify:full") {
+    const context = getGitContext();
+    const key = turnKey(inputPayload, context);
+
+    if (shouldSkipVerification(context, key)) {
+      if (isFinalReportResponse(inputPayload) || wasFinalReportRequested(key)) {
+        writePass();
+      }
+
+      const completionPrompt = readRequiredPrompt(completionPromptPath);
+      const instructionFeedbackPrompt = readRequiredPrompt(instructionFeedbackPromptPath);
+      markFinalReportRequested(key);
+      writeBlock(
+        "Final response required.",
+        [
+          "Report data:",
+          "- PR: 変更なし・PR不要",
+          "",
+          "Completion report instruction:",
+          completionPrompt,
+          "",
+          "Instruction feedback prompt:",
+          instructionFeedbackPrompt,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      );
+    }
+  }
+
   for (const check of checks) {
     const dirtyPathsBeforeCheck =
       mode === "verify:full" && check.name === "pnpm fix" ? getGitContext().currentDirtyPaths : [];
@@ -651,10 +689,6 @@ async function main() {
   if (mode === "verify:full") {
     const context = getGitContext();
     const key = turnKey(inputPayload, context);
-
-    if (isFinalReportResponse(inputPayload) || wasFinalReportRequested(key)) {
-      writePass();
-    }
 
     assertCompletionGitState(context);
 
