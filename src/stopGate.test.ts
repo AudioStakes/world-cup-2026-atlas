@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -11,6 +11,12 @@ type HookRunResult = {
   status: number | null;
   stdout: string;
   stderr: string;
+};
+
+type HookPayload = {
+  decision?: string;
+  reason?: string;
+  [key: string]: unknown;
 };
 
 type RepoHarness = {
@@ -32,10 +38,12 @@ describe("stop_gate.mjs", () => {
 
     expect(source).toContain("renameSync(");
     expect(source).not.toContain('spawnSync("mv"');
-    expect(source.indexOf("for (const check of checks)")).toBeLessThan(source.indexOf('if (mode === "verify:full")'));
-    expect(source.indexOf('if (isFinalReportResponse(inputPayload) || wasFinalReportRequested(key))')).toBeGreaterThan(
+    expect(source.indexOf("for (const check of checks)")).toBeLessThan(
       source.indexOf('if (mode === "verify:full")'),
     );
+    expect(
+      source.indexOf("if (isFinalReportResponse(inputPayload) || wasFinalReportRequested(key))"),
+    ).toBeGreaterThan(source.indexOf('if (mode === "verify:full")'));
   });
 
   it("runs pnpm fix before pnpm verify:full and keeps progress on stderr", () => {
@@ -111,7 +119,9 @@ describe("stop_gate.mjs", () => {
     const payload = parseJsonOutput(result.stdout);
 
     expect(payload.reason).toContain("Final response required.");
-    expect(payload.reason).toContain("PR: not required because no task-owned changes were committed");
+    expect(payload.reason).toContain(
+      "PR: not required because no task-owned changes were committed",
+    );
     expect(payload.reason).not.toContain("Current branch has no upstream.");
   });
 
@@ -143,7 +153,12 @@ describe("stop_gate.mjs", () => {
     runGit(harness.root, ["commit", "-m", "Ready task"]);
     runGit(harness.root, ["push", "-u", "origin", "task-ready"]);
 
-    const result = runHook(harness, "verify:full", {}, { FAKE_GH_URL: "https://example.test/pr/123" });
+    const result = runHook(
+      harness,
+      "verify:full",
+      {},
+      { FAKE_GH_URL: "https://example.test/pr/123" },
+    );
     const payload = parseJsonOutput(result.stdout);
 
     expect(payload.decision).toBe("block");
@@ -163,7 +178,12 @@ describe("stop_gate.mjs", () => {
     runGit(harness.root, ["commit", "-m", "Report task"]);
     runGit(harness.root, ["push", "-u", "origin", "task-report"]);
 
-    const first = runHook(harness, "verify:full", {}, { FAKE_GH_URL: "https://example.test/pr/456" });
+    const first = runHook(
+      harness,
+      "verify:full",
+      {},
+      { FAKE_GH_URL: "https://example.test/pr/456" },
+    );
     const second = runHook(
       harness,
       "verify:full",
@@ -223,9 +243,13 @@ function initializeRepo(harness: RepoHarness): void {
   writeFileSync(join(harness.root, "README.md"), "# test\n");
   writeFileSync(
     join(harness.root, ".gitignore"),
-    [".codex/hooks/logs/", ".codex/state/stop-gate-state.json", "bin/", "pnpm-invocations.log", "remote.git/"].join(
-      "\n",
-    ) + "\n",
+    `${[
+      ".codex/hooks/logs/",
+      ".codex/state/stop-gate-state.json",
+      "bin/",
+      "pnpm-invocations.log",
+      "remote.git/",
+    ].join("\n")}\n`,
   );
   runGit(harness.root, ["add", "README.md", ".gitignore"]);
   runGit(harness.root, ["commit", "-m", "Initial commit"]);
@@ -235,8 +259,14 @@ function initializeRepo(harness: RepoHarness): void {
 }
 
 function captureBaseline(root: string): void {
-  writeFileSync(join(root, ".codex", "state", "git-start-status"), runGit(root, ["status", "--porcelain=v1"]));
-  writeFileSync(join(root, ".codex", "state", "git-start-head"), `${runGit(root, ["rev-parse", "HEAD"]).trim()}\n`);
+  writeFileSync(
+    join(root, ".codex", "state", "git-start-status"),
+    runGit(root, ["status", "--porcelain=v1"]),
+  );
+  writeFileSync(
+    join(root, ".codex", "state", "git-start-head"),
+    `${runGit(root, ["rev-parse", "HEAD"]).trim()}\n`,
+  );
 }
 
 function installFakePnpm(binDir: string): void {
@@ -294,7 +324,7 @@ function runHook(
     env: {
       ...process.env,
       ...extraEnv,
-      PATH: `${harness.binDir}:${process.env.PATH ?? ""}`,
+      PATH: `${harness.binDir}:${process.env["PATH"] ?? ""}`,
       FAKE_PNPM_LOG: harness.pnpmLogPath,
       CODEX_HOOK_VERBOSE: "1",
     },
@@ -327,9 +357,9 @@ function expectJsonOnlyStdout(stdout: string): void {
   expect(trimmed.split("\n")).toHaveLength(1);
 }
 
-function parseJsonOutput(stdout: string): Record<string, string> {
+function parseJsonOutput(stdout: string): HookPayload {
   expectJsonOnlyStdout(stdout);
-  return JSON.parse(stdout) as Record<string, string>;
+  return JSON.parse(stdout) as HookPayload;
 }
 
 function readLines(path: string): string[] {

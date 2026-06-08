@@ -1,4 +1,4 @@
-import type ExplorerResultViewModel from "../../features/explorer/types";
+import type { ExplorerResultViewModel } from "../../features/explorer/types";
 
 type ResultCardProps = {
   readonly result: ExplorerResultViewModel;
