@@ -13,7 +13,6 @@
 
 ## Detailed Instructions
 
-- [Agent Workflow](docs/agent-instructions/agent-workflow.md)
 - [Development](docs/agent-instructions/development.md)
 - [Testing](docs/agent-instructions/testing.md)
 - [Docs and Domain](docs/agent-instructions/docs-and-domain.md)
