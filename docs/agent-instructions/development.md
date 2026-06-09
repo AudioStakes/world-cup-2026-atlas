@@ -18,8 +18,17 @@ Explorer ViewModel
 Preact UI
 ```
 
+## Agent Operating Principle
+
+Repository instructions and hooks exist to reduce agent cognitive load.
+Per-task prompts should focus only on task-specific goals, scope, and review targets.
+Stable development rules, validation commands, delivery rules, and report format belong in repository instructions, not repeated task prompts.
+
 ## Rules
 
+- Use `$agent-md-refactor` when refactoring `AGENTS.md`, `CLAUDE.md`, or related agent-instruction docs.
+- If that refactor also changes repository code or tests, use `$tdd` for those code changes.
+- Use `$tdd` for important repository behavior that already has automated test coverage, including hook code such as `.codex/hooks/stop_gate.mjs`.
 - Prefer pure functions for state transitions, indexes, queries, filtering, sorting, and calculations.
 - Keep `queryExplorer()` as the only source of UI-facing Explorer ViewModel data.
 - Keep Preact components thin: components should render ViewModel data and dispatch explicit user intents.
@@ -36,3 +45,11 @@ Preact UI
 - Group, country, date, and venue surfaces should remain clickable selection controls.
 - Selection changes should update all dependent UI surfaces consistently: cards, chips, result panel, map highlight, and route display.
 - Prefer accessible native controls or explicit button semantics for clickable UI.
+
+## UI Change Scope
+
+- For visual polish tasks, prefer CSS-only changes unless the requested behavior requires ViewModel or component changes.
+- Do not change tournament data, Natural Earth map data, projection logic, or venue coordinates during visual-only tasks.
+- Do not modify selection, filtering, URL state, or route logic unless the task explicitly asks for behavior changes.
+- Keep full-viewport app shell behavior intact unless the task is specifically about layout.
+- Preserve the existing map rendering architecture: Natural Earth map data, projected venue positions, SVG-positioned semantic venue buttons.

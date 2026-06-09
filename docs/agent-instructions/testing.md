@@ -1,65 +1,49 @@
-# Testing strategy
+# Testing
 
-World Cup 2026 Atlas keeps UI behavior stable by testing pure logic first and browser behavior second.
+## Overview
 
-## Local quality gate
+Tests should describe observable behavior through public interfaces and user-visible outcomes.
 
-Run this before handing work off:
+## Rules
 
-```bash
-pnpm ready
-```
+- Add or update tests for every behavior change, bug fix, or feature.
+- Prefer testing query outputs, ViewModels, and user-visible interactions over implementation details.
+- Keep state, query, ViewModel, and UI tests separately understandable.
+- Follow red-green-refactor.
+- Never refactor while tests are red.
+- Verify selection synchronization between group, country, date, and venue filters.
+- Verify URL/request-parameter initialization behavior.
+- Verify map highlighting and route rendering behavior when selection changes.
+- For UI-heavy work, run Playwright coverage on the affected flow.
+- Routine completion checks should use `pnpm verify`.
+- For significant UI changes, use `pnpm verify:full`.
 
-`pnpm ready` runs Biome safe fixes first, then the required verification gate.
+## Guidance
 
-## Required verification
+- Test public behavior, not component internals.
+- Prefer ViewModel tests when UI rendering details are not the core concern.
+- Use Playwright for end-to-end interaction flows.
+- Focus on selection logic, filtering correctness, and cross-surface synchronization.
 
-```bash
-pnpm verify
-```
+### Process-based integration tests
 
-This is read-only and must pass in CI. It runs:
+- When a test spawns `child_process`, creates temporary git repositories, or installs fake CLI binaries, add a shared timeout constant in that file from the initial implementation.
+- Leave a short comment explaining that the timeout covers process startup, git initialization, and fake CLI setup overhead.
+- Use `30_000`ms as the default starting point.
+- Apply the timeout consistently at the `describe` level or through shared helpers instead of scattering per-test overrides.
+- If a case appears to need a longer timeout, first check whether fixture setup, fake command behavior, or process count can be reduced.
 
-1. `pnpm check`
-2. `pnpm typecheck`
-3. `pnpm test`
-4. `pnpm build`
+## UI Review Viewports
 
-## End-to-end smoke tests
+For PC-oriented UI changes, check these viewports when practical:
 
-Install Playwright browsers once:
+- 1280x720
+- 1366x768
+- 1440x900
 
-```bash
-pnpm exec playwright install chromium
-```
+For Explorer UI changes, check representative routes:
 
-Then run:
-
-```bash
-pnpm e2e
-```
-
-Use this before UI-heavy handoffs:
-
-```bash
-pnpm verify:full
-```
-
-`pnpm verify:full` runs the normal quality gate plus Playwright smoke tests.
-
-## Testing priorities
-
-Prefer pure function tests for:
-
-- URL parse/serialize
-- initial state resolution
-- state transitions
-- AND search behavior
-- ViewModel generation
-
-Use Playwright only for critical browser flows:
-
-- initial A1 fallback selection
-- team selection from Groups & Teams
-- venue selection from the map
-- URL state synchronization
+- /
+- /?country=jpn
+- /?venue=dallas
+- /?date=2026-06-14
