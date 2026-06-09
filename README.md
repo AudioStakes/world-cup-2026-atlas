@@ -1,52 +1,27 @@
-# World Cup 2026 Atlas
+# world-cup-2026-atlas
 
-World Cup 2026 Atlas is a static Preact application for exploring teams, groups, dates, venues, and travel routes across North America.
+`world-cup-2026-atlas` is a static Preact application for exploring teams, groups, dates, venues, and travel routes for FIFA World Cup 2026.
 
-The implementation is intentionally state-driven:
+## Quick Reference
 
-```txt
-Data
- ↓
-Indexes
- ↓
-Atomic Queries
- ↓
-Explorer Query
- ↓
-Explorer ViewModel
- ↓
-Preact UI
-```
+- Install: `pnpm install`
+- Dev: `pnpm dev`
+- Fix: `pnpm fix`
+- Typecheck: `pnpm typecheck`
+- Test: `pnpm test`
+- E2E: `pnpm e2e`
+- Verify: `pnpm verify`
+- Full UI verification: `pnpm verify:full`
+- Use concise, direct replies
 
-## Stack
+## Detailed Instructions
 
-- Preact
-- TypeScript
-- Vite
-- Biome
-- Vitest
-- Testing Library
-- Playwright
-- pnpm
+- [Development](docs/agent-instructions/development.md)
+- [Testing](docs/agent-instructions/testing.md)
 
-## Development
-
-```bash
-pnpm install
-pnpm dev
-```
-
-## Quality gates
+## Quality Gates
 
 Run this before handing work off:
-
-```bash
-pnpm ready
-```
-
-`pnpm ready` runs Biome safe fixes, then `pnpm verify`.
-
-CI should run the read-only gate:
 
 ```bash
 pnpm verify
@@ -54,7 +29,7 @@ pnpm verify
 
 `pnpm verify` runs:
 
-1. `pnpm check`
+1. `pnpm fix`
 2. `pnpm typecheck`
 3. `pnpm test`
 4. `pnpm build`
@@ -66,25 +41,24 @@ pnpm exec playwright install chromium
 pnpm verify:full
 ```
 
+`pnpm verify:full` runs:
+
+1. `pnpm verify`
+2. `pnpm e2e`
+
 ## Scripts
 
 ```bash
-pnpm fix          # write Biome safe fixes, formatting, and import organization
-pnpm format       # alias for pnpm fix
-pnpm lint         # run Biome lint only
-pnpm check        # run Biome format/lint/import checks without writing
-pnpm typecheck    # run TypeScript strict checks
-pnpm test         # run unit tests once
-pnpm test:watch   # run Vitest watch mode
-pnpm test:coverage # run Vitest coverage
-pnpm build        # build production assets
-pnpm verify       # run the required read-only quality gate
-pnpm e2e          # run Playwright smoke tests
-pnpm verify:full  # run verify and e2e
-pnpm ready        # run safe fixes and verify
+pnpm fix         # write Biome safe fixes, formatting, and import organization
+pnpm typecheck   # run TypeScript strict checks for app and node configs
+pnpm test        # run unit tests once
+pnpm e2e         # run Playwright smoke tests
+pnpm build       # build production assets
+pnpm verify      # quality gate
+pnpm verify:full # run verify and e2e
 ```
 
-## Product direction
+## Product Direction
 
 The app should prioritize:
 

@@ -1,10 +1,10 @@
 # Production data migration checklist
 
-Use this checklist when replacing provisional data.
+Use when replacing provisional data.
 
 ## 1. Capture source references
 
-For every imported dataset, record:
+Record:
 
 - source title
 - publisher
@@ -29,9 +29,7 @@ src/data/matches.ts
 
 ## 3. Preserve IDs
 
-Avoid changing existing IDs unless the current ID is wrong.
-
-Stable IDs keep URLs and tests stable:
+Avoid changing existing IDs unless the current ID is wrong. Stable IDs keep URLs and tests stable:
 
 ```txt
 country=jpn
@@ -42,7 +40,7 @@ date=2026-06-14
 
 ## 4. Validate invariants
 
-At minimum, `pnpm ready` should confirm:
+At minimum, `pnpm verify` should confirm:
 
 - 12 groups
 - 48 slots
@@ -58,6 +56,4 @@ At minimum, `pnpm ready` should confirm:
 
 ## 5. Keep derived values derived
 
-Do not manually store route totals, highlighted venues, or distance rankings in data files.
-
-Those belong to query or calculation code.
+Do not manually store route totals, highlighted venues, or distance rankings in data files. Keep those in query or calculation code.

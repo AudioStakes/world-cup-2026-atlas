@@ -7,20 +7,12 @@ World Cup 2026 Atlas keeps UI behavior stable by testing pure logic first and br
 Run this before handing work off:
 
 ```bash
-pnpm ready
-```
-
-`pnpm ready` runs Biome safe fixes first, then the required verification gate.
-
-## Required verification
-
-```bash
 pnpm verify
 ```
 
-This is read-only and must pass in CI. It runs:
+`pnpm verify` runs:
 
-1. `pnpm check`
+1. `pnpm fix`
 2. `pnpm typecheck`
 3. `pnpm test`
 4. `pnpm build`
@@ -54,7 +46,7 @@ Prefer pure function tests for:
 - URL parse/serialize
 - initial state resolution
 - state transitions
-- AND search behavior
+- search behavior
 - ViewModel generation
 
 Use Playwright only for critical browser flows:

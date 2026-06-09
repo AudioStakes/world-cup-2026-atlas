@@ -7,6 +7,9 @@
 - Install: `pnpm install`
 - Dev: `pnpm dev`
 - Fix: `pnpm fix`
+- Typecheck: `pnpm typecheck`
+- Test: `pnpm test`
+- E2E: `pnpm e2e`
 - Verify: `pnpm verify`
 - Full UI verification: `pnpm verify:full`
 - Use concise, direct replies
