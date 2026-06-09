@@ -9,6 +9,12 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, join } from "node:path";
+import {
+  buildPrReportLine as buildPrReportLineCore,
+  isFinalReportResponse as isFinalReportResponseCore,
+  parseStopHookToggleValue as parseStopHookToggleValueCore,
+  shouldSkipVerification as shouldSkipVerificationCore,
+} from "./stop_gate_core.mjs";
 
 const inputPayload = readStdinJson();
 const repositoryRoot = resolveRepositoryRoot();
@@ -128,27 +134,14 @@ function writeProgress(message) {
 }
 
 function readStopHookToggle(name, label) {
-  const rawValue = process.env[name];
-  if (rawValue === undefined) {
-    return true;
+  const result = parseStopHookToggleValueCore(process.env[name], name);
+  if (result.warning) {
+    writeProgress(result.warning);
   }
-
-  const normalized = rawValue.trim().toLowerCase();
-  if (normalized.length === 0) {
-    return true;
-  }
-
-  if (["1", "true", "yes", "on"].includes(normalized)) {
-    return true;
-  }
-
-  if (["0", "false", "no", "off"].includes(normalized)) {
+  if (!result.enabled && process.env[name] !== undefined) {
     writeProgress(`skip ${label}: ${name}=off`);
-    return false;
   }
-
-  writeProgress(`warning: invalid ${name}=${JSON.stringify(rawValue)}; using on`);
-  return true;
+  return result.enabled;
 }
 
 function writePass() {
@@ -164,30 +157,8 @@ function writeBlock(title, reason) {
   process.exit(0);
 }
 
-function getInputStrings(value) {
-  if (value === null || value === undefined) {
-    return [];
-  }
-
-  if (typeof value === "string") {
-    return [value];
-  }
-
-  if (Array.isArray(value)) {
-    return value.flatMap((item) => getInputStrings(item));
-  }
-
-  if (typeof value === "object") {
-    return Object.values(value).flatMap((item) => getInputStrings(item));
-  }
-
-  return [];
-}
-
 function isFinalReportResponse(value) {
-  return getInputStrings(value).some((text) =>
-    /Completion report instruction:|Review Notes:|残作業:/.test(text),
-  );
+  return isFinalReportResponseCore(value);
 }
 
 function createLogPath(name) {
@@ -497,19 +468,7 @@ function blockCompletion(reason, nextAction) {
 }
 
 function buildPrReportLine(context) {
-  if (!stopHookActions.autoPushPr && context.hasTaskCommit) {
-    return "- PR: 自動push/PR作成は無効";
-  }
-
-  if (!stopHookActions.autoCommit && context.newDirtyPaths.length > 0) {
-    return "- PR: 自動commitは無効";
-  }
-
-  if (context.hasTaskCommit && context.prUrl) {
-    return `- PR: ${context.prUrl}`;
-  }
-
-  return "- PR: 変更なし・PR不要";
+  return buildPrReportLineCore(context, stopHookActions);
 }
 
 function buildFinalResponseReason(context) {
@@ -614,11 +573,10 @@ function assertFixDidNotCreateDirtyPaths(beforePaths, context) {
 }
 
 function shouldSkipVerification(context, key) {
-  if (isFinalReportResponse(inputPayload) || wasFinalReportRequested(key)) {
-    return true;
-  }
-
-  return !context.hasTaskCommit && context.newDirtyPaths.length === 0;
+  return shouldSkipVerificationCore(
+    context,
+    isFinalReportResponse(inputPayload) || wasFinalReportRequested(key),
+  );
 }
 
 function saveStopState(state) {

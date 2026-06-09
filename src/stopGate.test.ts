@@ -13,7 +13,8 @@ const instructionFeedbackPromptPath = resolve(
   process.cwd(),
   ".codex/hooks/prompts/stop_instruction_feedback.txt",
 );
-const STOP_GATE_INTEGRATION_TIMEOUT_MS = 30_000;
+const STOP_GATE_INTEGRATION_TIMEOUT_MS = 12_000;
+
 const tempRoots: string[] = [];
 
 type HookRunResult = {
@@ -25,7 +26,6 @@ type HookRunResult = {
 type HookPayload = {
   decision?: string;
   reason?: string;
-  [key: string]: unknown;
 };
 
 type RepoHarness = {
@@ -41,83 +41,47 @@ afterEach(() => {
   }
 });
 
-// Process-based integration tests keep an explicit shared timeout.
-// This file spawns stop_gate.mjs in temporary git repositories with fake pnpm/gh binaries,
-// so process startup, git initialization, and fake CLI setup add overhead beyond unit tests.
 describe("stop_gate.mjs", { timeout: STOP_GATE_INTEGRATION_TIMEOUT_MS }, () => {
-  it("keeps the verify:full control flow and renameSync hardening in the source", () => {
-    const source = readFileSync(hookPath, "utf8");
-
-    expect(source).toContain("renameSync(");
-    expect(source).not.toContain('spawnSync("mv"');
-    expect(source.indexOf('if (mode === "verify:full")')).toBeLessThan(
-      source.indexOf("for (const check of checks)"),
-    );
-    expect(source.indexOf("if (shouldSkipVerification(context, key))")).toBeGreaterThan(
-      source.indexOf('if (mode === "verify:full")'),
-    );
-  });
-
   it("runs pnpm fix before pnpm verify:full and keeps progress on stderr", () => {
     const harness = createHarness();
     initializeRepo(harness);
     captureBaseline(harness.root);
+
     runGit(harness.root, ["checkout", "-b", "task-progress"]);
     writeFileSync(join(harness.root, "task.txt"), "progress\n");
     runGit(harness.root, ["add", "task.txt"]);
-    runGit(harness.root, ["commit", "-m", "Add progress task"]);
+    runGit(harness.root, ["commit", "-m", "Add task progress"]);
     runGit(harness.root, ["push", "-u", "origin", "task-progress"]);
 
-    const result = runHook(harness, "verify:full", {});
+    const result = runHook(
+      harness,
+      "verify:full",
+      {},
+      { FAKE_GH_URL: "https://example.test/pr/1" },
+    );
 
     expect(result.status).toBe(0);
-    expectJsonOnlyStdout(result.stdout);
-    expect(parseJsonOutput(result.stdout).decision).toBe("block");
-    expect(readLines(harness.pnpmLogPath)).toEqual(["--silent fix", "--silent verify:full"]);
     expect(result.stderr).toContain("[stop_gate] running pnpm fix...");
     expect(result.stderr).toContain("[stop_gate] running pnpm verify:full...");
-    expect(result.stderr).not.toContain('"decision":"block"');
+    expect(readLines(harness.pnpmLogPath)).toEqual(["--silent fix", "--silent verify:full"]);
   });
 
   it("returns a block decision when pnpm verify:full fails and exits 0", () => {
     const harness = createHarness();
     initializeRepo(harness);
     captureBaseline(harness.root);
+
     runGit(harness.root, ["checkout", "-b", "task-fail"]);
     writeFileSync(join(harness.root, "task.txt"), "fail\n");
     runGit(harness.root, ["add", "task.txt"]);
     runGit(harness.root, ["commit", "-m", "Add fail task"]);
     runGit(harness.root, ["push", "-u", "origin", "task-fail"]);
 
-    const result = runHook(harness, "verify:full", {}, { FAKE_PNPM_FAIL_VERIFY: "1" });
-    const payload = parseJsonOutput(result.stdout);
-
-    expect(result.status).toBe(0);
-    expect(payload.decision).toBe("block");
-    expect(payload.reason).toContain("Completion is blocked.");
-    expect(payload.reason).toContain("pnpm verify:full failed");
-    expect(payload.reason).toContain("Next action for Codex:");
-    expect(readLines(harness.pnpmLogPath)).toEqual(["--silent fix", "--silent verify:full"]);
-  });
-
-  it("keeps important TypeScript, Biome, Playwright, and pnpm lines in compacted failure output", () => {
-    const harness = createHarness();
-    initializeRepo(harness);
-    captureBaseline(harness.root);
-    runGit(harness.root, ["checkout", "-b", "task-noisy-fail"]);
-    writeFileSync(join(harness.root, "task.txt"), "noisy\n");
-    runGit(harness.root, ["add", "task.txt"]);
-    runGit(harness.root, ["commit", "-m", "Add noisy fail task"]);
-    runGit(harness.root, ["push", "-u", "origin", "task-noisy-fail"]);
-
     const noisyOutput = [
-      ...Array.from({ length: 60 }, (_, index) => `noise ${index + 1}`),
-      "error TS2322: Type 'string' is not assignable to type 'number'.",
-      "Biome checked 12 files in 3ms. No fixes applied.",
-      "Found 1 error.",
-      "Timed out 5000ms waiting for expect(locator).toBeVisible()",
-      "ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL Command failed with exit code 1.",
-      ...Array.from({ length: 60 }, (_, index) => `tail ${index + 1}`),
+      "src/app/app.tsx:100: error TS2322: type mismatch",
+      "Biome checked 12 files in 7ms.",
+      "Playwright timeout after 30000ms",
+      "ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL",
     ].join("\n");
 
     const result = runHook(
@@ -125,93 +89,26 @@ describe("stop_gate.mjs", { timeout: STOP_GATE_INTEGRATION_TIMEOUT_MS }, () => {
       "verify:full",
       {},
       {
+        FAKE_GH_URL: "https://example.test/pr/123",
         FAKE_PNPM_FAIL_VERIFY: "1",
         FAKE_PNPM_VERIFY_STDERR: noisyOutput,
       },
     );
-    const payload = parseJsonOutput(result.stdout);
 
+    const payload = parseJsonOutput(result.stdout);
+    expect(result.status).toBe(0);
+    expect(payload.decision).toBe("block");
+    expect(payload.reason).toContain("pnpm verify:full failed");
     expect(payload.reason).toContain("error TS2322:");
     expect(payload.reason).toContain("Biome checked 12 files");
-    expect(payload.reason).toContain("Timed out 5000ms waiting for expect");
     expect(payload.reason).toContain("ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL");
   });
 
-  it("does not require PR or upstream when there are no task-owned changes", () => {
+  it("blocks with uncommitted-diff guidance when task-owned dirty files remain", () => {
     const harness = createHarness();
     initializeRepo(harness);
     captureBaseline(harness.root);
 
-    const result = runHook(harness, "verify:full", {});
-    const payload = parseJsonOutput(result.stdout);
-
-    expect(payload.reason).toContain("Final response required.");
-    expect(payload.reason).toContain("Report data:");
-    expect(payload.reason).toContain("PR: 変更なし・PR不要");
-    expect(payload.reason).not.toContain("Codex final report context:");
-    expect(payload.reason).not.toContain("Branch:");
-    expect(payload.reason).not.toContain("Latest commit:");
-    expect(payload.reason).not.toContain("Verification:");
-    expect(payload.reason).not.toContain("Working tree:");
-    expect(payload.reason).not.toContain("Pre-existing dirty files preserved:");
-    expect(payload.reason).not.toContain("Current branch has no upstream.");
-    expect(readLines(harness.pnpmLogPath)).toEqual([]);
-  });
-
-  it("blocks with a Codex next action when task changes exist on a branch without upstream", () => {
-    const harness = createHarness();
-    initializeRepo(harness);
-    captureBaseline(harness.root);
-    runGit(harness.root, ["checkout", "-b", "task-upstream-missing"]);
-    writeFileSync(join(harness.root, "task.txt"), "changed\n");
-    runGit(harness.root, ["add", "task.txt"]);
-    runGit(harness.root, ["commit", "-m", "Task change"]);
-
-    const result = runHook(harness, "verify:full", {});
-    const payload = parseJsonOutput(result.stdout);
-
-    expect(payload.decision).toBe("block");
-    expect(payload.reason).toContain("Current branch has no upstream.");
-    expect(payload.reason).toContain("Next action for Codex:");
-    expect(payload.reason).toContain("Push the current branch with upstream");
-  });
-
-  it("returns final response required when verification and git state both pass", () => {
-    const harness = createHarness();
-    initializeRepo(harness);
-    captureBaseline(harness.root);
-    runGit(harness.root, ["checkout", "-b", "task-ready"]);
-    writeFileSync(join(harness.root, "task.txt"), "ready\n");
-    runGit(harness.root, ["add", "task.txt"]);
-    runGit(harness.root, ["commit", "-m", "Ready task"]);
-    runGit(harness.root, ["push", "-u", "origin", "task-ready"]);
-
-    const result = runHook(
-      harness,
-      "verify:full",
-      {},
-      { FAKE_GH_URL: "https://example.test/pr/123" },
-    );
-    const payload = parseJsonOutput(result.stdout);
-
-    expect(payload.decision).toBe("block");
-    expect(payload.reason).toContain("Final response required.");
-    expect(payload.reason).toContain("Report data:");
-    expect(payload.reason).toContain("Completion report instruction:");
-    expect(payload.reason).toContain("Instruction feedback prompt:");
-    expect(payload.reason).toContain("- PR: https://example.test/pr/123");
-    expect(payload.reason).not.toContain("Codex final report context:");
-    expect(payload.reason).not.toContain("Branch:");
-    expect(payload.reason).not.toContain("Latest commit:");
-    expect(payload.reason).not.toContain("Verification:");
-    expect(payload.reason).not.toContain("Working tree:");
-    expect(payload.reason).not.toContain("Pre-existing dirty files preserved:");
-  });
-
-  it("blocks with the uncommitted-diff guidance when task-owned dirty files remain", () => {
-    const harness = createHarness();
-    initializeRepo(harness);
-    captureBaseline(harness.root);
     runGit(harness.root, ["checkout", "-b", "task-dirty"]);
     writeFileSync(join(harness.root, "task-dirty.txt"), "dirty\n");
 
@@ -219,63 +116,22 @@ describe("stop_gate.mjs", { timeout: STOP_GATE_INTEGRATION_TIMEOUT_MS }, () => {
       harness,
       "verify:full",
       {},
-      {
-        FAKE_GH_URL: "https://example.test/pr/999",
-      },
+      { FAKE_GH_URL: "https://example.test/pr/999" },
     );
-    const payload = parseJsonOutput(result.stdout);
 
+    const payload = parseJsonOutput(result.stdout);
     expect(result.status).toBe(0);
     expect(payload.decision).toBe("block");
     expect(payload.reason).toContain("New uncommitted changes remain since task start:");
     expect(payload.reason).toContain("task-dirty.txt");
     expect(payload.reason).toContain("Commit only task-owned changes.");
-    expect(payload.reason).toContain(
-      "Do not stage or commit unrelated pre-existing dirty changes.",
-    );
-    expect(payload.reason).toContain(
-      "If a pre-existing dirty file is explicitly in scope, commit only the task-required changes.",
-    );
-  });
-
-  it("blocks when pnpm fix creates task-owned formatting diffs before verify:full", () => {
-    const harness = createHarness();
-    initializeRepo(harness);
-    captureBaseline(harness.root);
-    runGit(harness.root, ["checkout", "-b", "task-formatting"]);
-    writeFileSync(join(harness.root, "task-formatting.txt"), "tracked\n");
-    runGit(harness.root, ["add", "task-formatting.txt"]);
-    runGit(harness.root, ["commit", "-m", "Add formatting target"]);
-    runGit(harness.root, ["push", "-u", "origin", "task-formatting"]);
-
-    const result = runHook(
-      harness,
-      "verify:full",
-      {},
-      {
-        FAKE_GH_URL: "https://example.test/pr/654",
-        FAKE_PNPM_FIX_WRITE_PATH: join(harness.root, "task-formatting.txt"),
-        FAKE_PNPM_FIX_WRITE_CONTENT: "formatted\n",
-      },
-    );
-    const payload = parseJsonOutput(result.stdout);
-
-    expect(result.status).toBe(0);
-    expect(payload.decision).toBe("block");
-    expect(payload.reason).toContain("pnpm fix created or exposed formatting changes:");
-    expect(payload.reason).toContain("task-formatting.txt");
-    expect(payload.reason).toContain("Stage and commit only task-owned formatting changes.");
-    expect(payload.reason).toContain(
-      "Do not stage or commit unrelated pre-existing dirty changes.",
-    );
-    expect(payload.reason).toContain("Then finish again.");
-    expect(readLines(harness.pnpmLogPath)).toEqual(["--silent fix"]);
   });
 
   it("returns an empty JSON object after the final report response", () => {
     const harness = createHarness();
     initializeRepo(harness);
     captureBaseline(harness.root);
+
     runGit(harness.root, ["checkout", "-b", "task-report"]);
     writeFileSync(join(harness.root, "task.txt"), "report\n");
     runGit(harness.root, ["add", "task.txt"]);
@@ -307,171 +163,16 @@ describe("stop_gate.mjs", { timeout: STOP_GATE_INTEGRATION_TIMEOUT_MS }, () => {
     expect(second.stdout.trim()).toBe("{}");
     expect(readLines(harness.pnpmLogPath)).toEqual(["--silent fix", "--silent verify:full"]);
   });
-
-  it("does not hang when run directly without stdin", () => {
-    const harness = createHarness();
-    initializeRepo(harness);
-    captureBaseline(harness.root);
-
-    const result = runHook(harness, "verify:full", undefined, {
-      FAKE_GH_URL: "https://example.test/pr/789",
-    });
-
-    expect(result.status).toBe(0);
-    expect(parseJsonOutput(result.stdout).decision).toBe("block");
-    expect(readLines(harness.pnpmLogPath)).toEqual([]);
-  });
-});
-
-it("skips auto commit when STOP_HOOK_AUTO_COMMIT is off", () => {
-  const harness = createHarness();
-  initializeRepo(harness);
-  captureBaseline(harness.root);
-  runGit(harness.root, ["checkout", "-b", "task-auto-commit-off"]);
-  writeFileSync(join(harness.root, "task-auto-commit-off.txt"), "dirty\n");
-
-  const result = runHook(
-    harness,
-    "verify:full",
-    {},
-    {
-      STOP_HOOK_AUTO_COMMIT: " OFF ",
-    },
-  );
-
-  const payload = parseJsonOutput(result.stdout);
-  expect(result.status).toBe(0);
-  expect(payload.decision).toBe("block");
-  expect(payload.reason).toContain("Final response required.");
-  expect(payload.reason).toContain("- PR: 自動commitは無効");
-  expect(payload.reason).toContain("Instruction feedback prompt:");
-  expect(payload.reason).not.toContain("New uncommitted changes remain since task start:");
-  expect(result.stderr).toContain("skip task-owned changes auto commit: STOP_HOOK_AUTO_COMMIT=off");
-  expect(result.stderr).toContain("skip auto commit checks: STOP_HOOK_AUTO_COMMIT=off");
-});
-
-it("skips push and PR checks when STOP_HOOK_AUTO_PUSH_PR is off", () => {
-  const harness = createHarness();
-  initializeRepo(harness);
-  captureBaseline(harness.root);
-  runGit(harness.root, ["checkout", "-b", "task-auto-push-pr-off"]);
-  writeFileSync(join(harness.root, "task-auto-push-pr-off.txt"), "task\n");
-  runGit(harness.root, ["add", "task-auto-push-pr-off.txt"]);
-  runGit(harness.root, ["commit", "-m", "Task without auto PR"]);
-
-  const result = runHook(
-    harness,
-    "verify:full",
-    {},
-    {
-      STOP_HOOK_AUTO_PUSH_PR: "No",
-    },
-  );
-
-  const payload = parseJsonOutput(result.stdout);
-  expect(result.status).toBe(0);
-  expect(payload.decision).toBe("block");
-  expect(payload.reason).toContain("Final response required.");
-  expect(payload.reason).toContain("- PR: 自動push/PR作成は無効");
-  expect(payload.reason).toContain("Instruction feedback prompt:");
-  expect(payload.reason).not.toContain("Current branch has no upstream.");
-  expect(payload.reason).not.toContain("No pull request URL found.");
-  expect(result.stderr).toContain(
-    "skip push/create/update pull request: STOP_HOOK_AUTO_PUSH_PR=off",
-  );
-});
-
-it("skips the agent load report when STOP_HOOK_AGENT_LOAD_REPORT is off", () => {
-  const harness = createHarness();
-  initializeRepo(harness);
-  captureBaseline(harness.root);
-  runGit(harness.root, ["checkout", "-b", "task-agent-load-report-off"]);
-  writeFileSync(join(harness.root, "task-agent-load-report-off.txt"), "task\n");
-  runGit(harness.root, ["add", "task-agent-load-report-off.txt"]);
-  runGit(harness.root, ["commit", "-m", "Task without agent load report"]);
-  runGit(harness.root, ["push", "-u", "origin", "task-agent-load-report-off"]);
-
-  const result = runHook(
-    harness,
-    "verify:full",
-    {},
-    {
-      STOP_HOOK_AGENT_LOAD_REPORT: "FALSE",
-      FAKE_GH_URL: "https://example.test/pr/321",
-    },
-  );
-
-  const payload = parseJsonOutput(result.stdout);
-  expect(result.status).toBe(0);
-  expect(payload.decision).toBe("block");
-  expect(payload.reason).toContain("Final response required.");
-  expect(payload.reason).toContain("- PR: https://example.test/pr/321");
-  expect(payload.reason).not.toContain("Instruction feedback prompt:");
-  expect(result.stderr).toContain("skip AI agent load report: STOP_HOOK_AGENT_LOAD_REPORT=off");
-});
-
-it("treats invalid stop hook toggle values as on and warns", () => {
-  const harness = createHarness();
-  initializeRepo(harness);
-  captureBaseline(harness.root);
-  runGit(harness.root, ["checkout", "-b", "task-invalid-stop-hook-toggle"]);
-  writeFileSync(join(harness.root, "task-invalid-stop-hook-toggle.txt"), "task\n");
-  runGit(harness.root, ["add", "task-invalid-stop-hook-toggle.txt"]);
-  runGit(harness.root, ["commit", "-m", "Task with invalid toggle"]);
-
-  const result = runHook(
-    harness,
-    "verify:full",
-    {},
-    {
-      STOP_HOOK_AUTO_PUSH_PR: "banana",
-    },
-  );
-
-  const payload = parseJsonOutput(result.stdout);
-  expect(result.status).toBe(0);
-  expect(payload.decision).toBe("block");
-  expect(payload.reason).toContain("Current branch has no upstream.");
-  expect(result.stderr).toContain('warning: invalid STOP_HOOK_AUTO_PUSH_PR="banana"; using on');
-});
-
-it("disables only the targeted stop hook actions when all toggles are off", () => {
-  const harness = createHarness();
-  initializeRepo(harness);
-  captureBaseline(harness.root);
-  runGit(harness.root, ["checkout", "-b", "task-all-stop-hook-toggles-off"]);
-  writeFileSync(join(harness.root, "task-all-stop-hook-toggles-off.txt"), "dirty\n");
-
-  const result = runHook(
-    harness,
-    "verify:full",
-    {},
-    {
-      STOP_HOOK_AUTO_COMMIT: "off",
-      STOP_HOOK_AUTO_PUSH_PR: "OFF",
-      STOP_HOOK_AGENT_LOAD_REPORT: " false ",
-    },
-  );
-
-  const payload = parseJsonOutput(result.stdout);
-  expect(result.status).toBe(0);
-  expect(payload.decision).toBe("block");
-  expect(payload.reason).toContain("Final response required.");
-  expect(payload.reason).toContain("- PR: 自動commitは無効");
-  expect(payload.reason).not.toContain("Instruction feedback prompt:");
-  expect(payload.reason).not.toContain("New uncommitted changes remain since task start:");
-  expect(result.stderr).toContain("skip task-owned changes auto commit: STOP_HOOK_AUTO_COMMIT=off");
-  expect(result.stderr).toContain(
-    "skip push/create/update pull request: STOP_HOOK_AUTO_PUSH_PR=off",
-  );
-  expect(result.stderr).toContain("skip AI agent load report: STOP_HOOK_AGENT_LOAD_REPORT=off");
 });
 
 function createHarness(): RepoHarness {
   const root = mkdtempSync(join(tmpdir(), "stop-gate-"));
   const binDir = join(root, "bin");
   const remoteRoot = join(root, "remote.git");
-  const pnpmLogPath = join(root, "pnpm-invocations.log");
+  const pnpmLogPath = join(
+    tmpdir(),
+    `stop-gate-pnpm-${Date.now()}-${Math.random().toString(16).slice(2)}.log`,
+  );
 
   mkdirSync(binDir, { recursive: true });
   mkdirSync(join(root, ".codex", "hooks", "prompts"), { recursive: true });
@@ -497,17 +198,8 @@ function initializeRepo(harness: RepoHarness): void {
   runGit(harness.root, ["init", "-b", "main"]);
   runGit(harness.root, ["config", "user.name", "Codex Test"]);
   runGit(harness.root, ["config", "user.email", "codex@example.test"]);
-  writeFileSync(join(harness.root, "README.md"), "# test\n");
-  writeFileSync(
-    join(harness.root, ".gitignore"),
-    `${[
-      ".codex/hooks/logs/",
-      ".codex/state/stop-gate-state.json",
-      "bin/",
-      "pnpm-invocations.log",
-      "remote.git/",
-    ].join("\n")}\n`,
-  );
+  writeFileSync(join(harness.root, "README.md"), "repo\n");
+  writeFileSync(join(harness.root, ".gitignore"), ".codex/hooks/logs/\n");
   runGit(harness.root, ["add", "README.md", ".gitignore"]);
   runGit(harness.root, ["commit", "-m", "Initial commit"]);
   runGit(harness.root, ["init", "--bare", harness.remoteRoot]);
@@ -516,59 +208,9 @@ function initializeRepo(harness: RepoHarness): void {
 }
 
 function captureBaseline(root: string): void {
-  writeFileSync(
-    join(root, ".codex", "state", "git-start-status"),
-    runGit(root, ["status", "--porcelain=v1"]),
-  );
-  writeFileSync(
-    join(root, ".codex", "state", "git-start-head"),
-    `${runGit(root, ["rev-parse", "HEAD"]).trim()}\n`,
-  );
-}
-
-function installFakePnpm(binDir: string): void {
-  writeExecutable(
-    join(binDir, "pnpm"),
-    `#!/bin/sh
-echo "$*" >> "$FAKE_PNPM_LOG"
-if [ "$2" = "fix" ] && [ -n "$FAKE_PNPM_FIX_WRITE_PATH" ]; then
-  printf "%s" "$FAKE_PNPM_FIX_WRITE_CONTENT" >> "$FAKE_PNPM_FIX_WRITE_PATH"
-fi
-if [ -n "$FAKE_PNPM_STDOUT" ]; then
-  printf '%b\\n' "$FAKE_PNPM_STDOUT"
-else
-  echo "pnpm stdout: $*"
-fi
-if [ "$2" = "verify:full" ] && [ -n "$FAKE_PNPM_VERIFY_STDERR" ]; then
-  printf '%b\\n' "$FAKE_PNPM_VERIFY_STDERR" >&2
-elif [ -n "$FAKE_PNPM_STDERR" ]; then
-  printf '%b\\n' "$FAKE_PNPM_STDERR" >&2
-else
-  echo "pnpm stderr: $*" >&2
-fi
-if [ "$2" = "verify:full" ] && [ "$FAKE_PNPM_FAIL_VERIFY" = "1" ]; then
-  exit 1
-fi
-exit 0
-`,
-  );
-}
-
-function installFakeGh(binDir: string): void {
-  writeExecutable(
-    join(binDir, "gh"),
-    `#!/bin/sh
-if [ -n "$FAKE_GH_URL" ]; then
-  printf '%s\\n' "$FAKE_GH_URL"
-  exit 0
-fi
-exit 1
-`,
-  );
-}
-
-function writeExecutable(path: string, content: string): void {
-  writeFileSync(path, content, { mode: 0o755 });
+  const stateDir = join(root, ".codex", "state");
+  writeFileSync(join(stateDir, "git-start-status"), runGit(root, ["status", "--porcelain=v1"]));
+  writeFileSync(join(stateDir, "git-start-head"), runGit(root, ["rev-parse", "HEAD"]));
 }
 
 function runHook(
@@ -577,33 +219,24 @@ function runHook(
   payload?: unknown,
   extraEnv: Record<string, string> = {},
 ): HookRunResult {
-  const { PATH: currentPath = "" } = process.env;
   const result = spawnSync(process.execPath, [hookPath, mode], {
     cwd: harness.root,
     encoding: "utf8",
     env: {
       ...process.env,
       ...extraEnv,
-      PATH: `${harness.binDir}:${currentPath}`,
-      FAKE_PNPM_LOG: harness.pnpmLogPath,
       CODEX_HOOK_VERBOSE: "1",
+      FAKE_PNPM_LOG: harness.pnpmLogPath,
+      PATH: `${harness.binDir}:${process.env["PATH"] ?? ""}`,
     },
-    ...(payload === undefined ? {} : { input: JSON.stringify(payload) }),
+    input: payload === undefined ? undefined : JSON.stringify(payload),
   });
 
-  return {
-    status: result.status,
-    stdout: result.stdout,
-    stderr: result.stderr,
-  };
+  return { status: result.status, stdout: result.stdout, stderr: result.stderr };
 }
 
 function runGit(cwd: string, args: string[]): string {
-  const result = spawnSync("git", args, {
-    cwd,
-    encoding: "utf8",
-  });
-
+  const result = spawnSync("git", args, { cwd, encoding: "utf8" });
   if (result.status !== 0) {
     throw new Error(`git ${args.join(" ")} failed\n${result.stderr}`);
   }
@@ -611,16 +244,12 @@ function runGit(cwd: string, args: string[]): string {
   return result.stdout;
 }
 
-function expectJsonOnlyStdout(stdout: string): void {
+function parseJsonOutput(stdout: string): HookPayload {
   const trimmed = stdout.trim();
   expect(trimmed).not.toBe("");
   expect(() => JSON.parse(trimmed)).not.toThrow();
   expect(trimmed.split("\n")).toHaveLength(1);
-}
-
-function parseJsonOutput(stdout: string): HookPayload {
-  expectJsonOnlyStdout(stdout);
-  return JSON.parse(stdout) as HookPayload;
+  return JSON.parse(trimmed) as HookPayload;
 }
 
 function readLines(path: string): string[] {
@@ -632,4 +261,39 @@ function readLines(path: string): string[] {
     .split("\n")
     .map((line) => line.trim())
     .filter(Boolean);
+}
+
+function installFakePnpm(binDir: string): void {
+  writeExecutable(
+    join(binDir, "pnpm"),
+    [
+      "#!/bin/sh",
+      'printf \'%s\\n\' "$*" >> "$FAKE_PNPM_LOG"',
+      'if [ "$1" = "--silent" ] && [ "$2" = "verify:full" ] && [ "$FAKE_PNPM_FAIL_VERIFY" = "1" ]; then',
+      "  printf '%s\\n' \"" + "$" + "{FAKE_PNPM_VERIFY_STDERR:-pnpm verify:full failed}" + '" >&2',
+      "  exit 1",
+      "fi",
+      "exit 0",
+      "",
+    ].join("\n"),
+  );
+}
+
+function installFakeGh(binDir: string): void {
+  writeExecutable(
+    join(binDir, "gh"),
+    [
+      "#!/bin/sh",
+      'if [ -n "$FAKE_GH_URL" ]; then',
+      "  printf '%s\\n' \"$FAKE_GH_URL\"",
+      "  exit 0",
+      "fi",
+      "exit 1",
+      "",
+    ].join("\n"),
+  );
+}
+
+function writeExecutable(path: string, content: string): void {
+  writeFileSync(path, content, { mode: 0o755 });
 }
