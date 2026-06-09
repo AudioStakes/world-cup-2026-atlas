@@ -18,6 +18,11 @@ const baselineHeadPath = join(repositoryRoot, ".codex", "state", "git-start-head
 const stopStatePath = join(repositoryRoot, ".codex", "state", "stop-gate-state.json");
 const logDirectory = join(repositoryRoot, ".codex", "hooks", "logs");
 const isVerbose = process.env.CODEX_HOOK_VERBOSE === "1";
+const stopHookActions = {
+  autoCommit: readStopHookToggle("STOP_HOOK_AUTO_COMMIT", "task-owned changes auto commit"),
+  autoPushPr: readStopHookToggle("STOP_HOOK_AUTO_PUSH_PR", "push/create/update pull request"),
+  agentLoadReport: readStopHookToggle("STOP_HOOK_AGENT_LOAD_REPORT", "AI agent load report"),
+};
 const completionPromptPath = join(
   repositoryRoot,
   ".codex",
@@ -120,6 +125,30 @@ function writeJson(value) {
 
 function writeProgress(message) {
   process.stderr.write(`[stop_gate] ${message}\n`);
+}
+
+function readStopHookToggle(name, label) {
+  const rawValue = process.env[name];
+  if (rawValue === undefined) {
+    return true;
+  }
+
+  const normalized = rawValue.trim().toLowerCase();
+  if (normalized.length === 0) {
+    return true;
+  }
+
+  if (["1", "true", "yes", "on"].includes(normalized)) {
+    return true;
+  }
+
+  if (["0", "false", "no", "off"].includes(normalized)) {
+    writeProgress(`skip ${label}: ${name}=off`);
+    return false;
+  }
+
+  writeProgress(`warning: invalid ${name}=${JSON.stringify(rawValue)}; using on`);
+  return true;
 }
 
 function writePass() {
@@ -467,8 +496,44 @@ function blockCompletion(reason, nextAction) {
   );
 }
 
+function buildPrReportLine(context) {
+  if (!stopHookActions.autoPushPr && context.hasTaskCommit) {
+    return "- PR: 自動push/PR作成は無効";
+  }
+
+  if (!stopHookActions.autoCommit && context.newDirtyPaths.length > 0) {
+    return "- PR: 自動commitは無効";
+  }
+
+  if (context.hasTaskCommit && context.prUrl) {
+    return `- PR: ${context.prUrl}`;
+  }
+
+  return "- PR: 変更なし・PR不要";
+}
+
+function buildFinalResponseReason(context) {
+  const completionPrompt = readRequiredPrompt(completionPromptPath);
+  const lines = [
+    "Report data:",
+    buildPrReportLine(context),
+    "",
+    "Completion report instruction:",
+    completionPrompt,
+  ];
+
+  if (stopHookActions.agentLoadReport) {
+    const instructionFeedbackPrompt = readRequiredPrompt(instructionFeedbackPromptPath);
+    lines.push("", "Instruction feedback prompt:", instructionFeedbackPrompt);
+  } else {
+    writeProgress("skip AI agent load report: STOP_HOOK_AGENT_LOAD_REPORT=off");
+  }
+
+  return lines.filter(Boolean).join("\n");
+}
+
 function assertCompletionGitState(context) {
-  if (context.newDirtyPaths.length > 0) {
+  if (context.newDirtyPaths.length > 0 && stopHookActions.autoCommit) {
     blockCompletion(
       "New uncommitted changes remain since task start:",
       [
@@ -482,7 +547,16 @@ function assertCompletionGitState(context) {
     );
   }
 
+  if (context.newDirtyPaths.length > 0 && !stopHookActions.autoCommit) {
+    writeProgress("skip auto commit checks: STOP_HOOK_AUTO_COMMIT=off");
+  }
+
   if (!context.hasTaskCommit) {
+    return;
+  }
+
+  if (!stopHookActions.autoPushPr) {
+    writeProgress("skip push/create/update pull request: STOP_HOOK_AUTO_PUSH_PR=off");
     return;
   }
 
@@ -516,6 +590,11 @@ function assertCompletionGitState(context) {
 }
 
 function assertFixDidNotCreateDirtyPaths(beforePaths, context) {
+  if (!stopHookActions.autoCommit) {
+    writeProgress("skip formatting-change commit check: STOP_HOOK_AUTO_COMMIT=off");
+    return;
+  }
+
   const beforePathSet = new Set(beforePaths);
   const createdDirtyPaths = context.newDirtyPaths.filter((path) => !beforePathSet.has(path));
   if (createdDirtyPaths.length === 0) {
@@ -620,6 +699,7 @@ async function main() {
       const completionPrompt = readRequiredPrompt(completionPromptPath);
       const instructionFeedbackPrompt = readRequiredPrompt(instructionFeedbackPromptPath);
       markFinalReportRequested(key);
+      writeBlock("Final response required.", buildFinalResponseReason(context));
       writeBlock(
         "Final response required.",
         [
@@ -696,6 +776,7 @@ async function main() {
     const instructionFeedbackPrompt = readRequiredPrompt(instructionFeedbackPromptPath);
 
     markFinalReportRequested(key);
+    writeBlock("Final response required.", buildFinalResponseReason(context));
     writeBlock(
       "Final response required.",
       [

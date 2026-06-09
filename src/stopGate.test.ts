@@ -323,6 +323,150 @@ describe("stop_gate.mjs", { timeout: STOP_GATE_INTEGRATION_TIMEOUT_MS }, () => {
   });
 });
 
+it("skips auto commit when STOP_HOOK_AUTO_COMMIT is off", () => {
+  const harness = createHarness();
+  initializeRepo(harness);
+  captureBaseline(harness.root);
+  runGit(harness.root, ["checkout", "-b", "task-auto-commit-off"]);
+  writeFileSync(join(harness.root, "task-auto-commit-off.txt"), "dirty\n");
+
+  const result = runHook(
+    harness,
+    "verify:full",
+    {},
+    {
+      STOP_HOOK_AUTO_COMMIT: " OFF ",
+    },
+  );
+
+  const payload = parseJsonOutput(result.stdout);
+  expect(result.status).toBe(0);
+  expect(payload.decision).toBe("block");
+  expect(payload.reason).toContain("Final response required.");
+  expect(payload.reason).toContain("- PR: 自動commitは無効");
+  expect(payload.reason).toContain("Instruction feedback prompt:");
+  expect(payload.reason).not.toContain("New uncommitted changes remain since task start:");
+  expect(result.stderr).toContain("skip task-owned changes auto commit: STOP_HOOK_AUTO_COMMIT=off");
+  expect(result.stderr).toContain("skip auto commit checks: STOP_HOOK_AUTO_COMMIT=off");
+});
+
+it("skips push and PR checks when STOP_HOOK_AUTO_PUSH_PR is off", () => {
+  const harness = createHarness();
+  initializeRepo(harness);
+  captureBaseline(harness.root);
+  runGit(harness.root, ["checkout", "-b", "task-auto-push-pr-off"]);
+  writeFileSync(join(harness.root, "task-auto-push-pr-off.txt"), "task\n");
+  runGit(harness.root, ["add", "task-auto-push-pr-off.txt"]);
+  runGit(harness.root, ["commit", "-m", "Task without auto PR"]);
+
+  const result = runHook(
+    harness,
+    "verify:full",
+    {},
+    {
+      STOP_HOOK_AUTO_PUSH_PR: "No",
+    },
+  );
+
+  const payload = parseJsonOutput(result.stdout);
+  expect(result.status).toBe(0);
+  expect(payload.decision).toBe("block");
+  expect(payload.reason).toContain("Final response required.");
+  expect(payload.reason).toContain("- PR: 自動push/PR作成は無効");
+  expect(payload.reason).toContain("Instruction feedback prompt:");
+  expect(payload.reason).not.toContain("Current branch has no upstream.");
+  expect(payload.reason).not.toContain("No pull request URL found.");
+  expect(result.stderr).toContain(
+    "skip push/create/update pull request: STOP_HOOK_AUTO_PUSH_PR=off",
+  );
+});
+
+it("skips the agent load report when STOP_HOOK_AGENT_LOAD_REPORT is off", () => {
+  const harness = createHarness();
+  initializeRepo(harness);
+  captureBaseline(harness.root);
+  runGit(harness.root, ["checkout", "-b", "task-agent-load-report-off"]);
+  writeFileSync(join(harness.root, "task-agent-load-report-off.txt"), "task\n");
+  runGit(harness.root, ["add", "task-agent-load-report-off.txt"]);
+  runGit(harness.root, ["commit", "-m", "Task without agent load report"]);
+  runGit(harness.root, ["push", "-u", "origin", "task-agent-load-report-off"]);
+
+  const result = runHook(
+    harness,
+    "verify:full",
+    {},
+    {
+      STOP_HOOK_AGENT_LOAD_REPORT: "FALSE",
+      FAKE_GH_URL: "https://example.test/pr/321",
+    },
+  );
+
+  const payload = parseJsonOutput(result.stdout);
+  expect(result.status).toBe(0);
+  expect(payload.decision).toBe("block");
+  expect(payload.reason).toContain("Final response required.");
+  expect(payload.reason).toContain("- PR: https://example.test/pr/321");
+  expect(payload.reason).not.toContain("Instruction feedback prompt:");
+  expect(result.stderr).toContain("skip AI agent load report: STOP_HOOK_AGENT_LOAD_REPORT=off");
+});
+
+it("treats invalid stop hook toggle values as on and warns", () => {
+  const harness = createHarness();
+  initializeRepo(harness);
+  captureBaseline(harness.root);
+  runGit(harness.root, ["checkout", "-b", "task-invalid-stop-hook-toggle"]);
+  writeFileSync(join(harness.root, "task-invalid-stop-hook-toggle.txt"), "task\n");
+  runGit(harness.root, ["add", "task-invalid-stop-hook-toggle.txt"]);
+  runGit(harness.root, ["commit", "-m", "Task with invalid toggle"]);
+
+  const result = runHook(
+    harness,
+    "verify:full",
+    {},
+    {
+      STOP_HOOK_AUTO_PUSH_PR: "banana",
+    },
+  );
+
+  const payload = parseJsonOutput(result.stdout);
+  expect(result.status).toBe(0);
+  expect(payload.decision).toBe("block");
+  expect(payload.reason).toContain("Current branch has no upstream.");
+  expect(result.stderr).toContain('warning: invalid STOP_HOOK_AUTO_PUSH_PR="banana"; using on');
+});
+
+it("disables only the targeted stop hook actions when all toggles are off", () => {
+  const harness = createHarness();
+  initializeRepo(harness);
+  captureBaseline(harness.root);
+  runGit(harness.root, ["checkout", "-b", "task-all-stop-hook-toggles-off"]);
+  writeFileSync(join(harness.root, "task-all-stop-hook-toggles-off.txt"), "dirty\n");
+
+  const result = runHook(
+    harness,
+    "verify:full",
+    {},
+    {
+      STOP_HOOK_AUTO_COMMIT: "off",
+      STOP_HOOK_AUTO_PUSH_PR: "OFF",
+      STOP_HOOK_AGENT_LOAD_REPORT: " false ",
+    },
+  );
+
+  const payload = parseJsonOutput(result.stdout);
+  expect(result.status).toBe(0);
+  expect(payload.decision).toBe("block");
+  expect(payload.reason).toContain("Final response required.");
+  expect(payload.reason).toContain("- PR: 自動commitは無効");
+  expect(payload.reason).not.toContain("Instruction feedback prompt:");
+  expect(payload.reason).not.toContain("New uncommitted changes remain since task start:");
+  expect(result.stderr).toContain("skip task-owned changes auto commit: STOP_HOOK_AUTO_COMMIT=off");
+  expect(result.stderr).toContain(
+    "skip push/create/update pull request: STOP_HOOK_AUTO_PUSH_PR=off",
+  );
+  expect(result.stderr).toContain("skip AI agent load report: STOP_HOOK_AGENT_LOAD_REPORT=off");
+});
+
 function createHarness(): RepoHarness {
   const root = mkdtempSync(join(tmpdir(), "stop-gate-"));
   const binDir = join(root, "bin");
@@ -433,13 +577,14 @@ function runHook(
   payload?: unknown,
   extraEnv: Record<string, string> = {},
 ): HookRunResult {
+  const { PATH: currentPath = "" } = process.env;
   const result = spawnSync(process.execPath, [hookPath, mode], {
     cwd: harness.root,
     encoding: "utf8",
     env: {
       ...process.env,
       ...extraEnv,
-      PATH: `${harness.binDir}:${process.env["PATH"] ?? ""}`,
+      PATH: `${harness.binDir}:${currentPath}`,
       FAKE_PNPM_LOG: harness.pnpmLogPath,
       CODEX_HOOK_VERBOSE: "1",
     },
