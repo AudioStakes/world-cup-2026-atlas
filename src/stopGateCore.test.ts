@@ -167,4 +167,66 @@ describe("stopGate core", () => {
       ),
     ).toMatchObject({ title: "Current branch has no upstream." });
   });
+  it("builds dirty file guidance for task-owned changes without staging unrelated work", () => {
+    const issue = getCompletionGitStateIssue(
+      {
+        branch: "feature",
+        branchStatus: "",
+        hasTaskCommit: false,
+        newDirtyPaths: ["task-dirty.txt"],
+        prUrl: "",
+        upstream: "origin/feature",
+      },
+      defaultActions,
+    );
+
+    expect(issue).toMatchObject({
+      title: "New uncommitted changes remain since task start:",
+      nextAction:
+        "Commit only task-owned changes. Then push, create or update the PR, and finish again.",
+    });
+    expect(issue?.reason).toContain("task-dirty.txt");
+    expect(issue?.reason).toContain("Commit only task-owned changes.");
+    expect(issue?.reason).toContain("Do not stage or commit unrelated pre-existing dirty changes.");
+    expect(issue?.reason).toContain("Then push, create or update the PR, and finish again.");
+  });
+
+  it("distinguishes task-owned dirty paths from pre-existing dirty paths", () => {
+    expect(getCreatedDirtyPaths(["pre-existing.txt"], ["pre-existing.txt"])).toEqual([]);
+    expect(
+      getCreatedDirtyPaths(["pre-existing.txt"], ["pre-existing.txt", "task-dirty.txt"]),
+    ).toEqual(["task-dirty.txt"]);
+  });
+
+  it("preserves important verify failure lines while compacting noisy output", () => {
+    const lines = Array.from({ length: 140 }, (_, index) => `noise ${index}`);
+    lines[4] = "src/app/app.tsx:100: error TS2322: type mismatch";
+    lines[45] = "Biome checked 12 files in 7ms.";
+    lines[84] = "Playwright timeout after 30000ms";
+    lines[104] = "ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL";
+
+    const compacted = compactOutput(lines.join("\n"));
+
+    expect(compacted).toContain("error TS2322:");
+    expect(compacted).toContain("Biome checked 12 files");
+    expect(compacted).toContain("Playwright timeout");
+    expect(compacted).toContain("ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL");
+    expect(compacted).toContain("... omitted");
+  });
+
+  it("allows completion after a final report payload has been requested", () => {
+    const context = { hasTaskCommit: true, newDirtyPaths: [] };
+    const finalReportPayload = {
+      messages: [
+        {
+          role: "assistant",
+          content: "PR: https://example.test/pr/1\nReview Notes: none\n残作業: none",
+        },
+      ],
+    };
+
+    expect(shouldSkipVerification(context, false)).toBe(false);
+    expect(isFinalReportResponse(finalReportPayload)).toBe(true);
+    expect(shouldSkipVerification(context, true)).toBe(true);
+  });
 });
