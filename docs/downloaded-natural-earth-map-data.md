@@ -1,6 +1,6 @@
 # Downloaded Natural Earth map data
 
-This project now generates the North America base map from Natural Earth GeoJSON.
+This project generates the North America base map from Natural Earth GeoJSON.
 
 ## Commands
 
@@ -8,7 +8,7 @@ This project now generates the North America base map from Natural Earth GeoJSON
 pnpm map:data
 ```
 
-`pnpm ready` now runs `pnpm map:data` first.
+Normal verification does not run `pnpm map:data`.
 
 ## Sources
 
@@ -16,8 +16,6 @@ The generator downloads:
 
 - `ne_110m_admin_0_countries.geojson`
 - `ne_110m_lakes.geojson`
-
-from the Natural Earth vector repository.
 
 ## Generated file
 
@@ -34,6 +32,4 @@ The generated file contains:
 
 ## Important policy
 
-Do not hand-author or approximate the North America landmass in `MapView.tsx`.
-
-The base map must come from downloaded Natural Earth geographic data, then be projected into the explorer SVG.
+Do not hand-author or approximate the North America landmass in `MapView.tsx`. The base map must come from downloaded Natural Earth geographic data, then be projected into the explorer SVG.

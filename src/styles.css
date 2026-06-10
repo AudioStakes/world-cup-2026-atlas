@@ -366,19 +366,36 @@ button:focus-visible {
 .date-chip-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 5px;
+  gap: 4px;
 }
 
 .date-chip {
-  min-height: 28px;
-  padding: 0 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-height: 40px;
+  padding: 5px 4px;
   border: 1px solid rgba(23, 32, 42, 0.08);
   border-radius: 9px;
   color: rgba(23, 32, 42, 0.72);
   background: rgba(255, 255, 255, 0.66);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 850;
+  line-height: 1.05;
   cursor: pointer;
+}
+
+.date-chip__date {
+  font-size: 11px;
+  letter-spacing: 0.01em;
+}
+
+.date-chip__meta {
+  color: rgba(23, 32, 42, 0.56);
+  font-size: 9px;
+  font-weight: 750;
 }
 
 .date-chip:hover {
@@ -392,6 +409,10 @@ button:focus-visible {
   background: var(--color-red);
 }
 
+.date-chip.is-selected .date-chip__meta {
+  color: rgba(255, 255, 255, 0.82);
+}
+
 .date-chip.is-outside-current-filter {
   opacity: 0.58;
 }
@@ -399,6 +420,10 @@ button:focus-visible {
 .date-chip.has-no-fixture {
   color: rgba(23, 32, 42, 0.28);
   background: rgba(255, 255, 255, 0.42);
+}
+
+.date-chip.has-no-fixture .date-chip__meta {
+  color: rgba(23, 32, 42, 0.26);
 }
 
 .result-card {
@@ -444,8 +469,9 @@ button:focus-visible {
 
 .route-summary {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
   margin: 10px 0 0;
   padding: 8px 10px;
   border: 1px solid rgba(181, 31, 31, 0.14);
@@ -456,8 +482,24 @@ button:focus-visible {
   font-weight: 850;
 }
 
+.route-summary__headline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 8px;
+}
+
 .route-summary strong {
   color: var(--color-red);
+}
+
+.route-summary__note {
+  margin: 0;
+  color: rgba(23, 32, 42, 0.58);
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.35;
 }
 
 .result-empty-message {
@@ -751,9 +793,9 @@ button:focus-visible {
   }
 
   .date-chip {
-    min-height: 26px;
-    padding: 0 3px;
-    font-size: 9px;
+    min-height: 36px;
+    padding: 4px 3px;
+    font-size: 8px;
   }
 
   .result-card {
@@ -775,6 +817,10 @@ button:focus-visible {
 
   .route-summary {
     padding: 8px 10px;
+  }
+
+  .route-summary__note {
+    font-size: 9px;
   }
 
   .match-list {
@@ -826,4 +872,73 @@ button:focus-visible {
   .atlas-body {
     grid-template-columns: 360px 760px;
   }
+}
+
+/* Map contrast pass: keep the base map readable without overpowering markers. */
+.map-panel {
+  border-color: rgba(23, 32, 42, 0.12);
+  background:
+    radial-gradient(circle at 18% 16%, rgba(255, 255, 255, 0.92), transparent 34%),
+    radial-gradient(circle at 74% 18%, rgba(212, 226, 236, 0.55), transparent 28%),
+    linear-gradient(135deg, rgba(248, 251, 253, 0.98), rgba(223, 232, 240, 0.96));
+  box-shadow:
+    0 28px 80px rgba(23, 32, 42, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.map-canvas {
+  background:
+    radial-gradient(circle at 50% 24%, rgba(255, 255, 255, 0.3), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.26), rgba(235, 242, 248, 0.18));
+}
+
+.map-svg {
+  filter: saturate(0.96) contrast(1.06);
+}
+
+.map-frame {
+  fill: rgba(248, 250, 252, 0.82);
+  stroke: rgba(23, 32, 42, 0.14);
+}
+
+.country-shape {
+  fill: rgba(209, 220, 231, 0.96);
+  stroke: rgba(23, 32, 42, 0.12);
+  stroke-width: 1.2;
+}
+
+.canada-shape {
+  fill: rgba(216, 227, 237, 0.96);
+}
+
+.usa-shape {
+  fill: rgba(208, 220, 231, 0.96);
+}
+
+.mexico-shape {
+  fill: rgba(203, 216, 227, 0.96);
+}
+
+.coastline-detail,
+.map-border-line {
+  stroke: rgba(62, 79, 96, 0.2);
+  stroke-width: 1.1;
+  opacity: 0.92;
+}
+
+.map-border-line {
+  stroke-width: 1.4;
+}
+
+.map-lake {
+  fill: rgba(181, 205, 224, 0.92);
+  stroke: rgba(86, 115, 141, 0.24);
+  stroke-width: 1;
+}
+
+.country-label {
+  fill: rgba(23, 32, 42, 0.46);
+  stroke: rgba(255, 255, 255, 0.66);
+  stroke-width: 3;
+  paint-order: stroke fill;
 }

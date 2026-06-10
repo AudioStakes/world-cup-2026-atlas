@@ -43,6 +43,7 @@ describe("country route summaries", () => {
       matchCount: 3,
       visitedVenueCount: 2,
       itineraryLabel: "3 matches · 2 venues",
+      venueCountExplanationLabel: "Dallas is visited twice.",
       totalDistanceLabel: "1,688 km",
     });
   });

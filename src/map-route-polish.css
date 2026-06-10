@@ -41,3 +41,46 @@
 .map-route-label-group {
   filter: drop-shadow(0 8px 14px rgba(23, 32, 42, 0.09));
 }
+
+/* Pull route geometry and labels together so the distance reads as part of the path. */
+.map-route-line {
+  stroke: rgba(23, 32, 42, 0.66);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 4.2;
+  filter: drop-shadow(0 1px 1px rgba(255, 255, 255, 0.58));
+}
+
+.map-route-line.is-knockout {
+  stroke: rgba(181, 31, 31, 0.72);
+  stroke-dasharray: 7 7;
+}
+
+.map-route-arrow {
+  fill: rgba(23, 32, 42, 0.68);
+  stroke: rgba(255, 255, 255, 0.88);
+  stroke-width: 1;
+  paint-order: stroke fill;
+  filter: drop-shadow(0 1px 1px rgba(255, 255, 255, 0.6));
+}
+
+.map-route-arrow.is-knockout {
+  fill: rgba(181, 31, 31, 0.72);
+}
+
+.map-route-label-bg {
+  fill: rgba(248, 250, 252, 0.96);
+  stroke: rgba(23, 32, 42, 0.14);
+  stroke-width: 1.2;
+}
+
+.map-route-label {
+  fill: rgba(23, 32, 42, 0.86);
+  stroke: rgba(255, 255, 255, 0.82);
+  stroke-width: 2.2;
+  paint-order: stroke fill;
+}
+
+.map-route-label-group {
+  filter: drop-shadow(0 10px 18px rgba(23, 32, 42, 0.16));
+}

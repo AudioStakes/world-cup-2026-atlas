@@ -10,36 +10,36 @@ type DateSelectorProps = {
   readonly onAction: (action: ExplorerAction) => void;
 };
 
+type DateChipProps = {
+  readonly dateOption: DateOptionViewModel;
+  readonly onAction: (action: ExplorerAction) => void;
+};
+
 export function DateSelector({ dateSelector, onAction }: DateSelectorProps) {
   return (
     <section class="panel-section date-section" aria-labelledby="date-selector-title">
       <div class="section-heading">
-        <h2 id="date-selector-title">{dateSelector.title}</h2>
+        <div>
+          <p class="eyebrow">Dates</p>
+          <h2 id="date-selector-title">{dateSelector.title}</h2>
+        </div>
       </div>
+
       <div class="date-months">
         {dateSelector.months.map((month) => (
-          <section
-            class="date-month"
-            key={month.monthLabel}
-            aria-label={`${month.monthLabel} dates`}
-          >
+          <div class="date-month" key={month.monthLabel}>
             <p class="date-month__label">{month.monthLabel}</p>
             <div class="date-chip-grid">
               {month.dates.map((dateOption) => (
                 <DateChip key={dateOption.date} dateOption={dateOption} onAction={onAction} />
               ))}
             </div>
-          </section>
+          </div>
         ))}
       </div>
     </section>
   );
 }
-
-type DateChipProps = {
-  readonly dateOption: DateOptionViewModel;
-  readonly onAction: (action: ExplorerAction) => void;
-};
 
 function DateChip({ dateOption, onAction }: DateChipProps) {
   return (
@@ -56,27 +56,24 @@ function DateChip({ dateOption, onAction }: DateChipProps) {
       onClick={() => onAction({ type: "selectDate", date: dateOption.date })}
     >
       <span class="date-chip__date">{dateOption.label}</span>
-      {dateOption.matchCountLabel ? (
-        <span class="date-chip__meta">{dateOption.matchCountLabel}</span>
-      ) : null}
-      {dateOption.kickoffRangeLabel ? (
-        <span class="date-chip__time">
-          {dateOption.kickoffRangeLabel}
-          {dateOption.timeZoneSummaryLabel ? ` · ${dateOption.timeZoneSummaryLabel}` : ""}
-        </span>
-      ) : null}
+      <span class="date-chip__meta">{dateOption.matchCountLabel ?? "No matches"}</span>
     </button>
   );
 }
 
 function createDateChipAriaLabel(dateOption: DateOptionViewModel): string {
-  const kickoffSummary =
-    dateOption.kickoffRangeLabel && dateOption.timeZoneSummaryLabel
+  const parts = [`Select ${dateOption.label}`];
+
+  if (dateOption.matchCountLabel) {
+    parts.push(dateOption.matchCountLabel);
+  }
+
+  if (dateOption.kickoffRangeLabel) {
+    const kickoffSummary = dateOption.timeZoneSummaryLabel
       ? `${dateOption.kickoffRangeLabel} ${dateOption.timeZoneSummaryLabel}`
       : dateOption.kickoffRangeLabel;
-  const details = [dateOption.matchCountLabel, kickoffSummary].filter(Boolean);
+    parts.push(kickoffSummary);
+  }
 
-  return details.length > 0
-    ? `Select ${dateOption.label}, ${details.join(", ")}`
-    : `Select ${dateOption.label}`;
+  return parts.join(" · ");
 }

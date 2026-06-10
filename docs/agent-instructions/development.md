@@ -26,6 +26,9 @@ Stable development rules, validation commands, delivery rules, and report format
 
 ## Rules
 
+- Use `$agent-md-refactor` when refactoring `AGENTS.md`, `CLAUDE.md`, or related agent-instruction docs.
+- If that refactor also changes repository code or tests, use `$tdd` for those code changes.
+- Use `$tdd` for important repository behavior that already has automated test coverage, including hook code such as `.codex/hooks/stop_gate.mjs`.
 - Prefer pure functions for state transitions, indexes, queries, filtering, sorting, and calculations.
 - Keep `queryExplorer()` as the only source of UI-facing Explorer ViewModel data.
 - Keep Preact components thin: components should render ViewModel data and dispatch explicit user intents.
