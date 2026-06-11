@@ -74,8 +74,7 @@ function GroupTeamRow({ team, onAction }: GroupTeamRowProps) {
           {team.flagEmoji}
         </span>
         <span class="group-team-copy">
-          <span class="group-team-name">{team.countryName}</span>
-          <span class="group-team-code">{team.countryMetaLabel}</span>
+          <span class="group-team-name">{team.countryCode}</span>
         </span>
       </div>
     );
@@ -89,7 +88,7 @@ function GroupTeamRow({ team, onAction }: GroupTeamRowProps) {
         team.availability === "outsideCurrentFilter" && "is-outside-current-filter",
       )}
       type="button"
-      title={`${team.countryName} (${team.countryMetaLabel})`}
+      title={team.countryName}
       aria-pressed={team.isSelected}
       aria-label={`Select ${team.countryName}`}
       onClick={(event) => {
@@ -101,8 +100,7 @@ function GroupTeamRow({ team, onAction }: GroupTeamRowProps) {
         {team.flagEmoji}
       </span>
       <span class="group-team-copy">
-        <span class="group-team-name">{team.countryName}</span>
-        <span class="group-team-code">{team.countryMetaLabel}</span>
+        <span class="group-team-name">{team.countryCode}</span>
       </span>
     </button>
   );

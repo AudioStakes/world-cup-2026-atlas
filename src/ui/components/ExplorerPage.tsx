@@ -13,14 +13,11 @@ type ExplorerPageProps = {
 export function ExplorerPage({ viewModel, onAction }: ExplorerPageProps) {
   return (
     <main class="atlas-shell" aria-label="World Cup 2026 Atlas explorer">
-      <Header header={viewModel.header} onClearAll={() => onAction({ type: "clearAll" })} />
+      <Header header={viewModel.header} />
       <section class="atlas-body" aria-label="Explorer workspace">
         <aside class="explore-panel" aria-label="Explore panel">
           <div class="explore-panel__intro">
             <p class="eyebrow">Explore</p>
-            <h1>World Cup 2026 Atlas</h1>
-            <p>{viewModel.explorePanel.helpText}</p>
-            <p class="venue-tip">{viewModel.explorePanel.venueHelpText}</p>
           </div>
           <GroupsAndTeamsTable
             groupsAndTeams={viewModel.explorePanel.groupsAndTeams}
