@@ -45,20 +45,20 @@ describe("App", () => {
     );
   });
 
-  it("renders compact country codes in the groups table", () => {
+  it("renders readable country names in the groups table", () => {
     render(<App />);
 
     const groupsSection = screen.getByRole("region", { name: "Groups & Teams" });
 
     expect(within(groupsSection).getByText("JPN")).toBeInTheDocument();
-    expect(within(groupsSection).queryByText("Japan")).not.toBeInTheDocument();
+    expect(within(groupsSection).getByText("Japan")).toBeInTheDocument();
     expect(within(groupsSection).queryByText("JPN · AFC")).not.toBeInTheDocument();
   });
 
   it("keeps date chips visually compact while preserving date selection", () => {
     render(<App />);
 
-    const dateButton = screen.getByRole("button", { name: /Select Jun 14/ });
+    const dateButton = screen.getByRole("button", { name: /Select Sun Jun 14/ });
     fireEvent.click(dateButton);
 
     expect(dateButton).toHaveAttribute("aria-pressed", "true");

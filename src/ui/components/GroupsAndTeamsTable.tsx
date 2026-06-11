@@ -100,7 +100,8 @@ function GroupTeamRow({ team, onAction }: GroupTeamRowProps) {
         {team.flagEmoji}
       </span>
       <span class="group-team-copy">
-        <span class="group-team-name">{team.countryCode}</span>
+        <span class="group-team-name">{team.countryName}</span>
+        <span class="group-team-meta">{team.countryCode}</span>
       </span>
     </button>
   );

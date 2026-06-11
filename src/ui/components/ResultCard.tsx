@@ -24,10 +24,20 @@ export function ResultCard({ result }: ResultCardProps) {
               <p class="match-card__meta">
                 {match.matchNumberLabel} · {match.stageLabel}
               </p>
-              <p class="match-card__date">{match.dateLabel}</p>
               <p class="match-card__primary">{match.primaryText}</p>
-              <p class="match-card__secondary">{match.secondaryText}</p>
-              <p class="match-card__venue">📍 {match.venueLabel}</p>
+              <dl class="match-card__facts">
+                <div>
+                  <dt>When</dt>
+                  <dd>
+                    {match.dateLabel}
+                    <span>{match.secondaryText}</span>
+                  </dd>
+                </div>
+                <div>
+                  <dt>Where</dt>
+                  <dd>{match.venueLabel}</dd>
+                </div>
+              </dl>
             </li>
           ))}
         </ol>
