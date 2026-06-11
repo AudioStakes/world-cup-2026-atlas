@@ -14,6 +14,10 @@
 - Full UI verification: `pnpm verify:full`
 - Use concise, direct replies
 
+## Tool Policy
+
+- Do not use Serena for design-only discussion when symbol references or refactoring impact analysis are unnecessary.
+
 ## Detailed Instructions
 
 - [Development](docs/agent-instructions/development.md)

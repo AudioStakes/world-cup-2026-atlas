@@ -1,4 +1,4 @@
-import { spawn, spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -31,24 +31,21 @@ type RepoHarness = {
   root: string;
   binDir: string;
   pnpmLogPath: string;
-  remoteRoot: string;
 };
 
 describe("stop_gate.mjs", { timeout: STOP_GATE_INTEGRATION_TIMEOUT_MS }, () => {
   it.concurrent("runs final report flow with progress on stderr and JSON-only stdout", async () => {
     const harness = createHarness();
     try {
-      initializeRepo(harness);
-      addRemote(harness);
+      createFakeGit(harness, {
+        baselineHead: "baseline-head",
+        currentHead: "task-head",
+      });
       createFakePnpm(harness, { failVerify: false });
       createFakeGh(harness, "https://example.test/pr/456");
       captureBaseline(harness.root);
 
-      runGit(harness.root, ["checkout", "-b", "task-report"]);
       writeFileSync(join(harness.root, "task.txt"), "report\n");
-      runGit(harness.root, ["add", "task.txt"]);
-      runGit(harness.root, ["commit", "-m", "Add task report"]);
-      pushBranch(harness);
 
       const first = await runStopGate(harness, "verify:full");
       const firstPayload = parseJsonOutput(first.stdout);
@@ -82,14 +79,16 @@ describe("stop_gate.mjs", { timeout: STOP_GATE_INTEGRATION_TIMEOUT_MS }, () => {
   it.concurrent("returns block JSON when pnpm verify:full fails", async () => {
     const harness = createHarness();
     try {
-      initializeRepo(harness);
+      createFakeGit(harness, {
+        baselineHead: "baseline-head",
+        currentHead: "task-head",
+      });
       createFakePnpm(harness, {
         failVerify: true,
         verifyStderr: "pnpm verify:full failed\n",
       });
       captureBaseline(harness.root);
 
-      runGit(harness.root, ["checkout", "-b", "task-fail"]);
       writeFileSync(join(harness.root, "task.txt"), "fail\n");
 
       const result = await runStopGate(harness, "verify:full");
@@ -109,8 +108,7 @@ describe("stop_gate.mjs", { timeout: STOP_GATE_INTEGRATION_TIMEOUT_MS }, () => {
 function createHarness(): RepoHarness {
   const root = mkdtempSync(join(tmpdir(), "stop-gate-"));
   const binDir = join(root, "bin");
-  const remoteRoot = join(root, "remote.git");
-  const pnpmLogPath = join(root, ".git", "pnpm.log");
+  const pnpmLogPath = join(root, "pnpm.log");
 
   mkdirSync(binDir, { recursive: true });
   mkdirSync(join(root, ".codex", "hooks", "prompts"), { recursive: true });
@@ -123,37 +121,18 @@ function createHarness(): RepoHarness {
     readFileSync(instructionFeedbackPromptPath, "utf8"),
   );
 
-  return { root, binDir, pnpmLogPath, remoteRoot };
+  return { root, binDir, pnpmLogPath };
 }
 
 function cleanupHarness(harness: RepoHarness): void {
   rmSync(harness.root, { force: true, recursive: true });
 }
 
-function initializeRepo(harness: RepoHarness): void {
-  runGit(harness.root, ["init", "-b", "main"]);
-  runGit(harness.root, ["config", "user.email", "codex@example.test"]);
-  runGit(harness.root, ["config", "user.name", "Codex Test"]);
-
-  writeFileSync(join(harness.root, "README.md"), "initial\n");
-  runGit(harness.root, ["add", "README.md"]);
-  runGit(harness.root, ["commit", "-m", "Initial commit"]);
-}
-
-function addRemote(harness: RepoHarness): void {
-  runGit(harness.root, ["init", "--bare", harness.remoteRoot]);
-  runGit(harness.root, ["remote", "add", "origin", harness.remoteRoot]);
-}
-
-function pushBranch(harness: RepoHarness): void {
-  runGit(harness.root, ["push", "-u", "origin", "HEAD"]);
-}
-
 function captureBaseline(root: string): void {
   const stateDir = join(root, ".codex", "state");
   mkdirSync(stateDir, { recursive: true });
-  writeFileSync(join(stateDir, "git-start-status"), runGit(root, ["status", "--short"]));
-  writeFileSync(join(stateDir, "git-start-head"), runGit(root, ["rev-parse", "HEAD"]));
+  writeFileSync(join(stateDir, "git-start-status"), "");
+  writeFileSync(join(stateDir, "git-start-head"), "baseline-head\n");
 }
 
 function runStopGate(
@@ -200,15 +179,6 @@ function runStopGate(
   });
 }
 
-function runGit(cwd: string, args: string[]): string {
-  const result = spawnSync("git", args, { cwd, encoding: "utf8" });
-  if (result.status !== 0) {
-    throw new Error(`git ${args.join(" ")} failed\n${result.stderr}`);
-  }
-
-  return result.stdout;
-}
-
 function parseJsonOutput(stdout: string): HookPayload {
   expect(stdout.trim()).toMatch(/^\{.*\}$/s);
   return JSON.parse(stdout);
@@ -223,6 +193,44 @@ function readLines(path: string): string[] {
     .split("\n")
     .map((line) => line.trim())
     .filter(Boolean);
+}
+
+function createFakeGit(
+  harness: RepoHarness,
+  options: { baselineHead: string; currentHead: string },
+): void {
+  writeExecutable(
+    join(harness.binDir, "git"),
+    [
+      "#!/bin/sh",
+      `root='${harness.root}'`,
+      `baseline_head='${options.baselineHead}'`,
+      `current_head='${options.currentHead}'`,
+      'case "$*" in',
+      '  "rev-parse --show-toplevel")',
+      '    printf "%s\\n" "$root"',
+      "    ;;",
+      '  "status --branch --porcelain=v1")',
+      '    printf "## task-report...origin/task-report\\n"',
+      "    ;;",
+      '  "status --porcelain=v1")',
+      "    exit 0",
+      "    ;;",
+      '  "rev-parse HEAD")',
+      '    if [ -f ".codex/state/git-start-head" ]; then',
+      '      printf "%s\\n" "$current_head"',
+      "    else",
+      '      printf "%s\\n" "$baseline_head"',
+      "    fi",
+      "    ;;",
+      "  *)",
+      '    printf "unexpected git command: %s\\n" "$*" >&2',
+      "    exit 1",
+      "    ;;",
+      "esac",
+      "",
+    ].join("\n"),
+  );
 }
 
 function createFakePnpm(
