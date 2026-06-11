@@ -533,7 +533,7 @@ function assertCompletionGitState(context) {
   if (!context.upstream) {
     blockCompletion(
       "Current branch has no upstream.",
-      "Push the current branch with upstream, create or update the PR, and finish again.",
+      "Push the current branch with upstream, create or update the PR, and finish again. If this stop hook still reports no upstream after `git push -u`, check `git config --get branch.<branch>.remote` and `git config --get branch.<branch>.merge`; if either is empty, run `git branch --set-upstream-to=origin/<branch> <branch>`.",
     );
   }
 
