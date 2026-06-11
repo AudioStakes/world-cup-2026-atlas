@@ -10,8 +10,7 @@
 - Typecheck: `pnpm typecheck`
 - Test: `pnpm test`
 - E2E: `pnpm e2e`
-- Verify: `pnpm verify`
-- Full UI verification: `pnpm verify:full`
+- When files change, run only the closest useful check needed for the change; stop hooks run broader verification.
 - Use concise, direct replies
 
 ## Tool Policy
