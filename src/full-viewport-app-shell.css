@@ -32,8 +32,13 @@ body {
   grid-template-rows:
     auto
     minmax(0, 1.08fr)
-    minmax(0, 0.4fr)
-    minmax(0, 0.82fr);
+    minmax(0, 0.4fr);
+}
+
+.explorer-output {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .panel-section,
@@ -60,11 +65,23 @@ body {
   html,
   body,
   #app {
-    overflow: hidden;
+    overflow: auto;
+  }
+
+  .atlas-shell {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
   }
 
   .atlas-body {
-    overflow: hidden;
+    overflow: visible;
+  }
+
+  .explore-panel,
+  .explorer-output {
+    height: auto;
+    overflow: visible;
   }
 }
 

@@ -24,9 +24,11 @@ export function ExplorerPage({ viewModel, onAction }: ExplorerPageProps) {
             onAction={onAction}
           />
           <DateSelector dateSelector={viewModel.explorePanel.dateSelector} onAction={onAction} />
-          <ResultCard result={viewModel.explorePanel.result} />
         </aside>
-        <MapView map={viewModel.map} onAction={onAction} />
+        <section class="explorer-output" aria-label="Selection results">
+          <ResultCard result={viewModel.explorePanel.result} />
+          <MapView map={viewModel.map} onAction={onAction} />
+        </section>
       </section>
     </main>
   );
