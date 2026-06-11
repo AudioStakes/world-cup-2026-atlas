@@ -1171,6 +1171,41 @@ button:focus-visible {
   font-weight: 750;
 }
 
+.match-card {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) max-content;
+  align-items: center;
+  gap: 8px 14px;
+}
+
+.match-card__when,
+.match-card__venue {
+  color: rgba(20, 30, 44, 0.72);
+  font-size: 0.88rem;
+  font-weight: 850;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.match-card__matchup {
+  min-width: 0;
+  color: var(--color-ink);
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1.18;
+}
+
+@media (max-width: 700px) {
+  .match-card {
+    grid-template-columns: 1fr;
+  }
+
+  .match-card__when,
+  .match-card__venue {
+    white-space: normal;
+  }
+}
+
 .map-route-line {
   stroke-width: 2.4;
 }

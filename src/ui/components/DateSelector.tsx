@@ -65,8 +65,7 @@ function DateChip({ dateOption, onAction }: DateChipProps) {
       aria-label={createDateChipAriaLabel(dateOption)}
       onClick={() => onAction({ type: "selectDate", date: dateOption.date })}
     >
-      <span class="date-chip__weekday">{formatWeekday(dateOption.date)}</span>
-      <span class="date-chip__date">{dateOption.label}</span>
+      <span class="date-chip__date">{formatDayOfMonth(dateOption.date)}</span>
     </button>
   );
 }
@@ -86,6 +85,10 @@ function createLeadingBlankDays(dates: readonly DateOptionViewModel[]): readonly
 
 function formatWeekday(date: string): string {
   return weekdayLabels[getWeekdayIndex(date)] ?? weekdayLabels[0];
+}
+
+function formatDayOfMonth(date: string): string {
+  return String(new Date(`${date}T00:00:00Z`).getUTCDate());
 }
 
 function getWeekdayIndex(date: string): number {

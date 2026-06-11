@@ -105,6 +105,7 @@ describe("createResultViewModel production metadata", () => {
     const japanMatch = result.matches.find((match) => match.matchNumberLabel === "Match 11");
 
     expect(japanMatch?.stageLabel).toBe("Group F");
+    expect(japanMatch?.matchupText).toBe("🇳🇱 Netherlands vs 🇯🇵 Japan");
     expect(japanMatch?.secondaryText).toBe("15:00 CT");
     expect(japanMatch?.venueLabel).toBe("Dallas");
     expect(japanMatch?.venueDetailLabel).toBe("AT&T Stadium · Arlington, USA · CT");

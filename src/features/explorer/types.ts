@@ -129,6 +129,7 @@ export type MatchListItemViewModel = {
   readonly stageLabel: string;
   readonly dateLabel: string;
   readonly primaryText: string;
+  readonly matchupText: string;
   readonly secondaryText: string;
   readonly venueId: VenueId;
   readonly venueLabel: string;

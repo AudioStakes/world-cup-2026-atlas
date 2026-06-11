@@ -62,16 +62,19 @@ describe("App", () => {
     fireEvent.click(dateButton);
 
     expect(dateButton).toHaveAttribute("aria-pressed", "true");
+    expect(dateButton).toHaveTextContent("14");
+    expect(dateButton).not.toHaveTextContent("Sun");
+    expect(dateButton).not.toHaveTextContent("Jun");
     expect(screen.queryByText(/matches/)).not.toBeInTheDocument();
   });
 
-  it("renders match cards without long venue detail lines", () => {
+  it("renders match cards as compact date matchup venue rows", () => {
     render(<App />);
 
     const matchCard = getFirstMatchCard();
     const matchScope = within(matchCard);
 
-    expect(matchCard).toHaveTextContent("Match 1 · Group A");
+    expect(matchCard).toHaveTextContent("Jun 11 13:00 CT🇲🇽 Mexico vs 🇿🇦 South AfricaMexico City");
     expect(matchScope.queryByText(/Estadio Azteca · Mexico City, Mexico/)).not.toBeInTheDocument();
   });
 
