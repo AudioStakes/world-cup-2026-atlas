@@ -1,8 +1,8 @@
 以下のみ日本語で出力。新規作業・要約は禁止。
 
-## AIエージェント負荷の自己改善
+## Codexの作業量を抑える自己改善
 
-### 1. AIエージェントを使わなくてよかった作業
+### 1. Codexが必要以上に実行時間や探索量を費やした作業
 
 確認観点:
 
@@ -13,6 +13,7 @@
 * subagent/MCP/tool/automation/skill が不要または時期尚早だった作業
 * task/thread/context が肥大した箇所
 * caching/batching/parallelization/単純な実装で負荷を減らせた箇所
+* 複数コマンドを何度も手動実行せず、script化・alias化・ワンライナー化できた作業
 
 出力形式:
 
