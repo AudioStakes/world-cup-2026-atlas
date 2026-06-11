@@ -1,11 +1,10 @@
 #!/usr/bin/env node
 import { spawn, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const mode = process.argv[2] ?? "verify:full";
 const baselinePath = join(".codex", "hooks", "state", "baseline.json");
-const logDirectory = join(".codex", "hooks", "logs");
 const completionPromptPath = join(".codex", "hooks", "prompts", "stop_completion_report.txt");
 const instructionFeedbackPromptPath = join(
   ".codex",
@@ -58,15 +57,6 @@ const importantLinePatterns = [
 const contextRadius = 4;
 const tailLines = 24;
 const maxLinesTotal = 96;
-
-function createLogPath(name) {
-  const safeName = name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-  const timestamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\..+$/, "");
-  return join(logDirectory, `${timestamp}-${safeName}.log`);
-}
 
 function compactOutput(output) {
   const lines = output
@@ -147,36 +137,25 @@ function runCheck([name, command, args]) {
 
     child.on("error", (error) => {
       const output = error instanceof Error ? error.message : String(error);
-      const fullLogPath = writeFullLog(name, output);
       resolve({
         name,
         ok: false,
         exitCode: null,
         output: compactOutput(output),
-        fullLogPath,
       });
     });
 
     child.on("close", (exitCode) => {
       const fullOutput = `${stdout}\n${stderr}`;
-      const fullLogPath = exitCode === 0 ? null : writeFullLog(name, fullOutput);
 
       resolve({
         name,
         ok: exitCode === 0,
         exitCode,
         output: compactOutput(fullOutput),
-        fullLogPath,
       });
     });
   });
-}
-
-function writeFullLog(name, output) {
-  mkdirSync(logDirectory, { recursive: true });
-  const fullLogPath = createLogPath(name);
-  writeFileSync(fullLogPath, output);
-  return fullLogPath;
 }
 
 function runGit(args, options = {}) {
@@ -329,11 +308,6 @@ for (const check of checks) {
     if (result.output.length > 0) {
       console.error("");
       console.error(result.output);
-    }
-
-    if (result.fullLogPath) {
-      console.error("");
-      console.error(`Full log: ${result.fullLogPath}`);
     }
 
     console.error("");

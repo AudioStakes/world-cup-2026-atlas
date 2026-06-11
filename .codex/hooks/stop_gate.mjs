@@ -7,6 +7,12 @@ const repositoryRoot = resolveRepositoryRoot();
 const mode = process.argv[2] ?? "verify:full";
 const baselineStatusPath = join(repositoryRoot, ".codex", "state", "git-start-status");
 const baselineHeadPath = join(repositoryRoot, ".codex", "state", "git-start-head");
+const finalInstructionHeadPath = join(
+  repositoryRoot,
+  ".codex",
+  "state",
+  "stop-final-instructions-head",
+);
 const logDirectory = join(repositoryRoot, ".codex", "hooks", "logs");
 const completionPromptPath = join(
   repositoryRoot,
@@ -34,9 +40,9 @@ const commandPlans = {
 const checks = commandPlans[mode];
 
 if (checks === undefined) {
-  console.error(`Unknown Codex hook mode: ${mode}`);
-  console.error(`Expected one of: ${Object.keys(commandPlans).join(", ")}`);
-  process.exit(1);
+  failWithMessage(
+    `Unknown Codex hook mode: ${mode}\nExpected one of: ${Object.keys(commandPlans).join(", ")}`,
+  );
 }
 
 const importantLinePatterns = [
@@ -356,9 +362,13 @@ function assertCompletionGitState(context) {
   }
 }
 
+function emitHookResponse(response) {
+  process.stdout.write(`${JSON.stringify(response)}\n`);
+}
+
 function failWithMessage(message) {
-  console.error(message);
-  process.exit(1);
+  emitHookResponse({ decision: "block", reason: message });
+  process.exit(0);
 }
 
 function readRequiredPrompt(path) {
@@ -373,22 +383,19 @@ for (const check of checks) {
   const result = await runCheck(check);
 
   if (!result.ok) {
-    console.error(`${result.name} failed`);
+    const message = [`${result.name} failed`];
 
     if (result.output.length > 0) {
-      console.error("");
-      console.error(result.output);
+      message.push("", result.output);
     }
 
     if (result.fullLogPath) {
-      console.error("");
-      console.error(`Full log: ${result.fullLogPath}`);
+      message.push("", `Full log: ${result.fullLogPath}`);
     }
 
-    console.error("");
-    console.error("Fix the failure above, then continue. Do not change unrelated files.");
+    message.push("", "Fix the failure above, then continue. Do not change unrelated files.");
 
-    process.exit(1);
+    failWithMessage(message.join("\n"));
   }
 }
 
@@ -396,27 +403,43 @@ if (mode === "verify:full") {
   const context = getGitContext();
   assertCompletionGitState(context);
 
-  console.log("Codex final report context:");
-  console.log("- Verification: pnpm verify:full passed");
-  console.log(`- Branch: ${context.branch}`);
-  console.log(`- Latest commit: ${context.latestCommit}`);
-  console.log(`- Task changes: ${context.hasTaskCommit ? "committed" : "none"}`);
-  console.log(
+  if (
+    existsSync(finalInstructionHeadPath) &&
+    readFileSync(finalInstructionHeadPath, "utf8").trim() === context.currentHead
+  ) {
+    emitHookResponse({ continue: true });
+    process.exit(0);
+  }
+
+  const message = [
+    "Codex final report context:",
+    "- Verification: pnpm verify:full passed",
+    `- Branch: ${context.branch}`,
+    `- Latest commit: ${context.latestCommit}`,
+    `- Task changes: ${context.hasTaskCommit ? "committed" : "none"}`,
     `- PR: ${context.prUrl ?? "not required because no task-owned changes were committed"}`,
-  );
-  console.log("- Working tree: no new uncommitted task changes");
+    "- Working tree: no new uncommitted task changes",
+  ];
+
   if (context.baselineDirtyPaths.length > 0) {
-    console.log("- Pre-existing dirty files preserved:");
+    message.push("- Pre-existing dirty files preserved:");
     for (const path of context.baselineDirtyPaths) {
-      console.log(`  - ${path}`);
+      message.push(`  - ${path}`);
     }
   }
 
-  console.log("");
-  console.log("Completion report instruction:");
-  console.log(readRequiredPrompt(completionPromptPath));
+  message.push(
+    "",
+    "Completion report instruction:",
+    readRequiredPrompt(completionPromptPath),
+    "",
+    "Instruction feedback instruction:",
+    readRequiredPrompt(instructionFeedbackPromptPath),
+  );
 
-  console.log("");
-  console.log("Instruction feedback instruction:");
-  console.log(readRequiredPrompt(instructionFeedbackPromptPath));
+  writeFileSync(finalInstructionHeadPath, `${context.currentHead}\n`);
+  emitHookResponse({ decision: "block", reason: message.join("\n") });
+  process.exit(0);
 }
+
+emitHookResponse({ continue: true });

@@ -20,23 +20,53 @@ function resolveRepositoryRoot() {
     : process.cwd();
 }
 
-const repositoryRoot = resolveRepositoryRoot();
-const mode = process.argv[2] ?? "verify:full";
-const stopGatePath = resolve(repositoryRoot, ".codex", "hooks", "stop_gate.mjs");
-
-if (!existsSync(stopGatePath)) {
-  console.error(`[codex:stop-check] Missing stop gate script: ${stopGatePath}`);
-  process.exit(1);
+function emitHookResponse(response) {
+  process.stdout.write(`${JSON.stringify(response)}\n`);
 }
 
-console.log("[codex:stop-check] Codex app does not fire the CLI Stop hook directly.");
-console.log(`[codex:stop-check] Running ${mode} through .codex/hooks/stop_gate.mjs instead.`);
+function forwardProcessOutput(result) {
+  if (result.stdout && result.stdout.length > 0) {
+    process.stderr.write(result.stdout);
+  }
 
-const result = spawnSync(process.execPath, [stopGatePath, mode], {
+  if (result.stderr && result.stderr.length > 0) {
+    process.stderr.write(result.stderr);
+  }
+}
+
+const repositoryRoot = resolveRepositoryRoot();
+const mode = process.argv[2] ?? "verify:full";
+const stopCheckPath = resolve(repositoryRoot, "scripts", "codex-stop-check.mjs");
+
+if (!existsSync(stopCheckPath)) {
+  const reason = `[codex:stop-check] Missing stop check script: ${stopCheckPath}`;
+  console.error(reason);
+  emitHookResponse({ decision: "block", reason });
+  process.exit(0);
+}
+
+const result = spawnSync(process.execPath, [stopCheckPath, mode], {
   cwd: repositoryRoot,
   encoding: "utf8",
-  stdio: "inherit",
+  stdio: ["ignore", "pipe", "pipe"],
   env: process.env,
 });
 
-process.exit(result.status ?? 1);
+forwardProcessOutput(result);
+
+if (result.error) {
+  const reason = `[codex:stop-check] Failed to run stop check: ${result.error.message}`;
+  console.error(reason);
+  emitHookResponse({ decision: "block", reason });
+  process.exit(0);
+}
+
+if (result.status !== 0) {
+  const reason =
+    result.stderr?.trim() || result.stdout?.trim() || "[codex:stop-check] Stop gate failed";
+  console.error(`[codex:stop-check] Stop check exited with status ${result.status ?? 1}`);
+  emitHookResponse({ decision: "block", reason });
+  process.exit(0);
+}
+
+emitHookResponse({ continue: true });
