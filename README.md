@@ -66,6 +66,8 @@ pnpm exec playwright install chromium
 pnpm verify:full
 ```
 
+In the Codex app, run `pnpm codex:stop-check` before ending a thread if you want the CLI `Stop` hook's final verification flow.
+
 ## Scripts
 
 ```bash
