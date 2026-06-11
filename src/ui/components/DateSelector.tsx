@@ -56,7 +56,6 @@ function DateChip({ dateOption, onAction }: DateChipProps) {
       onClick={() => onAction({ type: "selectDate", date: dateOption.date })}
     >
       <span class="date-chip__date">{dateOption.label}</span>
-      <span class="date-chip__meta">{dateOption.matchCountLabel ?? "No matches"}</span>
     </button>
   );
 }
