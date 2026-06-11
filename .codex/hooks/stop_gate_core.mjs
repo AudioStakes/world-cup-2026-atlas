@@ -62,6 +62,37 @@ export function isFinalReportResponse(value) {
   );
 }
 
+export function formatHookJson(value) {
+  return `${JSON.stringify(value)}\n`;
+}
+
+export function buildBlockResponse(title, reason) {
+  return {
+    decision: "block",
+    reason: [title, "", reason].filter(Boolean).join("\n"),
+  };
+}
+
+export function buildFinalResponseReason({
+  prReportLine,
+  completionPrompt,
+  instructionFeedbackPrompt,
+}) {
+  const lines = [
+    "Report data:",
+    prReportLine,
+    "",
+    "Completion report instruction:",
+    completionPrompt,
+  ];
+
+  if (instructionFeedbackPrompt !== undefined) {
+    lines.push("", "Instruction feedback prompt:", instructionFeedbackPrompt);
+  }
+
+  return lines.filter(Boolean).join("\n");
+}
+
 export function parseStatusPaths(statusOutput) {
   return statusOutput
     .split(/\r?\n/)

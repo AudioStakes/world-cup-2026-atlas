@@ -31,6 +31,19 @@ export function parseStopHookToggleValue(
 
 export function getInputStrings(value: unknown): string[];
 export function isFinalReportResponse(value: unknown): boolean;
+export function formatHookJson(value: unknown): string;
+export function buildBlockResponse(
+  title: string,
+  reason?: string,
+): {
+  decision: "block";
+  reason: string;
+};
+export function buildFinalResponseReason(options: {
+  prReportLine: string;
+  completionPrompt: string;
+  instructionFeedbackPrompt?: string;
+}): string;
 export function parseStatusPaths(statusOutput: string): string[];
 export function compactOutput(
   output: string,
