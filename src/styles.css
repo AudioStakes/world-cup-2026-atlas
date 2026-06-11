@@ -136,7 +136,7 @@ button:focus-visible {
 .atlas-body {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(348px, 370px) minmax(680px, 1fr);
+  grid-template-columns: minmax(320px, 360px) minmax(720px, 1fr);
   gap: 18px;
   min-height: 0;
   padding-top: 18px;
@@ -145,7 +145,7 @@ button:focus-visible {
 .explore-panel {
   z-index: 4;
   display: grid;
-  grid-template-rows: auto minmax(350px, 1.06fr) minmax(116px, 0.32fr) minmax(220px, 0.72fr);
+  grid-template-rows: auto minmax(360px, 1fr) minmax(116px, 0.32fr);
   gap: 12px;
   min-height: 0;
   padding: 14px;
@@ -154,6 +154,13 @@ button:focus-visible {
   background: var(--color-panel);
   box-shadow: var(--shadow-panel);
   backdrop-filter: blur(18px);
+}
+
+.explorer-output {
+  display: grid;
+  grid-template-rows: minmax(220px, 0.42fr) minmax(440px, 1fr);
+  gap: 18px;
+  min-height: 0;
 }
 
 .explore-panel__intro {
@@ -428,7 +435,7 @@ button:focus-visible {
 
 .result-card {
   display: grid;
-  grid-template-rows: auto auto auto 1fr;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
   padding: 12px;
   overflow: hidden;
   background: var(--color-panel-strong);
@@ -556,12 +563,12 @@ button:focus-visible {
   position: relative;
   min-height: 0;
   overflow: hidden;
-  border: 1px solid rgba(23, 32, 42, 0.08);
-  border-radius: 32px;
+  border: 0;
+  border-radius: 0;
   background:
     radial-gradient(circle at 62% 26%, rgba(255, 255, 255, 0.96), transparent 30%),
     linear-gradient(135deg, rgba(255, 255, 255, 0.74), rgba(231, 238, 246, 0.86));
-  box-shadow: var(--shadow-panel);
+  box-shadow: none;
 }
 
 .map-canvas {
@@ -941,4 +948,57 @@ button:focus-visible {
   stroke: rgba(255, 255, 255, 0.66);
   stroke-width: 3;
   paint-order: stroke fill;
+}
+
+.map-panel {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.map-frame {
+  fill: transparent;
+  stroke: none;
+}
+
+.explorer-output .map-svg {
+  inset: 0;
+}
+
+@media (max-width: 1180px) {
+  .atlas-body {
+    grid-template-columns: minmax(320px, 1fr);
+    grid-template-rows: auto auto;
+  }
+
+  .explorer-output {
+    grid-template-rows: minmax(220px, auto) minmax(420px, 58vh);
+  }
+}
+
+@media (max-width: 720px) {
+  html,
+  body,
+  #app {
+    min-width: 0;
+  }
+
+  .atlas-body {
+    gap: 12px;
+  }
+
+  .explore-panel {
+    height: auto;
+    grid-template-rows: auto auto auto;
+    overflow: visible;
+  }
+
+  .panel-section {
+    overflow: visible;
+  }
+
+  .explorer-output {
+    gap: 12px;
+    grid-template-rows: minmax(220px, auto) minmax(360px, 52vh);
+  }
 }
