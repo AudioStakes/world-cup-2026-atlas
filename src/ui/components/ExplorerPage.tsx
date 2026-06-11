@@ -18,7 +18,6 @@ export function ExplorerPage({ viewModel, onAction }: ExplorerPageProps) {
         <aside class="explore-panel" aria-label="Explore panel">
           <div class="explore-panel__intro">
             <p class="eyebrow">Explore</p>
-            <h1>World Cup 2026 Atlas</h1>
             <p>{viewModel.explorePanel.helpText}</p>
             <p class="venue-tip">{viewModel.explorePanel.venueHelpText}</p>
           </div>
