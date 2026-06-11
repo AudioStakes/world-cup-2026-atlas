@@ -117,3 +117,30 @@
 .venue-marker[data-venue-id="guadalajara"] .venue-marker__label {
   top: 28px;
 }
+
+/* Tune label weight so state and proximity are easier to read at a glance. */
+.venue-marker__label {
+  color: rgba(23, 32, 42, 0.78);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.venue-marker:hover .venue-marker__label,
+.venue-marker:focus-visible .venue-marker__label {
+  color: rgba(23, 32, 42, 0.9);
+}
+
+.venue-marker.is-highlighted .venue-marker__label {
+  color: rgba(23, 32, 42, 0.88);
+}
+
+.venue-marker.is-selected .venue-marker__label {
+  color: rgba(23, 32, 42, 0.98);
+  font-weight: 800;
+}
+
+.venue-marker.is-dimmed .venue-marker__label {
+  color: rgba(23, 32, 42, 0.62);
+  text-shadow: none;
+}

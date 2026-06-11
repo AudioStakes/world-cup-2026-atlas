@@ -69,6 +69,7 @@ describe("createResultViewModel production metadata", () => {
 
     expect(result.title).toBe("Japan");
     expect(result.subtitle).toBe("Group F · JPN · AFC");
+    expect(result.routeSummary?.venueCountExplanationLabel).toBe("Dallas is visited twice.");
   });
 
   it("adds group team FIFA codes to group result subtitles", () => {

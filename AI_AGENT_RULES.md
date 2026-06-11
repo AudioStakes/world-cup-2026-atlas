@@ -7,7 +7,7 @@ Follow these rules when implementing changes in World Cup 2026 Atlas.
 Before handing off, run:
 
 ```bash
-pnpm ready
+pnpm verify
 ```
 
 For UI-heavy changes, also run:
@@ -43,7 +43,7 @@ pnpm exec playwright install chromium
 ## TypeScript rules
 
 - Do not use `any`.
-- Do not use non-null assertions unless a test or invariant makes it unavoidable and the reason is documented.
+- Do not use non-null assertions unless there is a short comment explaining the invariant.
 - Do not weaken TypeScript strict settings.
 - Keep branded ID types at domain boundaries.
 - Avoid `Date` objects outside date utility or ViewModel creation functions.
@@ -52,6 +52,6 @@ pnpm exec playwright install chromium
 
 - Prefer native `button` elements for interactive controls.
 - Do not add `aria-label` to non-interactive `div` elements.
-- Use visible text when it already communicates the control purpose.
+- Use visible text when possible.
 - Keep keyboard focus visible.
 - Update Playwright or component tests when changing accessible names.

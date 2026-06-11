@@ -16,6 +16,7 @@ const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const appStopCheckScript = resolve(repositoryRoot, "scripts", "codex-app-stop-check.mjs");
 const stopCheckScript = resolve(repositoryRoot, "scripts", "codex-stop-check.mjs");
 const stopGateScript = resolve(repositoryRoot, ".codex", "hooks", "stop_gate.mjs");
+const stopGateCoreScript = resolve(repositoryRoot, ".codex", "hooks", "stop_gate_core.mjs");
 const pathEnvironmentVariableName = "PATH";
 
 function writeExecutable(path: string, contents: string) {
@@ -38,6 +39,7 @@ function createWorkspace(pnpmScript: string) {
   copyFileSync(appStopCheckScript, join(scriptsDir, "codex-app-stop-check.mjs"));
   copyFileSync(stopCheckScript, join(scriptsDir, "codex-stop-check.mjs"));
   copyFileSync(stopGateScript, join(hooksDir, "stop_gate.mjs"));
+  copyFileSync(stopGateCoreScript, join(hooksDir, "stop_gate_core.mjs"));
   writeExecutable(join(binDir, "pnpm"), pnpmScript);
 
   return { workspaceRoot, binDir };
@@ -119,8 +121,8 @@ describe("stop gate output", () => {
     const result = runStopGateScript(workspaceRoot, binDir, "fix");
 
     expect(result.status).toBe(0);
-    expect(JSON.parse(result.stdout.trim())).toEqual({ continue: true });
-    expect(result.stderr).toBe("");
+    expect(JSON.parse(result.stdout.trim())).toEqual({});
+    expect(result.stderr).toContain("[stop_gate] running pnpm fix...");
   });
 
   it("prints block hook JSON when the hook script blocks directly", () => {
@@ -145,7 +147,7 @@ describe("stop gate output", () => {
     expect(response.decision).toBe("block");
     expect(response.reason).toContain("completion prompt");
     expect(response.reason).toContain("instruction feedback prompt");
-    expect(result.stderr).toBe("");
+    expect(result.stderr).toContain("[stop_gate] running pnpm fix...");
   });
 
   it("continues after final prompts have already been returned for the same commit", () => {
@@ -155,7 +157,7 @@ describe("stop gate output", () => {
     const result = runStopGateScript(workspaceRoot, binDir, "verify:full");
 
     expect(result.status).toBe(0);
-    expect(JSON.parse(result.stdout.trim())).toEqual({ continue: true });
+    expect(JSON.parse(result.stdout.trim())).toEqual({});
     expect(result.stderr).toBe("");
   });
 

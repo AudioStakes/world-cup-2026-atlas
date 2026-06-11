@@ -1,6 +1,6 @@
 # Deployment
 
-World Cup 2026 Atlas is a static Vite SPA and can be deployed to GitHub Pages.
+World Cup 2026 Atlas is a static Vite SPA that can be deployed to GitHub Pages.
 
 ## GitHub Pages workflow
 
@@ -15,13 +15,13 @@ It runs on:
 - pushes to `main`
 - manual `workflow_dispatch`
 
-The workflow:
+Workflow steps:
 
-1. installs dependencies with pnpm
-2. runs `pnpm verify`
-3. builds the app with `GITHUB_PAGES=true`
-4. uploads `dist`
-5. deploys to GitHub Pages
+1. install dependencies with pnpm
+2. run `pnpm verify`
+3. build the app with `GITHUB_PAGES=true`
+4. upload `dist`
+5. deploy to GitHub Pages
 
 ## Vite base path
 
@@ -50,7 +50,7 @@ In GitHub repository settings:
 ## Local check
 
 ```bash
-pnpm ready
+pnpm verify
 pnpm build
 pnpm preview
 ```

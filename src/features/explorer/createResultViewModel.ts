@@ -327,6 +327,7 @@ function createCountryRouteSummary(
   }, 0);
   const visitedVenueCount = new Set(routeVenues.map((venue) => venue.id)).size;
   const matchCount = routeMatches.length;
+  const venueCountExplanationLabel = createVenueCountExplanationLabel(routeVenues);
 
   return {
     matchCount,
@@ -335,9 +336,38 @@ function createCountryRouteSummary(
       visitedVenueCount,
       "venue",
     )}`,
+    venueCountExplanationLabel,
     totalDistanceKm,
     totalDistanceLabel: formatDistanceLabel(totalDistanceKm),
   };
+}
+
+function createVenueCountExplanationLabel(routeVenues: readonly Venue[]): string | null {
+  const venueCounts = new Map<Venue["id"], number>();
+
+  for (const venue of routeVenues) {
+    venueCounts.set(venue.id, (venueCounts.get(venue.id) ?? 0) + 1);
+  }
+
+  const repeatedVenueNames: string[] = [];
+  const seenVenueIds = new Set<Venue["id"]>();
+
+  for (const venue of routeVenues) {
+    if ((venueCounts.get(venue.id) ?? 0) <= 1 || seenVenueIds.has(venue.id)) {
+      continue;
+    }
+
+    repeatedVenueNames.push(venue.name);
+    seenVenueIds.add(venue.id);
+  }
+
+  if (repeatedVenueNames.length === 0) {
+    return null;
+  }
+
+  return repeatedVenueNames.length === 1
+    ? `${repeatedVenueNames[0]} is visited twice.`
+    : `${repeatedVenueNames.join(", ")} are revisited.`;
 }
 
 function formatCount(count: number, noun: "match" | "venue"): string {

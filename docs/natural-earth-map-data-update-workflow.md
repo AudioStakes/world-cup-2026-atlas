@@ -11,11 +11,11 @@ src/data/northAmericaMapData.ts
 Do not download map data during normal verification.
 
 ```bash
-pnpm ready
+pnpm verify
 pnpm e2e
 ```
 
-`pnpm ready` intentionally does not run `pnpm map:data`.
+`pnpm verify` intentionally does not run `pnpm map:data`.
 
 ## Updating map data
 
@@ -35,14 +35,14 @@ Then review and commit the generated file.
 
 ```bash
 git diff src/data/northAmericaMapData.ts
-pnpm ready
+pnpm verify
 pnpm e2e
 git add scripts/download-natural-earth-map-data.mjs src/data/northAmericaMapData.ts
 ```
 
 ## Policy
 
-- `pnpm ready` must be deterministic and must not depend on network access.
+- `pnpm verify` must be deterministic and must not depend on network access.
 - CI must use checked-in map data.
 - `pnpm map:data` is a manual source refresh command.
 - `src/data/northAmericaMapData.ts` should be committed to the repository.

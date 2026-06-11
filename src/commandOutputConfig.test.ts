@@ -23,8 +23,8 @@ describe("command output configuration", () => {
   it("does not add tool-specific output flags to the stop gate", () => {
     const stopGate = readFileSync(".codex/hooks/stop_gate.mjs", "utf8");
 
-    expect(stopGate).toContain('"pnpm", ["--silent", "fix"]');
-    expect(stopGate).toContain('"pnpm", ["--silent", "verify:full"]');
+    expect(stopGate).toContain('args: ["--silent", "fix"]');
+    expect(stopGate).toContain('args: ["--silent", "verify:full"]');
     expect(stopGate).not.toMatch(
       /--reporter|--silent=|--max-diagnostics|--pretty false|--noErrorTruncation|--trace=/,
     );

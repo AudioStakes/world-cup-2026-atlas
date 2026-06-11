@@ -25,6 +25,14 @@ Tests should describe observable behavior through public interfaces and user-vis
 - Use Playwright for end-to-end interaction flows.
 - Focus on selection logic, filtering correctness, and cross-surface synchronization.
 
+### Process-based integration tests
+
+- When a test spawns `child_process`, creates temporary git repositories, or installs fake CLI binaries, add a shared timeout constant in that file from the initial implementation.
+- Leave a short comment explaining that the timeout covers process startup, git initialization, and fake CLI setup overhead.
+- Use `30_000`ms as the default starting point.
+- Apply the timeout consistently at the `describe` level or through shared helpers instead of scattering per-test overrides.
+- If a case appears to need a longer timeout, first check whether fixture setup, fake command behavior, or process count can be reduced.
+
 ## UI Review Viewports
 
 For PC-oriented UI changes, check these viewports when practical:

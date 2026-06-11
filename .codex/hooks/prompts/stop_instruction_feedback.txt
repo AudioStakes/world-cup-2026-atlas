@@ -1,7 +1,44 @@
-## Instruction Feedback のみ日本語で出力。新規作業・要約は禁止。
-対象: AGENTS.md / docs / hooks / task prompt。根拠が明示されたもののみ。推測禁止。
-各カテゴリ最大2件。空なら省略。全空なら「## Instruction Feedback\n- None.」
+以下のみ日本語で出力。新規作業・要約は禁止。
 
-1 Helpful: Codexの作業負荷を下げたもの。
-2 Friction: 負荷を上げた、迷わせた、探しにくかった、不要だったもの。
-3 Improve: 次回以降の負荷を下げるために変更すべきもの。
+## AIエージェント負荷の自己改善
+
+### 1. AIエージェントを使わなくてよかった作業
+
+確認観点:
+
+* rule/script/test/lint/format/static analysis で済む作業
+* template/固定文/構造化出力で済む作業
+* grep/search/parser で済む探索・抽出
+* 小さいモデル/単発LLMで済む分類・要約・変換
+* subagent/MCP/tool/automation/skill が不要または時期尚早だった作業
+* task/thread/context が肥大した箇所
+* caching/batching/parallelization/単純な実装で負荷を減らせた箇所
+
+出力形式:
+
+該当作業をすべて列挙する。複数ある場合は作業ごとに次を繰り返す。1件にまとめない。該当なしは「該当なし」と書く。
+
+* 対象作業:
+  * 代替手段:
+  * evidence:
+  * 次回の改善:
+  * 置き場所: AGENTS.md・script・template・test・lint・skill・hook・docs・その他
+  * 判断: 今すぐ反映・後で検討・反映しない
+
+「今すぐ反映」は、次をすべて満たす場合だけ選ぶ:
+
+* evidence あり
+* 再発しそう
+* ルールまたは修正内容が短く明確
+
+### 2. 反映した改善
+
+「今すぐ反映」は最終報告で終わらず、その場で最小差分で修正し、必要な確認を実行し、commit してください。
+改善がない場合は「なし」と出力。
+
+出力形式:
+
+* 改善内容:
+* 変更ファイル:
+* 動作確認:
+* commit hash:
