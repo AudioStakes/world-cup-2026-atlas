@@ -15,8 +15,8 @@ Tests should describe observable behavior through public interfaces and user-vis
 - Verify URL/request-parameter initialization behavior.
 - Verify map highlighting and route rendering behavior when selection changes.
 - For UI-heavy work, run Playwright coverage on the affected flow.
-- Routine completion checks should use `pnpm verify`.
-- For significant UI changes, use `pnpm verify:full`.
+- When files change, run only the closest useful check needed for the change, such as `pnpm test`, `pnpm typecheck`, or `pnpm e2e`.
+- `pnpm verify` and `pnpm verify:full` run automatically in the stop hook; avoid running them during normal work unless the broader check is specifically needed.
 
 ## Guidance
 
