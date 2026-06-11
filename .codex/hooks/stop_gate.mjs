@@ -10,7 +10,10 @@ import {
 } from "node:fs";
 import { dirname, join } from "node:path";
 import {
+  buildBlockResponse as buildBlockResponseCore,
+  buildFinalResponseReason as buildFinalResponseReasonCore,
   buildPrReportLine as buildPrReportLineCore,
+  formatHookJson as formatHookJsonCore,
   isFinalReportResponse as isFinalReportResponseCore,
   parseStopHookToggleValue as parseStopHookToggleValueCore,
   shouldSkipVerification as shouldSkipVerificationCore,
@@ -133,7 +136,7 @@ function resolveRepositoryRoot() {
 }
 
 function writeJson(value) {
-  process.stdout.write(`${JSON.stringify(value)}\n`);
+  process.stdout.write(formatHookJsonCore(value));
 }
 
 function writeProgress(message) {
@@ -157,10 +160,7 @@ function writePass() {
 }
 
 function writeBlock(title, reason) {
-  writeJson({
-    decision: "block",
-    reason: [title, "", reason].filter(Boolean).join("\n"),
-  });
+  writeJson(buildBlockResponseCore(title, reason));
   process.exit(0);
 }
 
@@ -480,22 +480,19 @@ function buildPrReportLine(context) {
 
 function buildFinalResponseReason(context) {
   const completionPrompt = readRequiredPrompt(completionPromptPath);
-  const lines = [
-    "Report data:",
-    buildPrReportLine(context),
-    "",
-    "Completion report instruction:",
-    completionPrompt,
-  ];
+  let instructionFeedbackPrompt;
 
   if (stopHookActions.agentLoadReport) {
-    const instructionFeedbackPrompt = readRequiredPrompt(instructionFeedbackPromptPath);
-    lines.push("", "Instruction feedback prompt:", instructionFeedbackPrompt);
+    instructionFeedbackPrompt = readRequiredPrompt(instructionFeedbackPromptPath);
   } else {
     writeProgress("skip AI agent load report: STOP_HOOK_AGENT_LOAD_REPORT=off");
   }
 
-  return lines.filter(Boolean).join("\n");
+  return buildFinalResponseReasonCore({
+    prReportLine: buildPrReportLine(context),
+    completionPrompt,
+    instructionFeedbackPrompt,
+  });
 }
 
 function assertCompletionGitState(context) {
