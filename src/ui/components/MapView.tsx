@@ -138,8 +138,11 @@ type VenueMarkerProps = {
 
 function VenueMarker({ venue, onAction }: VenueMarkerProps) {
   const labelWidth = Math.max(58, venue.label.length * 12 + 28);
-  const labelX = venue.position.x + 12;
-  const labelY = venue.position.y - 22;
+  const labelX = clampMapLabelX(venue.position.x - labelWidth / 2, labelWidth);
+  const labelY =
+    venue.position.y - 34 > EXPLORER_MAP_VIEWBOX.minY
+      ? venue.position.y - 34
+      : venue.position.y + 16;
 
   function selectVenue() {
     onAction({ type: "selectVenue", venueId: venue.venueId });
@@ -172,4 +175,11 @@ function VenueMarker({ venue, onAction }: VenueMarkerProps) {
       </g>
     </g>
   );
+}
+
+function clampMapLabelX(x: number, labelWidth: number): number {
+  const minX = EXPLORER_MAP_VIEWBOX.minX + 8;
+  const maxX = EXPLORER_MAP_VIEWBOX.minX + EXPLORER_MAP_VIEWBOX.width - labelWidth - 8;
+
+  return Math.min(Math.max(x, minX), maxX);
 }

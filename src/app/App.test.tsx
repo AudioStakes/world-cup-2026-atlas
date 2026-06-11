@@ -50,9 +50,21 @@ describe("App", () => {
 
     const groupsSection = screen.getByRole("region", { name: "Groups & Teams" });
 
+    expect(within(groupsSection).getByText("South Africa")).toBeInTheDocument();
+    expect(within(groupsSection).getByText("Korea Republic")).toBeInTheDocument();
+    expect(within(groupsSection).getByText("Czechia")).toBeInTheDocument();
     expect(within(groupsSection).getByText("JPN")).toBeInTheDocument();
     expect(within(groupsSection).getByText("Japan")).toBeInTheDocument();
     expect(within(groupsSection).queryByText("JPN · AFC")).not.toBeInTheDocument();
+  });
+
+  it("omits redundant panel headings from the visible explorer controls", () => {
+    render(<App />);
+
+    expect(screen.queryByText("Explore")).not.toBeInTheDocument();
+    expect(screen.queryByText("Dates")).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Date" })).toHaveClass("visually-hidden");
+    expect(screen.getByRole("region", { name: "Date" })).toBeInTheDocument();
   });
 
   it("keeps date chips visually compact while preserving date selection", () => {

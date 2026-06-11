@@ -20,12 +20,9 @@ const weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const
 export function DateSelector({ dateSelector, onAction }: DateSelectorProps) {
   return (
     <section class="panel-section date-section" aria-labelledby="date-selector-title">
-      <div class="section-heading">
-        <div>
-          <p class="eyebrow">Dates</p>
-          <h2 id="date-selector-title">{dateSelector.title}</h2>
-        </div>
-      </div>
+      <h2 id="date-selector-title" class="visually-hidden">
+        {dateSelector.title}
+      </h2>
 
       <div class="date-months">
         {dateSelector.months.map((month) => (

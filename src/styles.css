@@ -20,6 +20,18 @@
   --shadow-card: 0 12px 28px rgba(23, 32, 42, 0.08);
 }
 
+.visually-hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -1171,6 +1183,17 @@ button:focus-visible {
   font-weight: 750;
 }
 
+.group-team-card.is-related,
+.group-team-card.is-selected {
+  min-height: 264px;
+  overflow: visible;
+}
+
+.group-team-card.is-related .group-team-row-button,
+.group-team-card.is-selected .group-team-row-button {
+  min-height: 48px;
+}
+
 .match-card {
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr) max-content;
@@ -1277,4 +1300,16 @@ button:focus-visible {
   block-size: 12px;
   border: 4px solid rgba(181, 31, 31, 0.28);
   outline: 0;
+}
+
+.venue-marker.is-dimmed {
+  opacity: 1;
+}
+
+.venue-marker.is-dimmed .venue-marker__button {
+  opacity: 0.48;
+}
+
+.venue-marker.is-dimmed .venue-marker__label {
+  opacity: 0.9;
 }
