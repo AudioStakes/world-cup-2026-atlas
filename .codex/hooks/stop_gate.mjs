@@ -3,31 +3,17 @@ import { spawn, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-const repositoryRoot = resolveRepositoryRoot();
-const mode = process.argv[2] ?? "verify:full";
-const baselineStatusPath = join(repositoryRoot, ".codex", "state", "git-start-status");
-const baselineHeadPath = join(repositoryRoot, ".codex", "state", "git-start-head");
-const finalInstructionHeadPath = join(
+const config = createHookConfig(process.argv);
+const {
   repositoryRoot,
-  ".codex",
-  "state",
-  "stop-final-instructions-head",
-);
-const logDirectory = join(repositoryRoot, ".codex", "hooks", "logs");
-const completionPromptPath = join(
-  repositoryRoot,
-  ".codex",
-  "hooks",
-  "prompts",
-  "stop_completion_report.txt",
-);
-const instructionFeedbackPromptPath = join(
-  repositoryRoot,
-  ".codex",
-  "hooks",
-  "prompts",
-  "stop_instruction_feedback.txt",
-);
+  mode,
+  baselineStatusPath,
+  baselineHeadPath,
+  finalInstructionHeadPath,
+  logDirectory,
+  completionPromptPath,
+  instructionFeedbackPromptPath,
+} = config;
 
 const commandPlans = {
   fix: [["pnpm fix", "pnpm", ["--silent", "fix"]]],
@@ -37,13 +23,7 @@ const commandPlans = {
   ],
 };
 
-const checks = commandPlans[mode];
-
-if (checks === undefined) {
-  failWithMessage(
-    `Unknown Codex hook mode: ${mode}\nExpected one of: ${Object.keys(commandPlans).join(", ")}`,
-  );
-}
+const checks = getChecksForMode(mode);
 
 const importantLinePatterns = [
   /^\s*FAIL\s+/,
@@ -73,6 +53,39 @@ const importantLinePatterns = [
 const contextRadius = 4;
 const tailLines = 24;
 const maxLinesTotal = 96;
+
+function createHookConfig(argv) {
+  const root = resolveRepositoryRoot();
+
+  return {
+    repositoryRoot: root,
+    mode: argv[2] ?? "verify:full",
+    baselineStatusPath: join(root, ".codex", "state", "git-start-status"),
+    baselineHeadPath: join(root, ".codex", "state", "git-start-head"),
+    finalInstructionHeadPath: join(root, ".codex", "state", "stop-final-instructions-head"),
+    logDirectory: join(root, ".codex", "hooks", "logs"),
+    completionPromptPath: join(root, ".codex", "hooks", "prompts", "stop_completion_report.txt"),
+    instructionFeedbackPromptPath: join(
+      root,
+      ".codex",
+      "hooks",
+      "prompts",
+      "stop_instruction_feedback.txt",
+    ),
+  };
+}
+
+function getChecksForMode(selectedMode) {
+  const checksForMode = commandPlans[selectedMode];
+
+  if (checksForMode === undefined) {
+    failWithMessage(
+      `Unknown Codex hook mode: ${selectedMode}\nExpected one of: ${Object.keys(commandPlans).join(", ")}`,
+    );
+  }
+
+  return checksForMode;
+}
 
 function resolveRepositoryRoot() {
   const result = spawnSync("git", ["rev-parse", "--show-toplevel"], {
@@ -379,27 +392,31 @@ function readRequiredPrompt(path) {
   return readFileSync(path, "utf8").trimEnd();
 }
 
-for (const check of checks) {
-  const result = await runCheck(check);
+async function runChecks(checksToRun) {
+  for (const check of checksToRun) {
+    const result = await runCheck(check);
 
-  if (!result.ok) {
-    const message = [`${result.name} failed`];
+    if (!result.ok) {
+      const message = [`${result.name} failed`];
 
-    if (result.output.length > 0) {
-      message.push("", result.output);
+      if (result.output.length > 0) {
+        message.push("", result.output);
+      }
+
+      if (result.fullLogPath) {
+        message.push("", `Full log: ${result.fullLogPath}`);
+      }
+
+      message.push("", "Fix the failure above, then continue. Do not change unrelated files.");
+
+      failWithMessage(message.join("\n"));
     }
-
-    if (result.fullLogPath) {
-      message.push("", `Full log: ${result.fullLogPath}`);
-    }
-
-    message.push("", "Fix the failure above, then continue. Do not change unrelated files.");
-
-    failWithMessage(message.join("\n"));
   }
 }
 
-if (mode === "verify:full") {
+await runChecks(checks);
+
+function handleVerifiedCompletion() {
   const context = getGitContext();
   assertCompletionGitState(context);
 
@@ -440,6 +457,10 @@ if (mode === "verify:full") {
   writeFileSync(finalInstructionHeadPath, `${context.currentHead}\n`);
   emitHookResponse({ decision: "block", reason: message.join("\n") });
   process.exit(0);
+}
+
+if (mode === "verify:full") {
+  handleVerifiedCompletion();
 }
 
 emitHookResponse({ continue: true });
