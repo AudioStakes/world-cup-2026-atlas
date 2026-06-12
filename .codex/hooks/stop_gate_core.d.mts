@@ -8,7 +8,9 @@ export type StopGateContext = {
   branch?: string;
   branchStatus?: string;
   hasTaskCommit: boolean;
+  currentHead?: string;
   newDirtyPaths: string[];
+  prHeadRefOid?: string;
   prUrl?: string;
   upstream?: string;
 };

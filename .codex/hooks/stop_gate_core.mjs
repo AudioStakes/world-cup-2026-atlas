@@ -217,29 +217,27 @@ export function getCompletionGitStateIssue(context, stopHookActions) {
     };
   }
 
-  if (!context.upstream) {
-    return {
-      title: "Current branch has no upstream.",
-      reason:
-        "Push the current branch with upstream, create or update the PR, and finish again. If this stop hook still reports no upstream after `git push -u`, check `git config --get branch.<branch>.remote` and `git config --get branch.<branch>.merge`; if either is empty, run `git branch --set-upstream-to=origin/<branch> <branch>`.",
-      nextAction:
-        "Push the current branch with upstream, create or update the PR, and finish again. If this stop hook still reports no upstream after `git push -u`, check `git config --get branch.<branch>.remote` and `git config --get branch.<branch>.merge`; if either is empty, run `git branch --set-upstream-to=origin/<branch> <branch>`.",
-    };
-  }
-
-  if (/\[ahead \d+\]/.test(context.branchStatus)) {
-    return {
-      title: "Current branch has unpushed commits.",
-      reason: "Push the current branch, create or update the PR, and finish again.",
-      nextAction: "Push the current branch, create or update the PR, and finish again.",
-    };
-  }
-
   if (!context.prUrl) {
     return {
       title: "No pull request URL found.",
       reason: "Create or update the pull request for the current branch, then finish again.",
       nextAction: "Create or update the pull request for the current branch, then finish again.",
+    };
+  }
+
+  if (!context.prHeadRefOid) {
+    return {
+      title: "Pull request head commit could not be verified.",
+      reason: "Refresh the pull request metadata, then finish again.",
+      nextAction: "Refresh the pull request metadata, then finish again.",
+    };
+  }
+
+  if (context.prHeadRefOid !== context.currentHead) {
+    return {
+      title: "Pull request is missing the latest local commit.",
+      reason: "Push the current branch, update the PR, and finish again.",
+      nextAction: "Push the current branch, update the PR, and finish again.",
     };
   }
 

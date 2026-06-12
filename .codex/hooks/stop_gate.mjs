@@ -382,6 +382,27 @@ function runCommand(command, args, options = {}) {
   return result.stdout.trimEnd();
 }
 
+function getCurrentPullRequestContext() {
+  const output = runCommand("gh", ["pr", "view", "--json", "url,headRefOid"], {
+    allowFailure: true,
+  });
+
+  if (!output) {
+    return { headRefOid: null, url: null };
+  }
+
+  try {
+    const pullRequest = JSON.parse(output);
+
+    return {
+      headRefOid: pullRequest.headRefOid ?? null,
+      url: pullRequest.url ?? null,
+    };
+  } catch {
+    return { headRefOid: null, url: null };
+  }
+}
+
 function parseStatusPaths(statusOutput) {
   return statusOutput
     .split(/\r?\n/)
@@ -430,9 +451,9 @@ function getGitContext() {
   const baselineHead = getBaselineHead();
   const currentHead = runGit(["rev-parse", "HEAD"]);
   const hasTaskCommit = currentHead !== baselineHead;
-  const prUrl = hasTaskCommit
-    ? runCommand("gh", ["pr", "view", "--json", "url", "--jq", ".url"], { allowFailure: true })
-    : null;
+  const pullRequestContext = hasTaskCommit
+    ? getCurrentPullRequestContext()
+    : { headRefOid: null, url: null };
   const branchLine =
     branchStatus
       .split("\n")[0]
@@ -448,7 +469,8 @@ function getGitContext() {
     latestCommit: currentHead,
     upstream,
     branchStatus,
-    prUrl,
+    prHeadRefOid: pullRequestContext.headRefOid,
+    prUrl: pullRequestContext.url,
     currentDirtyPaths,
     baselineDirtyPaths,
     newDirtyPaths,
