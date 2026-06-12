@@ -22,8 +22,7 @@
   appearance: none;
   transition:
     opacity 140ms ease,
-    color 140ms ease,
-    transform 140ms ease;
+    color 140ms ease;
 }
 
 .venue-marker__dot {
@@ -54,7 +53,6 @@
 .venue-marker:focus-visible {
   color: var(--color-red);
   outline: none;
-  transform: translateY(-1px);
 }
 
 .venue-marker:focus-visible {
@@ -88,7 +86,6 @@
     inset 0 0 0 1px rgba(255, 255, 255, 0.5);
   color: rgba(23, 32, 42, 0.78);
   transition:
-    transform 140ms ease,
     opacity 140ms ease,
     box-shadow 140ms ease,
     background-color 140ms ease,
@@ -107,7 +104,6 @@
 
 .venue-marker:hover,
 .venue-marker:focus-visible {
-  transform: translate(-50%, -50%) scale(1.04);
   border-color: rgba(181, 31, 31, 0.22);
   box-shadow:
     0 12px 26px rgba(23, 32, 42, 0.16),
@@ -140,7 +136,6 @@
     0 16px 32px rgba(23, 32, 42, 0.18),
     0 0 0 2px rgba(181, 31, 31, 0.16),
     0 0 0 6px rgba(181, 31, 31, 0.08);
-  transform: translate(-50%, -50%) scale(1.07);
   z-index: 2;
 }
 

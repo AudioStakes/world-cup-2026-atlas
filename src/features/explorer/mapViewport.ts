@@ -7,6 +7,13 @@ export const EXPLORER_MAP_VIEWBOX = {
 
 export type ExplorerMapViewBox = typeof EXPLORER_MAP_VIEWBOX;
 
+export const EXPLORER_MAP_DISPLAY_VIEWBOX: ExplorerMapViewBox = {
+  minX: 485,
+  minY: 282,
+  width: 790,
+  height: 678,
+} as const;
+
 export function isInsideExplorerMapViewBox(
   point: { readonly x: number; readonly y: number },
   viewBox: ExplorerMapViewBox = EXPLORER_MAP_VIEWBOX,

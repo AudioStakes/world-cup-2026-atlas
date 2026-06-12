@@ -1,5 +1,8 @@
 import { northAmericaMapBounds, northAmericaMapFeatures } from "../../data/northAmericaMapData";
-import { EXPLORER_MAP_VIEWBOX } from "../../features/explorer/mapViewport";
+import {
+  EXPLORER_MAP_DISPLAY_VIEWBOX,
+  type ExplorerMapViewBox,
+} from "../../features/explorer/mapViewport";
 import { createSvgPathsFromGeoGeometry } from "../../features/explorer/projectGeoPoint";
 import type {
   ExplorerAction,
@@ -14,7 +17,8 @@ type MapViewProps = {
 };
 
 export function MapView({ map, onAction }: MapViewProps) {
-  const viewBox = EXPLORER_MAP_VIEWBOX;
+  const viewBox = EXPLORER_MAP_DISPLAY_VIEWBOX;
+  const venueLabelLayouts = createVenueLabelLayouts(map.venueMarkers, viewBox);
 
   return (
     <section class="map-panel" aria-label="North America venue map">
@@ -86,8 +90,13 @@ export function MapView({ map, onAction }: MapViewProps) {
             </g>
           ))}
           <g class="venue-marker-layer" aria-label="Venue markers">
-            {map.venueMarkers.map((venue) => (
-              <VenueMarker key={venue.venueId} venue={venue} onAction={onAction} />
+            {map.venueMarkers.map((venue, index) => (
+              <VenueMarker
+                key={venue.venueId}
+                labelLayout={venueLabelLayouts[index]}
+                venue={venue}
+                onAction={onAction}
+              />
             ))}
           </g>
         </svg>
@@ -132,18 +141,12 @@ function MapBackground() {
 }
 
 type VenueMarkerProps = {
+  readonly labelLayout: VenueLabelLayout | undefined;
   readonly venue: VenueMarkerViewModel;
   readonly onAction: (action: ExplorerAction) => void;
 };
 
-function VenueMarker({ venue, onAction }: VenueMarkerProps) {
-  const labelWidth = Math.min(136, Math.max(76, venue.label.length * 8 + 24));
-  const labelX = clampMapLabelX(venue.position.x - labelWidth / 2, labelWidth);
-  const labelY =
-    venue.position.y - 34 > EXPLORER_MAP_VIEWBOX.minY
-      ? venue.position.y - 34
-      : venue.position.y + 18;
-
+function VenueMarker({ labelLayout, venue, onAction }: VenueMarkerProps) {
   function selectVenue() {
     onAction({ type: "selectVenue", venueId: venue.venueId });
   }
@@ -167,10 +170,19 @@ function VenueMarker({ venue, onAction }: VenueMarkerProps) {
           <span class="venue-marker__dot" aria-hidden="true" />
         </button>
       </foreignObject>
-      <g class="venue-marker__map-label" transform={`translate(${labelX} ${labelY})`}>
-        <rect class="venue-marker__label-bg" width={labelWidth} height="24" rx="10" />
-        <text class="venue-marker__label-text" x={labelWidth / 2} text-anchor="middle">
-          <tspan x={labelWidth / 2} y="16">
+      <g
+        class="venue-marker__map-label"
+        transform={`translate(${labelLayout?.x ?? venue.position.x} ${
+          labelLayout?.y ?? venue.position.y
+        })`}
+      >
+        <rect class="venue-marker__label-bg" width={labelLayout?.width ?? 76} height="24" rx="10" />
+        <text
+          class="venue-marker__label-text"
+          x={(labelLayout?.width ?? 76) / 2}
+          text-anchor="middle"
+        >
+          <tspan x={(labelLayout?.width ?? 76) / 2} y="16">
             {venue.label}
           </tspan>
         </text>
@@ -179,9 +191,106 @@ function VenueMarker({ venue, onAction }: VenueMarkerProps) {
   );
 }
 
-function clampMapLabelX(x: number, labelWidth: number): number {
-  const minX = EXPLORER_MAP_VIEWBOX.minX + 8;
-  const maxX = EXPLORER_MAP_VIEWBOX.minX + EXPLORER_MAP_VIEWBOX.width - labelWidth - 8;
+type VenueLabelLayout = {
+  readonly height: number;
+  readonly width: number;
+  readonly x: number;
+  readonly y: number;
+};
+
+const venueLabelHeight = 24;
+const venueLabelGap = 5;
+const venueLabelInset = 8;
+
+function createVenueLabelLayouts(
+  venues: readonly VenueMarkerViewModel[],
+  viewBox: ExplorerMapViewBox,
+): readonly VenueLabelLayout[] {
+  const layouts = venues.map((venue, index) => ({
+    index,
+    layout: createInitialVenueLabelLayout(venue, viewBox),
+  }));
+  const orderedLayouts = layouts
+    .slice()
+    .sort(
+      (left, right) =>
+        left.layout.y - right.layout.y ||
+        left.layout.x - right.layout.x ||
+        left.index - right.index,
+    );
+  const placedLayouts: VenueLabelLayout[] = [];
+
+  for (const item of orderedLayouts) {
+    let layout = item.layout;
+
+    for (const placedLayout of placedLayouts) {
+      if (doVenueLabelsOverlap(layout, placedLayout)) {
+        layout = {
+          ...layout,
+          y: placedLayout.y + placedLayout.height + venueLabelGap,
+        };
+      }
+    }
+
+    placedLayouts.push(layout);
+    item.layout = layout;
+  }
+
+  for (let index = placedLayouts.length - 1; index >= 0; index -= 1) {
+    const layout = placedLayouts[index];
+    if (!layout) {
+      continue;
+    }
+
+    const nextLayout = placedLayouts[index + 1];
+    const maxY = nextLayout
+      ? nextLayout.y - layout.height - venueLabelGap
+      : viewBox.minY + viewBox.height - layout.height - venueLabelInset;
+
+    if (layout.y > maxY) {
+      const adjustedLayout = { ...layout, y: maxY };
+      placedLayouts[index] = adjustedLayout;
+      const orderedLayout = orderedLayouts.find((item) => item.layout === layout);
+      if (orderedLayout) {
+        orderedLayout.layout = adjustedLayout;
+      }
+    }
+  }
+
+  return layouts.map(({ layout }) => layout);
+}
+
+function createInitialVenueLabelLayout(
+  venue: VenueMarkerViewModel,
+  viewBox: ExplorerMapViewBox,
+): VenueLabelLayout {
+  const labelWidth = Math.min(136, Math.max(76, venue.label.length * 8 + 24));
+  const preferredY = venue.position.y - venueLabelHeight - 10;
+  const fallbackY = venue.position.y + 18;
+
+  return {
+    height: venueLabelHeight,
+    width: labelWidth,
+    x: clampMapLabelX(venue.position.x - labelWidth / 2, labelWidth, viewBox),
+    y:
+      preferredY > viewBox.minY + venueLabelInset
+        ? preferredY
+        : Math.min(fallbackY, viewBox.minY + viewBox.height - venueLabelHeight - venueLabelInset),
+  };
+}
+
+function doVenueLabelsOverlap(left: VenueLabelLayout, right: VenueLabelLayout): boolean {
+  return (
+    left.x < right.x + right.width + venueLabelGap &&
+    left.x + left.width + venueLabelGap > right.x &&
+    left.y < right.y + right.height + venueLabelGap &&
+    left.y + left.height + venueLabelGap > right.y
+  );
+}
+
+function clampMapLabelX(x: number, labelWidth: number, viewBox: ExplorerMapViewBox): number {
+  const minX = viewBox.minX + venueLabelInset;
+  const maxX = viewBox.minX + viewBox.width - labelWidth - venueLabelInset;
 
   return Math.min(Math.max(x, minX), maxX);
 }

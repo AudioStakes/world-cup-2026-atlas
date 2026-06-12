@@ -1,5 +1,12 @@
 import { fireEvent, render, screen, within } from "@testing-library/preact";
 import { beforeEach, describe, expect, it } from "vitest";
+import { northAmericaMapBounds } from "../data/northAmericaMapData";
+import { venues } from "../data/venues";
+import {
+  EXPLORER_MAP_DISPLAY_VIEWBOX,
+  EXPLORER_MAP_VIEWBOX,
+} from "../features/explorer/mapViewport";
+import { projectGeoPointToExplorerMap } from "../features/explorer/projectGeoPoint";
 import { App } from "./App";
 
 function selectJapan() {
@@ -14,6 +21,52 @@ function getFirstMatchCard() {
   }
 
   return matchCard as HTMLElement;
+}
+
+function getVenueMarker(venueId: string) {
+  const marker = document.querySelector(`[data-venue-id="${venueId}"]`);
+
+  if (!marker) {
+    throw new Error(`Expected ${venueId} marker to render`);
+  }
+
+  return marker;
+}
+
+function getVenueLabelBox(venueId: string) {
+  const marker = getVenueMarker(venueId);
+  const label = marker.querySelector(".venue-marker__map-label");
+  const labelBackground = marker.querySelector(".venue-marker__label-bg");
+  const transform = label?.getAttribute("transform");
+  const match = transform?.match(/^translate\(([-\d.]+) ([-\d.]+)\)$/);
+
+  if (!match || !labelBackground) {
+    throw new Error(`Expected ${venueId} label bounds to render`);
+  }
+
+  return {
+    height: Number(labelBackground.getAttribute("height")),
+    width: Number(labelBackground.getAttribute("width")),
+    x: Number(match[1]),
+    y: Number(match[2]),
+  };
+}
+
+function doBoxesOverlap(
+  left: { readonly height: number; readonly width: number; readonly x: number; readonly y: number },
+  right: {
+    readonly height: number;
+    readonly width: number;
+    readonly x: number;
+    readonly y: number;
+  },
+) {
+  return (
+    left.x < right.x + right.width &&
+    left.x + left.width > right.x &&
+    left.y < right.y + right.height &&
+    left.y + left.height > right.y
+  );
 }
 
 describe("App", () => {
@@ -125,6 +178,38 @@ describe("App", () => {
 
     expect(labelText).toHaveTextContent("Seattle");
     expect(labelText).not.toHaveTextContent("Lumen Field");
+  });
+
+  it("renders a closer map crop while preserving venue center coordinates", () => {
+    render(<App />);
+
+    const svg = document.querySelector(".map-svg");
+    const boston = venues.find((venue) => venue.id === "boston");
+    const bostonButton = getVenueMarker("boston").querySelector(".venue-marker__button-object");
+    const bostonPosition = boston
+      ? projectGeoPointToExplorerMap(boston.geoPoint, northAmericaMapBounds)
+      : null;
+
+    expect(svg).toHaveAttribute(
+      "viewBox",
+      `${EXPLORER_MAP_DISPLAY_VIEWBOX.minX} ${EXPLORER_MAP_DISPLAY_VIEWBOX.minY} ${EXPLORER_MAP_DISPLAY_VIEWBOX.width} ${EXPLORER_MAP_DISPLAY_VIEWBOX.height}`,
+    );
+    expect(EXPLORER_MAP_DISPLAY_VIEWBOX.width).toBeLessThan(EXPLORER_MAP_VIEWBOX.width);
+    expect(EXPLORER_MAP_DISPLAY_VIEWBOX.height).toBeLessThan(EXPLORER_MAP_VIEWBOX.height);
+    expect(Number(bostonButton?.getAttribute("x"))).toBeCloseTo((bostonPosition?.x ?? 0) - 17);
+    expect(Number(bostonButton?.getAttribute("y"))).toBeCloseTo((bostonPosition?.y ?? 0) - 17);
+  });
+
+  it("stacks dense East Coast venue labels without moving marker centers", () => {
+    render(<App />);
+
+    const bostonLabel = getVenueLabelBox("boston");
+    const newYorkLabel = getVenueLabelBox("new-york-new-jersey");
+    const philadelphiaLabel = getVenueLabelBox("philadelphia");
+
+    expect(doBoxesOverlap(bostonLabel, newYorkLabel)).toBe(false);
+    expect(doBoxesOverlap(bostonLabel, philadelphiaLabel)).toBe(false);
+    expect(doBoxesOverlap(newYorkLabel, philadelphiaLabel)).toBe(false);
   });
 
   it("renders venue results after selecting a venue", () => {
