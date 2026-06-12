@@ -1,8 +1,8 @@
 import type { LocalDateString } from "../../domain/ids";
-import { localDate } from "../../domain/ids";
 import type { AppData, Match, Venue } from "../../domain/types";
 import { queryMatchesByViewState } from "../../queries/queryMatchesByViewState";
 import { formatDateLabel } from "./formatExplorerLabels";
+import { createTournamentDates } from "./tournamentDates";
 import type {
   DateMonthViewModel,
   DateOptionViewModel,
@@ -11,8 +11,6 @@ import type {
   NormalizedExplorerViewState,
 } from "./types";
 
-const FIRST_TOURNAMENT_DATE = "2026-06-11";
-const LAST_TOURNAMENT_DATE = "2026-07-19";
 const timeZoneDisplayOrder = ["PT", "MT", "CT", "ET"] as const;
 
 export function createDateSelectorViewModel(
@@ -143,19 +141,6 @@ function createTimeZoneSummaryLabel(
   return timeZoneDisplayOrder
     .filter((abbreviation) => timeZoneAbbreviations.has(abbreviation))
     .join("/");
-}
-
-function createTournamentDates(): readonly LocalDateString[] {
-  const dates: LocalDateString[] = [];
-  const cursor = new Date(`${FIRST_TOURNAMENT_DATE}T00:00:00Z`);
-  const end = new Date(`${LAST_TOURNAMENT_DATE}T00:00:00Z`);
-
-  while (cursor <= end) {
-    dates.push(localDate(cursor.toISOString().slice(0, 10)));
-    cursor.setUTCDate(cursor.getUTCDate() + 1);
-  }
-
-  return dates;
 }
 
 function getMonthLabel(date: string): string {

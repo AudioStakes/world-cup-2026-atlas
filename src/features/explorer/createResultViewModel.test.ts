@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { appData } from "../../data/appData";
 import { countryId, groupCode, localDate, venueId } from "../../domain/ids";
+import type { AppData } from "../../domain/types";
 import { createIndexes } from "../../indexes/createIndexes";
 import { createResultViewModel } from "./createResultViewModel";
 import { emptyExplorerViewState } from "./types";
@@ -63,6 +64,24 @@ function createResultForGroup(groupKey: string) {
   );
 }
 
+function withFinishedMatch(matchNumber: number, homeGoals: number, awayGoals: number): AppData {
+  return {
+    ...appData,
+    matches: appData.matches.map((match) =>
+      match.matchNumber === matchNumber
+        ? {
+            ...match,
+            result: {
+              status: "fullTime",
+              homeGoals,
+              awayGoals,
+            },
+          }
+        : match,
+    ),
+  };
+}
+
 describe("createResultViewModel production metadata", () => {
   it("adds FIFA code and confederation to country result subtitles", () => {
     const result = createResultForCountry("jpn");
@@ -70,6 +89,14 @@ describe("createResultViewModel production metadata", () => {
     expect(result.title).toBe("Japan");
     expect(result.subtitle).toBe("Group F · JPN · AFC");
     expect(result.routeSummary?.venueCountExplanationLabel).toBe("Dallas is visited twice.");
+    expect(result.details).toMatchObject({
+      type: "country",
+      metrics: expect.arrayContaining([
+        { label: "FIFA ranking", value: "#18 · Jun 11" },
+        { label: "Previous World Cup", value: "Round of 16" },
+        { label: "Group", value: "Group F" },
+      ]),
+    });
   });
 
   it("adds group team FIFA codes to group result subtitles", () => {
@@ -77,6 +104,68 @@ describe("createResultViewModel production metadata", () => {
 
     expect(result.title).toBe("Group F");
     expect(result.subtitle).toBe("6 matches · NED · JPN · SWE · TUN");
+    expect(result.details).toMatchObject({
+      type: "group",
+      standings: expect.arrayContaining([
+        expect.objectContaining({
+          teamLabel: "🇯🇵 Japan",
+          played: 0,
+          points: 0,
+          matchSummary: "NED scheduled · TUN scheduled · SWE scheduled",
+        }),
+      ]),
+    });
+  });
+
+  it("renders completed match scores and folds them into group standings", () => {
+    const data = withFinishedMatch(11, 2, 1);
+    const finishedIndexes = createIndexes(data);
+    const selectedGroupCode = groupCode("F");
+    const matches = data.matches.filter(
+      (match) =>
+        match.stage === "group" && "groupCode" in match && match.groupCode === selectedGroupCode,
+    );
+    const result = createResultViewModel(
+      data,
+      finishedIndexes,
+      { ...emptyExplorerViewState, selectedGroupCode },
+      matches,
+    );
+    const finishedMatch = result.matches.find((match) => match.matchNumberLabel === "Match 11");
+    const standings = result.details?.type === "group" ? result.details.standings : [];
+
+    expect(finishedMatch).toMatchObject({
+      scoreLineLabel: "2-1",
+      statusLabel: "Full time",
+    });
+    expect(standings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          teamLabel: "🇳🇱 Netherlands",
+          played: 1,
+          won: 1,
+          drawn: 0,
+          lost: 0,
+          goalsFor: 2,
+          goalsAgainst: 1,
+          goalDifferenceLabel: "+1",
+          points: 3,
+          matchSummary: "JPN 2-1 · SWE scheduled · TUN scheduled",
+        }),
+        expect.objectContaining({
+          teamLabel: "🇯🇵 Japan",
+          played: 1,
+          won: 0,
+          drawn: 0,
+          lost: 1,
+          goalsFor: 1,
+          goalsAgainst: 2,
+          goalDifferenceLabel: "-1",
+          points: 0,
+          matchSummary: "NED 2-1 · TUN scheduled · SWE scheduled",
+        }),
+      ]),
+    );
   });
 
   it("adds kickoff range and time-zone summary to multi-match date result subtitles", () => {
@@ -84,6 +173,14 @@ describe("createResultViewModel production metadata", () => {
 
     expect(result.title).toBe("Jun 14");
     expect(result.subtitle).toBe("4 matches · 12:00–20:00 · CT/ET");
+    expect(result.details).toMatchObject({
+      type: "date",
+      metrics: expect.arrayContaining([
+        { label: "Matches", value: "4 matches" },
+        { label: "Kickoff window", value: "12:00–20:00" },
+        { label: "Time zones", value: "CT/ET" },
+      ]),
+    });
   });
 
   it("adds singular kickoff metadata to one-match date result subtitles", () => {
@@ -130,6 +227,14 @@ describe("createResultViewModel production metadata", () => {
 
     expect(result.title).toBe("Dallas");
     expect(result.subtitle).toBe("AT&T Stadium · Arlington, USA · CT");
+    expect(result.details).toMatchObject({
+      type: "venue",
+      metrics: expect.arrayContaining([
+        { label: "Stadium", value: "AT&T Stadium" },
+        { label: "City", value: "Arlington, USA" },
+        { label: "Time zone", value: "CT · America/Chicago" },
+      ]),
+    });
   });
 
   it("formats non-USA venue result subtitles with host country names", () => {

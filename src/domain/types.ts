@@ -19,6 +19,11 @@ export type Country = {
   readonly shortName: string;
   readonly flagEmoji: string;
   readonly confederation: Confederation;
+  readonly fifaRanking?: {
+    readonly rank: number;
+    readonly sourceDate: LocalDateString;
+  };
+  readonly previousWorldCupResult?: string;
   readonly dataStatus: DataStatus;
   readonly sourceNote?: string;
 };
@@ -115,8 +120,15 @@ export type Match = {
   readonly venueId: VenueId;
   readonly homeParticipant: MatchParticipant;
   readonly awayParticipant: MatchParticipant;
+  readonly result?: MatchResult;
   readonly dataStatus: DataStatus;
   readonly sourceNote?: string;
+};
+
+export type MatchResult = {
+  readonly status: "fullTime";
+  readonly homeGoals: number;
+  readonly awayGoals: number;
 };
 
 export type AppData = {

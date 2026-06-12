@@ -47,16 +47,26 @@ describe("explorer URL state", () => {
     expect(serialized).toBe("?country=jpn&date=2026-06-14&venue=dallas");
   });
 
-  it("uses URL parameters before the default A1 fallback", () => {
-    const viewState = resolveInitialExplorerViewState("?country=jpn", indexes);
+  it("uses URL parameters before the default date fallback", () => {
+    const viewState = resolveInitialExplorerViewState(
+      "?country=jpn",
+      indexes,
+      localDate("2026-06-14"),
+    );
 
-    expect(viewState.selectedCountryId).toBe(countryId("jpn"));
+    expect(viewState).toEqual(makeState({ selectedCountryId: countryId("jpn") }));
   });
 
-  it("falls back to the A1 country when the URL has no explorer parameters", () => {
-    const viewState = resolveInitialExplorerViewState("", indexes);
+  it("falls back to the local today when the URL has no explorer parameters", () => {
+    const viewState = resolveInitialExplorerViewState("", indexes, localDate("2026-06-14"));
 
-    expect(viewState).toEqual(makeState({ selectedCountryId: countryId("mex") }));
+    expect(viewState).toEqual(makeState({ selectedDate: localDate("2026-06-14") }));
+  });
+
+  it("falls back to opening day when the local today is outside the tournament", () => {
+    const viewState = resolveInitialExplorerViewState("", indexes, localDate("2026-08-01"));
+
+    expect(viewState).toEqual(makeState({ selectedDate: localDate("2026-06-11") }));
   });
 
   it("drops invalid ids while normalizing state", () => {

@@ -7,7 +7,9 @@ export type DataSourcePurpose =
   | "venues"
   | "geo-coordinates"
   | "map-projection"
-  | "derived-distance";
+  | "derived-distance"
+  | "rankings"
+  | "team-history";
 
 export type DataSourceRecord = {
   readonly id: string;
@@ -99,5 +101,38 @@ export const dataSources = [
     accessedOn: "2026-06-08",
     notes:
       "Candidate source for Canada, United States, and Mexico boundaries when replacing the schematic SVG map with a real projected map.",
+  },
+  {
+    id: "fifa-coca-cola-ranking-2026-06-11",
+    title: "FIFA/Coca-Cola Men's World Ranking",
+    publisher: "FIFA",
+    reliability: "official",
+    purposes: ["rankings"],
+    url: "https://inside.fifa.com/fifa-world-ranking/men",
+    accessedOn: "2026-06-12",
+    notes:
+      "Official ranking page used to verify that the latest men's ranking was updated on 2026-06-11.",
+  },
+  {
+    id: "sofascore-fifa-rankings-2026-06-11",
+    title: "FIFA Football rankings 2026",
+    publisher: "Sofascore",
+    reliability: "trustedSecondary",
+    purposes: ["rankings"],
+    url: "https://www.sofascore.com/football/rankings/fifa",
+    accessedOn: "2026-06-12",
+    notes:
+      "Used for the structured country-by-country ranking values after confirming the update date against FIFA.",
+  },
+  {
+    id: "fifa-world-cup-2022-results",
+    title: "FIFA World Cup Qatar 2022 results",
+    publisher: "FIFA",
+    reliability: "official",
+    purposes: ["team-history"],
+    url: "https://www.fifa.com/",
+    accessedOn: "2026-06-12",
+    notes:
+      "Used for previous World Cup result labels such as champions, group stage, and did not qualify.",
   },
 ] as const satisfies readonly DataSourceRecord[];
