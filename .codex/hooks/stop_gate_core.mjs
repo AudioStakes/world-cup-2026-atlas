@@ -56,7 +56,9 @@ export function getInputStrings(value) {
 }
 
 export function isFinalReportResponse(value) {
-  return getInputStrings(value).some((text) => /Review Notes:|残作業:/.test(text));
+  return getInputStrings(value).some((text) =>
+    /Review Notes:|残作業:|# Efficiency Retrospective|## Self-Improvement Patch/.test(text),
+  );
 }
 
 export function formatHookJson(value) {
@@ -167,6 +169,15 @@ export function shouldSkipVerification(context, finalReportRequested) {
   }
 
   return !context.hasTaskCommit && context.newDirtyPaths.length === 0;
+}
+
+export function buildFinalReportRequestKey(repositoryRoot, context) {
+  return JSON.stringify({
+    repositoryRoot,
+    branch: context.branch ?? null,
+    head: context.currentHead ?? null,
+    prUrl: context.prUrl ?? null,
+  });
 }
 
 export function getCompletionGitStateIssue(context, stopHookActions) {

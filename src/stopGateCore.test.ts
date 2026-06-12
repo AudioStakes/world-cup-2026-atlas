@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildFinalReportRequestKey,
   buildPrReportLine,
   compactOutput,
   getCompletionGitStateIssue,
@@ -80,7 +81,38 @@ describe("stopGate core", () => {
       "Review Notes: none",
     ]);
     expect(isFinalReportResponse(payload)).toBe(true);
+    expect(
+      isFinalReportResponse({
+        messages: [
+          {
+            role: "assistant",
+            content: "# Efficiency Retrospective\n\n## Self-Improvement Patch\nImplemented: No",
+          },
+        ],
+      }),
+    ).toBe(true);
     expect(isFinalReportResponse({ messages: [{ content: "plain text" }] })).toBe(false);
+  });
+
+  it("builds final report request keys from stable completion state only", () => {
+    const context = {
+      branch: "codex/example",
+      currentHead: "abc123",
+      hasTaskCommit: true,
+      newDirtyPaths: [],
+      prUrl: "https://example.test/pr/1",
+    };
+
+    expect(buildFinalReportRequestKey("/repo", context)).toBe(
+      buildFinalReportRequestKey("/repo", {
+        ...context,
+        branchStatus: "## codex/example...origin/codex/example [ahead 1]",
+        upstream: "origin/codex/example",
+      }),
+    );
+    expect(buildFinalReportRequestKey("/repo", context)).not.toBe(
+      buildFinalReportRequestKey("/repo", { ...context, currentHead: "def456" }),
+    );
   });
 
   it("builds PR report lines for commit and toggle states", () => {
