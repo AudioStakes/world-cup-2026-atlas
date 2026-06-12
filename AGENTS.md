@@ -83,4 +83,6 @@ rtk pip list            rtk pnpm install        rtk npm run <script>
 - In command chains, prefix each segment: `rtk git add . && rtk git commit -m "msg"`
 - For debugging, use raw command without rtk prefix
 - `rtk proxy <cmd>` runs command without filtering but tracks usage
+- For package executables that pass flags through `npx`/`pnpm dlx`, use `rtk proxy npx ...`
+  or `rtk proxy pnpm dlx ...` so arguments are not interpreted as project scripts.
 <!-- /headroom:rtk-instructions -->
