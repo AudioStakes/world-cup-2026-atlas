@@ -25,17 +25,40 @@ async function expectVenueMarkerAlignment(page: Page, venueId: string) {
     .toBeLessThanOrEqual(1);
 }
 
+async function setBrowserToday(page: Page, dateIso: string) {
+  await page.addInitScript((fixedNow) => {
+    Date.now = () => new Date(fixedNow).getTime();
+  }, `${dateIso}T12:00:00`);
+}
+
 test.describe("World Cup 2026 Atlas explorer", () => {
-  test("starts from the A1 country when no URL query present", async ({ page }) => {
+  test("starts from today's tournament date when no URL query present", async ({ page }) => {
+    await setBrowserToday(page, "2026-06-12");
     await page.goto("/");
 
-    await expect(page.getByRole("heading", { name: "Mexico" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Select Mexico" })).toHaveAttribute(
+    await expect(page.getByRole("heading", { name: "Jun 12" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Select Fri Jun 12/ })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
-    await expect(page.getByText("/?country=mex")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Select Mexico" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    await expect(page.getByText("/?date=2026-06-12")).toHaveCount(0);
     await expect(page.getByRole("button", { name: /clear/i })).toHaveCount(0);
+
+    const splitHeights = await page.evaluate(() => {
+      const result = document.querySelector(".result-card")?.getBoundingClientRect();
+      const map = document.querySelector(".map-panel")?.getBoundingClientRect();
+
+      return {
+        map: map?.height ?? 0,
+        result: result?.height ?? 0,
+      };
+    });
+
+    expect(Math.abs(splitHeights.result - splitHeights.map)).toBeLessThanOrEqual(1);
   });
 
   test("restores a country selection from the URL query", async ({ page }) => {
@@ -64,7 +87,7 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     ).toBeVisible();
   });
 
-  test("selects a date without showing match-count chip metadata", async ({ page }) => {
+  test("selects a date and shows that day's fixture details", async ({ page }) => {
     await page.goto("/");
 
     await page.getByRole("button", { name: /Select Tue Jun 16/ }).click();
@@ -74,7 +97,10 @@ test.describe("World Cup 2026 Atlas explorer", () => {
       "aria-pressed",
       "true",
     );
-    await expect(page.getByText(/matches/)).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Jun 16" })).toBeVisible();
+    await expect(
+      page.locator(".detail-metrics").getByText("4 matches", { exact: true }),
+    ).toBeVisible();
   });
 
   test("selects a venue from the map", async ({ page }) => {
@@ -84,7 +110,9 @@ test.describe("World Cup 2026 Atlas explorer", () => {
 
     await expect(page).toHaveURL(/venue=dallas/);
     await expect(page.getByRole("heading", { name: "Dallas" })).toBeVisible();
-    await expect(page.getByText(/Arlington, USA/)).toHaveCount(0);
+    await expect(
+      page.locator(".detail-metrics").getByText("Arlington, USA", { exact: true }),
+    ).toBeVisible();
   });
 
   test("keeps HTML venue controls aligned to SVG marker centers across resize changes", async ({

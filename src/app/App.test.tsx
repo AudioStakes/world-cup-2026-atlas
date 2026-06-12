@@ -138,6 +138,7 @@ class MockResizeObserver {
 describe("App", () => {
   beforeEach(() => {
     window.history.replaceState(null, "", "/");
+    vi.spyOn(Date, "now").mockReturnValue(new Date(2026, 5, 11, 9).getTime());
   });
 
   afterEach(() => {
@@ -168,15 +169,19 @@ describe("App", () => {
     }
   });
 
-  it("renders the default explorer state from the production A1 country", () => {
+  it("renders the default explorer state from the production local tournament date", () => {
     render(<App />);
 
     expect(screen.getByText("World Cup 2026 Atlas")).toBeInTheDocument();
-    expect(screen.queryByText("/?country=mex")).not.toBeInTheDocument();
+    expect(screen.queryByText("/?date=2026-06-11")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /clear/i })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Select Mexico" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: /Select Thu Jun 11/ })).toHaveAttribute(
       "aria-pressed",
       "true",
+    );
+    expect(screen.getByRole("button", { name: "Select Mexico" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
     );
   });
 
@@ -239,7 +244,7 @@ describe("App", () => {
     expect(dateButton).toHaveTextContent("14");
     expect(dateButton).not.toHaveTextContent("Sun");
     expect(dateButton).not.toHaveTextContent("Jun");
-    expect(screen.queryByText(/matches/)).not.toBeInTheDocument();
+    expect(dateButton).not.toHaveTextContent(/matches/);
   });
 
   it("renders match cards as compact date matchup venue rows", () => {
@@ -251,6 +256,7 @@ describe("App", () => {
     expect(matchScope.getByText("Thu Jun 11 13:00 CT")).toBeInTheDocument();
     expect(matchScope.getByText("🇲🇽 vs 🇿🇦")).toBeInTheDocument();
     expect(matchScope.getByText("🇲🇽 Mexico vs 🇿🇦 South Africa")).toHaveClass("visually-hidden");
+    expect(matchScope.getByText("Scheduled")).toBeInTheDocument();
     expect(matchScope.queryByText(/Estadio Azteca · Mexico City, Mexico/)).not.toBeInTheDocument();
   });
 

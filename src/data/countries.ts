@@ -1,9 +1,73 @@
-import { countryId } from "../domain/ids";
+import { countryId, localDate } from "../domain/ids";
 import type { Country } from "../domain/types";
 
 const groupCompositionSourceNote = "fifa-world-cup-26-groups";
+const fifaRankingSourceDate = localDate("2026-06-11");
 
-export const countries = [
+type CountryDetail = Pick<Country, "fifaRanking" | "previousWorldCupResult">;
+
+const countryDetailsById = new Map<Country["id"], CountryDetail>([
+  [countryId("mex"), countryDetail(14, "Group stage")],
+  [countryId("rsa"), countryDetail(60, "Did not qualify")],
+  [countryId("kor"), countryDetail(25, "Round of 16")],
+  [countryId("cze"), countryDetail(40, "Did not qualify")],
+  [countryId("can"), countryDetail(30, "Group stage")],
+  [countryId("bos"), countryDetail(64, "Did not qualify")],
+  [countryId("qat"), countryDetail(56, "Group stage")],
+  [countryId("sui"), countryDetail(19, "Round of 16")],
+  [countryId("bra"), countryDetail(6, "Quarter-finals")],
+  [countryId("mar"), countryDetail(7, "Fourth place")],
+  [countryId("hti"), countryDetail(83, "Did not qualify")],
+  [countryId("sco"), countryDetail(42, "Did not qualify")],
+  [countryId("usa"), countryDetail(17, "Round of 16")],
+  [countryId("par"), countryDetail(41, "Did not qualify")],
+  [countryId("aus"), countryDetail(27, "Round of 16")],
+  [countryId("tur"), countryDetail(22, "Did not qualify")],
+  [countryId("ger"), countryDetail(10, "Group stage")],
+  [countryId("cuw"), countryDetail(82, "Did not qualify")],
+  [countryId("civ"), countryDetail(33, "Did not qualify")],
+  [countryId("ecu"), countryDetail(23, "Group stage")],
+  [countryId("ned"), countryDetail(8, "Quarter-finals")],
+  [countryId("jpn"), countryDetail(18, "Round of 16")],
+  [countryId("swe"), countryDetail(38, "Did not qualify")],
+  [countryId("tun"), countryDetail(45, "Group stage")],
+  [countryId("bel"), countryDetail(9, "Group stage")],
+  [countryId("egy"), countryDetail(29, "Did not qualify")],
+  [countryId("irn"), countryDetail(20, "Group stage")],
+  [countryId("nzl"), countryDetail(85, "Did not qualify")],
+  [countryId("esp"), countryDetail(2, "Round of 16")],
+  [countryId("cpv"), countryDetail(67, "Did not qualify")],
+  [countryId("ksa"), countryDetail(61, "Group stage")],
+  [countryId("uru"), countryDetail(16, "Group stage")],
+  [countryId("fra"), countryDetail(3, "Runners-up")],
+  [countryId("sen"), countryDetail(15, "Round of 16")],
+  [countryId("irq"), countryDetail(57, "Did not qualify")],
+  [countryId("nor"), countryDetail(31, "Did not qualify")],
+  [countryId("arg"), countryDetail(1, "Champions")],
+  [countryId("alg"), countryDetail(28, "Did not qualify")],
+  [countryId("aut"), countryDetail(24, "Did not qualify")],
+  [countryId("jor"), countryDetail(63, "Did not qualify")],
+  [countryId("por"), countryDetail(5, "Quarter-finals")],
+  [countryId("cod"), countryDetail(46, "Did not qualify")],
+  [countryId("uzb"), countryDetail(50, "Did not qualify")],
+  [countryId("col"), countryDetail(13, "Did not qualify")],
+  [countryId("eng"), countryDetail(4, "Quarter-finals")],
+  [countryId("cro"), countryDetail(11, "Third place")],
+  [countryId("gha"), countryDetail(73, "Group stage")],
+  [countryId("pan"), countryDetail(34, "Did not qualify")],
+]);
+
+function countryDetail(rank: number, previousWorldCupResult: string): CountryDetail {
+  return {
+    fifaRanking: {
+      rank,
+      sourceDate: fifaRankingSourceDate,
+    },
+    previousWorldCupResult,
+  };
+}
+
+const countryRows = [
   {
     id: countryId("mex"),
     fifaCode: "MEX",
@@ -485,3 +549,8 @@ export const countries = [
     sourceNote: groupCompositionSourceNote,
   },
 ] as const satisfies readonly Country[];
+
+export const countries = countryRows.map((country) => ({
+  ...country,
+  ...countryDetailsById.get(country.id),
+})) satisfies readonly Country[];

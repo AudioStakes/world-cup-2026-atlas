@@ -24,8 +24,10 @@ import {
 } from "./formatExplorerLabels";
 import type {
   CountryRouteSummaryViewModel,
+  ExplorerDetailViewModel,
   ExplorerResultType,
   ExplorerResultViewModel,
+  GroupStandingRowViewModel,
   MatchListItemViewModel,
   NormalizedExplorerViewState,
 } from "./types";
@@ -46,6 +48,7 @@ export function createResultViewModel(
       icon: "🧭",
       title: "Start exploring",
       subtitle: "",
+      details: null,
       emptyMessage: "Select a group, team, date, or venue pin to see matching fixtures here.",
       matches: [],
       routeSummary: null,
@@ -59,6 +62,7 @@ export function createResultViewModel(
     icon: title.icon,
     title: title.title,
     subtitle: title.subtitle,
+    details: createDetails(data, indexes, viewState, matchingMatches, resultType),
     emptyMessage:
       matchingMatches.length === 0 ? "No matches found for the current selection." : null,
     matches: matchingMatches.map((match) => createMatchListItem(indexes, viewState, match)),
@@ -240,11 +244,229 @@ function createMatchListItem(
     primaryText: createMatchPrimaryText(indexes, viewState, match),
     matchupText: createMatchupText(indexes, match),
     matchupAriaLabel: createMatchupAriaLabel(indexes, match),
+    scoreLineLabel: createScoreLineLabel(match),
+    statusLabel: match.result ? "Full time" : "Scheduled",
     secondaryText: `${match.kickoffLocal} ${venue.timeZone.abbreviation}`,
     venueId: venue.id,
     venueLabel: venue.name,
     venueDetailLabel: createVenueDetailLabel(venue),
   };
+}
+
+function createDetails(
+  data: AppData,
+  indexes: Indexes,
+  viewState: NormalizedExplorerViewState,
+  matchingMatches: readonly Match[],
+  resultType: ExplorerResultType,
+): ExplorerDetailViewModel | null {
+  if (resultType === "country" && viewState.selectedCountryId) {
+    const country = getRequiredCountry(indexes, viewState.selectedCountryId);
+    const groupCode = findCountryGroupCode(indexes, country.id);
+
+    return {
+      type: "country",
+      metrics: [
+        { label: "FIFA ranking", value: createFifaRankingLabel(country) },
+        { label: "Previous World Cup", value: country.previousWorldCupResult ?? "Data pending" },
+        { label: "Group", value: groupCode ? `Group ${groupCode}` : "TBD" },
+        { label: "Confederation", value: country.confederation },
+        { label: "Fixtures", value: formatCount(matchingMatches.length, "match") },
+      ],
+    };
+  }
+
+  if (resultType === "date" && viewState.selectedDate) {
+    return {
+      type: "date",
+      metrics: [
+        { label: "Matches", value: formatCount(matchingMatches.length, "match") },
+        { label: "Kickoff window", value: createKickoffRangeLabel(matchingMatches) ?? "Rest day" },
+        {
+          label: "Time zones",
+          value: createTimeZoneSummaryLabel(indexes, matchingMatches) ?? "None",
+        },
+      ],
+    };
+  }
+
+  if (resultType === "venue" && viewState.selectedVenueId) {
+    const venue = getRequiredVenue(indexes, viewState.selectedVenueId);
+
+    return {
+      type: "venue",
+      metrics: [
+        { label: "Stadium", value: venue.stadiumName },
+        { label: "City", value: createVenueCityLabel(venue) },
+        {
+          label: "Time zone",
+          value: `${venue.timeZone.abbreviation} · ${venue.timeZone.ianaName}`,
+        },
+        { label: "Matches", value: formatCount(matchingMatches.length, "match") },
+      ],
+    };
+  }
+
+  if (resultType === "group" && viewState.selectedGroupCode) {
+    return {
+      type: "group",
+      standings: createGroupStandings(data, indexes, viewState.selectedGroupCode),
+    };
+  }
+
+  return null;
+}
+
+function createFifaRankingLabel(country: Country): string {
+  if (!country.fifaRanking) {
+    return "Data pending";
+  }
+
+  return `#${country.fifaRanking.rank} · ${formatDateLabel(country.fifaRanking.sourceDate)}`;
+}
+
+function createScoreLineLabel(match: Match): string | null {
+  if (!match.result) {
+    return null;
+  }
+
+  return `${match.result.homeGoals}-${match.result.awayGoals}`;
+}
+
+function createGroupStandings(
+  data: AppData,
+  indexes: Indexes,
+  groupCode: GroupCode,
+): readonly GroupStandingRowViewModel[] {
+  const rows = getGroupSlotEntries(indexes, groupCode).map((slotEntry) => {
+    const country = slotEntry.countryId
+      ? (indexes.countriesById.get(slotEntry.countryId) ?? null)
+      : null;
+    return {
+      countryId: country?.id ?? null,
+      teamLabel: country ? `${country.flagEmoji} ${country.name}` : slotEntry.slotId,
+      played: 0,
+      won: 0,
+      drawn: 0,
+      lost: 0,
+      goalsFor: 0,
+      goalsAgainst: 0,
+      points: 0,
+      matchSummary: createTeamFixtureSummary(data, indexes, groupCode, country?.id ?? null),
+    };
+  });
+  const rowsByCountryId = new Map(
+    rows
+      .filter((row): row is (typeof rows)[number] & { readonly countryId: CountryId } =>
+        Boolean(row.countryId),
+      )
+      .map((row) => [row.countryId, row]),
+  );
+
+  for (const match of data.matches) {
+    if (match.stage !== "group" || !("groupCode" in match) || match.groupCode !== groupCode) {
+      continue;
+    }
+
+    const result = match.result;
+    if (!result) {
+      continue;
+    }
+
+    const homeCountryId = getParticipantCountryId(match.homeParticipant);
+    const awayCountryId = getParticipantCountryId(match.awayParticipant);
+    const homeRow = homeCountryId ? rowsByCountryId.get(homeCountryId) : undefined;
+    const awayRow = awayCountryId ? rowsByCountryId.get(awayCountryId) : undefined;
+
+    if (!homeRow || !awayRow) {
+      continue;
+    }
+
+    applyGroupResult(homeRow, result.homeGoals, result.awayGoals);
+    applyGroupResult(awayRow, result.awayGoals, result.homeGoals);
+  }
+
+  return rows
+    .map((row) => ({
+      ...row,
+      goalDifferenceLabel: formatGoalDifference(row.goalsFor - row.goalsAgainst),
+    }))
+    .sort(
+      (left, right) =>
+        right.points - left.points ||
+        Number.parseInt(right.goalDifferenceLabel, 10) -
+          Number.parseInt(left.goalDifferenceLabel, 10) ||
+        right.goalsFor - left.goalsFor ||
+        left.teamLabel.localeCompare(right.teamLabel),
+    );
+}
+
+function applyGroupResult(
+  row: {
+    played: number;
+    won: number;
+    drawn: number;
+    lost: number;
+    goalsFor: number;
+    goalsAgainst: number;
+    points: number;
+  },
+  goalsFor: number,
+  goalsAgainst: number,
+): void {
+  row.played += 1;
+  row.goalsFor += goalsFor;
+  row.goalsAgainst += goalsAgainst;
+
+  if (goalsFor > goalsAgainst) {
+    row.won += 1;
+    row.points += 3;
+  } else if (goalsFor < goalsAgainst) {
+    row.lost += 1;
+  } else {
+    row.drawn += 1;
+    row.points += 1;
+  }
+}
+
+function createTeamFixtureSummary(
+  data: AppData,
+  indexes: Indexes,
+  groupCode: GroupCode,
+  countryId: CountryId | null,
+): string {
+  if (!countryId) {
+    return "TBD";
+  }
+
+  const summaries = data.matches
+    .filter(
+      (match) =>
+        match.stage === "group" &&
+        "groupCode" in match &&
+        match.groupCode === groupCode &&
+        getMatchCountryIds(match).includes(countryId),
+    )
+    .sort(
+      (left, right) => left.date.localeCompare(right.date) || left.matchNumber - right.matchNumber,
+    )
+    .map((match) => {
+      const opponentId = getOpponentCountryId(match, countryId);
+      const opponent = opponentId ? indexes.countriesById.get(opponentId) : null;
+      const resultLabel = createScoreLineLabel(match) ?? "scheduled";
+
+      return opponent ? `${opponent.fifaCode} ${resultLabel}` : resultLabel;
+    });
+
+  return summaries.length > 0 ? summaries.join(" · ") : "No fixtures";
+}
+
+function formatGoalDifference(goalDifference: number): string {
+  if (goalDifference > 0) {
+    return `+${goalDifference}`;
+  }
+
+  return String(goalDifference);
 }
 
 function formatStageLabel(match: Match): string {

@@ -118,9 +118,56 @@ export type ExplorerResultViewModel = {
   readonly icon: string;
   readonly title: string;
   readonly subtitle: string;
+  readonly details: ExplorerDetailViewModel | null;
   readonly emptyMessage: string | null;
   readonly matches: readonly MatchListItemViewModel[];
   readonly routeSummary: CountryRouteSummaryViewModel | null;
+};
+
+export type ExplorerDetailViewModel =
+  | CountryDetailViewModel
+  | DateDetailViewModel
+  | VenueDetailViewModel
+  | GroupDetailViewModel;
+
+export type DetailMetricViewModel = {
+  readonly label: string;
+  readonly value: string;
+  readonly note?: string;
+};
+
+export type CountryDetailViewModel = {
+  readonly type: "country";
+  readonly metrics: readonly DetailMetricViewModel[];
+};
+
+export type DateDetailViewModel = {
+  readonly type: "date";
+  readonly metrics: readonly DetailMetricViewModel[];
+};
+
+export type VenueDetailViewModel = {
+  readonly type: "venue";
+  readonly metrics: readonly DetailMetricViewModel[];
+};
+
+export type GroupDetailViewModel = {
+  readonly type: "group";
+  readonly standings: readonly GroupStandingRowViewModel[];
+};
+
+export type GroupStandingRowViewModel = {
+  readonly countryId: CountryId | null;
+  readonly teamLabel: string;
+  readonly played: number;
+  readonly won: number;
+  readonly drawn: number;
+  readonly lost: number;
+  readonly goalsFor: number;
+  readonly goalsAgainst: number;
+  readonly goalDifferenceLabel: string;
+  readonly points: number;
+  readonly matchSummary: string;
 };
 
 export type MatchListItemViewModel = {
@@ -131,6 +178,8 @@ export type MatchListItemViewModel = {
   readonly primaryText: string;
   readonly matchupText: string;
   readonly matchupAriaLabel: string;
+  readonly scoreLineLabel: string | null;
+  readonly statusLabel: string;
   readonly secondaryText: string;
   readonly venueId: VenueId;
   readonly venueLabel: string;
