@@ -46,8 +46,6 @@ pnpm verify:full
 1. `pnpm verify`
 2. `pnpm e2e`
 
-In the Codex app, run `pnpm codex:stop-check` before ending a thread if you want the CLI `Stop` hook's final verification flow.
-
 ## Scripts
 
 ```bash
@@ -59,7 +57,6 @@ pnpm build       # build production assets
 pnpm verify      # quality gate
 pnpm verify:full # run verify and e2e
 pnpm ready       # write safe fixes, then run verify
-pnpm codex:stop-check # run the CLI Stop hook verification flow from Codex app
 ```
 
 ## Product Direction

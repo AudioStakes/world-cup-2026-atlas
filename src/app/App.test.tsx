@@ -53,8 +53,8 @@ describe("App", () => {
     expect(within(groupsSection).getByText("South Africa")).toBeInTheDocument();
     expect(within(groupsSection).getByText("Korea Republic")).toBeInTheDocument();
     expect(within(groupsSection).getByText("Czechia")).toBeInTheDocument();
-    expect(within(groupsSection).getByText("JPN")).toBeInTheDocument();
     expect(within(groupsSection).getByText("Japan")).toBeInTheDocument();
+    expect(within(groupsSection).queryByText("JPN")).not.toBeInTheDocument();
     expect(within(groupsSection).queryByText("JPN · AFC")).not.toBeInTheDocument();
   });
 
@@ -89,6 +89,27 @@ describe("App", () => {
     expect(matchScope.getByText("🇲🇽 vs 🇿🇦")).toBeInTheDocument();
     expect(matchScope.getByText("🇲🇽 Mexico vs 🇿🇦 South Africa")).toHaveClass("visually-hidden");
     expect(matchScope.queryByText(/Estadio Azteca · Mexico City, Mexico/)).not.toBeInTheDocument();
+  });
+
+  it("highlights the matching venue marker when a match card is hovered or focused", () => {
+    render(<App />);
+
+    const matchCard = getFirstMatchCard();
+
+    fireEvent.mouseEnter(matchCard);
+    expect(document.querySelectorAll(".venue-marker.is-highlighted")).toHaveLength(1);
+    expect(document.querySelector(".venue-marker.is-highlighted")).toHaveAttribute(
+      "data-venue-id",
+      "mexico-city",
+    );
+
+    fireEvent.mouseLeave(matchCard);
+    fireEvent.focus(matchCard);
+    expect(document.querySelectorAll(".venue-marker.is-highlighted")).toHaveLength(1);
+    expect(document.querySelector(".venue-marker.is-highlighted")).toHaveAttribute(
+      "data-venue-id",
+      "mexico-city",
+    );
   });
 
   it("renders venue results after selecting a venue", () => {

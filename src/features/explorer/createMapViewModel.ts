@@ -18,8 +18,11 @@ export function createMapViewModel(
   indexes: Indexes,
   viewState: NormalizedExplorerViewState,
   matchingMatches: readonly Match[],
+  focusedVenueId: VenueId | null = null,
 ): ExplorerMapViewModel {
-  const highlightedVenueIds = new Set(matchingMatches.map((match) => match.venueId));
+  const highlightedVenueIds = focusedVenueId
+    ? new Set([focusedVenueId])
+    : new Set(matchingMatches.map((match) => match.venueId));
 
   return {
     venueMarkers: data.venues.map((venue) => ({

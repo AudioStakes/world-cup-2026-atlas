@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { getCompletionGitStateIssue } from "../.codex/hooks/stop_gate_core.mjs";
@@ -9,6 +10,14 @@ const defaultActions = {
 };
 
 describe("stop_gate.mjs git state checks", () => {
+  it("uses the shared core completion git state check in the runtime hook", () => {
+    const runtimeHook = readFileSync(".codex/hooks/stop_gate.mjs", "utf8");
+
+    expect(runtimeHook).toContain("getCompletionGitStateIssueCore(context, stopHookActions)");
+    expect(runtimeHook).not.toContain("Current branch has no upstream.");
+    expect(runtimeHook).not.toContain("Current branch has unpushed commits.");
+  });
+
   it("allows completion without branch upstream when PR head matches local HEAD", () => {
     const context = {
       branch: "codex/example",

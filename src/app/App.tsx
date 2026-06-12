@@ -1,5 +1,6 @@
 import { useMemo, useState } from "preact/hooks";
 import { appData } from "../data/appData";
+import type { VenueId } from "../domain/ids";
 import { queryExplorer } from "../features/explorer/queryExplorer";
 import { resolveInitialExplorerViewState } from "../features/explorer/resolveInitialExplorerViewState";
 import { serializeExplorerSearchParams } from "../features/explorer/serializeExplorerSearchParams";
@@ -14,8 +15,12 @@ export function App() {
   const [viewState, setViewState] = useState<NormalizedExplorerViewState>(() =>
     resolveInitialExplorerViewState(getInitialSearchParams(), indexes),
   );
+  const [focusedVenueId, setFocusedVenueId] = useState<VenueId | null>(null);
 
-  const viewModel = useMemo(() => queryExplorer(appData, indexes, viewState), [viewState]);
+  const viewModel = useMemo(
+    () => queryExplorer(appData, indexes, viewState, focusedVenueId),
+    [focusedVenueId, viewState],
+  );
 
   function dispatchExplorerAction(action: ExplorerAction): void {
     const nextViewState = updateExplorerViewState(appData, indexes, viewState, action);
@@ -23,7 +28,13 @@ export function App() {
     syncBrowserUrl(nextViewState);
   }
 
-  return <ExplorerPage viewModel={viewModel} onAction={dispatchExplorerAction} />;
+  return (
+    <ExplorerPage
+      viewModel={viewModel}
+      onAction={dispatchExplorerAction}
+      onMatchVenueFocusChange={setFocusedVenueId}
+    />
+  );
 }
 
 function getInitialSearchParams(): URLSearchParams | string {

@@ -62,7 +62,7 @@
 }
 
 .venue-marker.is-dimmed {
-  opacity: 0.42;
+  opacity: 0.64;
 }
 
 .venue-marker.is-highlighted,
@@ -155,14 +155,14 @@
 }
 
 .venue-marker.is-dimmed {
-  filter: saturate(0.82);
+  filter: saturate(0.92);
 }
 
 .venue-marker.is-dimmed .venue-marker__label {
-  color: rgba(23, 32, 42, 0.82);
+  color: rgba(23, 32, 42, 0.9);
 }
 
 .venue-marker.is-dimmed .venue-marker__dot {
-  background: rgba(181, 31, 31, 0.56);
-  opacity: 0.56;
+  background: rgba(181, 31, 31, 0.72);
+  opacity: 0.76;
 }

@@ -14,6 +14,7 @@ import {
   buildFinalResponseReason as buildFinalResponseReasonCore,
   buildPrReportLine as buildPrReportLineCore,
   formatHookJson as formatHookJsonCore,
+  getCompletionGitStateIssue as getCompletionGitStateIssueCore,
   isFinalReportResponse as isFinalReportResponseCore,
   parseStopHookToggleValue as parseStopHookToggleValueCore,
   shouldSkipVerification as shouldSkipVerificationCore,
@@ -509,59 +510,18 @@ function buildFinalResponseReason(context) {
 }
 
 function assertCompletionGitState(context) {
-  if (context.newDirtyPaths.length > 0 && stopHookActions.autoCommit) {
-    blockCompletion(
-      "New uncommitted changes remain since task start:",
-      [
-        ...context.newDirtyPaths.map((path) => `- ${path}`),
-        "",
-        "Commit only task-owned changes.",
-        "Do not stage or commit unrelated pre-existing dirty changes.",
-        "If a pre-existing dirty file is explicitly in scope, commit only the task-required changes.",
-        "Then push, create or update the PR, and finish again.",
-      ].join("\n"),
-    );
-  }
-
   if (context.newDirtyPaths.length > 0 && !stopHookActions.autoCommit) {
     writeProgress("skip auto commit checks: STOP_HOOK_AUTO_COMMIT=off");
   }
 
-  if (!context.hasTaskCommit) {
-    return;
-  }
-
-  if (!stopHookActions.autoPushPr) {
+  if (context.hasTaskCommit && !stopHookActions.autoPushPr) {
     writeProgress("skip push/create/update pull request: STOP_HOOK_AUTO_PUSH_PR=off");
-    return;
   }
 
-  if (context.branch === "main") {
-    blockCompletion(
-      "Committed task work is on main.",
-      "Create a non-main branch for the task work, move or recreate the task commit there, push it, create or update the PR, and finish again.",
-    );
-  }
+  const issue = getCompletionGitStateIssueCore(context, stopHookActions);
 
-  if (!context.upstream) {
-    blockCompletion(
-      "Current branch has no upstream.",
-      "Push the current branch with upstream, create or update the PR, and finish again. If this stop hook still reports no upstream after `git push -u`, check `git config --get branch.<branch>.remote` and `git config --get branch.<branch>.merge`; if either is empty, run `git branch --set-upstream-to=origin/<branch> <branch>`.",
-    );
-  }
-
-  if (/\[ahead \d+\]/.test(context.branchStatus)) {
-    blockCompletion(
-      "Current branch has unpushed commits.",
-      "Push the current branch, create or update the PR, and finish again.",
-    );
-  }
-
-  if (!context.prUrl) {
-    blockCompletion(
-      "No pull request URL found.",
-      "Create or update the pull request for the current branch, then finish again.",
-    );
+  if (issue) {
+    blockCompletion(issue.reason, issue.nextAction);
   }
 }
 

@@ -31,9 +31,9 @@ test.describe("World Cup 2026 Atlas explorer", () => {
 
     await expect(page).toHaveURL(/country=jpn/);
     await expect(page.getByRole("heading", { name: "Japan" })).toBeVisible();
-    await expect(
-      page.getByRole("region", { name: "Groups & Teams" }).getByText("JPN"),
-    ).toBeVisible();
+    await expect(page.getByRole("region", { name: "Groups & Teams" }).getByText("JPN")).toHaveCount(
+      0,
+    );
     await expect(
       page.getByRole("region", { name: "Groups & Teams" }).getByText("Japan"),
     ).toBeVisible();
