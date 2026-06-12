@@ -67,6 +67,10 @@ export function shouldSkipVerification(
   context: StopGateContext,
   finalReportRequested: boolean,
 ): boolean;
+export function buildFinalReportRequestKey(
+  repositoryRoot: string,
+  context: StopGateContext,
+): string;
 export function getCompletionGitStateIssue(
   context: StopGateContext,
   stopHookActions: StopHookActions,

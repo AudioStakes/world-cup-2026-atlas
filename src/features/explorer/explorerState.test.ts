@@ -104,30 +104,28 @@ describe("updateExplorerViewState", () => {
     expect(cleared.selectedCountryId).toBeNull();
   });
 
-  it("keeps compatible selections as an AND filter", () => {
+  it("keeps only a newly selected date after a country selection", () => {
     const currentState = makeState({ selectedCountryId: countryId("jpn") });
     const nextState = updateExplorerViewState(appData, indexes, currentState, {
       type: "selectDate",
       date: localDate("2026-06-14"),
     });
 
-    expect(nextState).toEqual(
-      makeState({ selectedCountryId: countryId("jpn"), selectedDate: localDate("2026-06-14") }),
-    );
+    expect(nextState).toEqual(makeState({ selectedDate: localDate("2026-06-14") }));
   });
 
-  it("prioritizes a newly selected date and removes conflicting country selection", () => {
-    const currentState = makeState({ selectedCountryId: countryId("jpn") });
+  it("keeps only a newly selected country after a group selection", () => {
+    const currentState = makeState({ selectedGroupCode: groupCode("F") });
     const nextState = updateExplorerViewState(appData, indexes, currentState, {
-      type: "selectDate",
-      date: localDate("2026-06-11"),
+      type: "selectCountry",
+      countryId: countryId("jpn"),
     });
 
-    expect(nextState).toEqual(makeState({ selectedDate: localDate("2026-06-11") }));
+    expect(nextState).toEqual(makeState({ selectedCountryId: countryId("jpn") }));
   });
 
-  it("prioritizes a newly selected venue and removes conflicting country selection", () => {
-    const currentState = makeState({ selectedCountryId: countryId("jpn") });
+  it("keeps only a newly selected venue after a date selection", () => {
+    const currentState = makeState({ selectedDate: localDate("2026-06-14") });
     const nextState = updateExplorerViewState(appData, indexes, currentState, {
       type: "selectVenue",
       venueId: venueId("los-angeles"),

@@ -69,8 +69,8 @@
 }
 
 .map-route-label-bg {
-  fill: rgba(248, 250, 252, 0.96);
-  stroke: rgba(23, 32, 42, 0.14);
+  fill: transparent;
+  stroke: transparent;
   stroke-width: 1.2;
 }
 
@@ -82,5 +82,5 @@
 }
 
 .map-route-label-group {
-  filter: drop-shadow(0 10px 18px rgba(23, 32, 42, 0.16));
+  filter: none;
 }

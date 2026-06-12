@@ -11,6 +11,7 @@ import {
 import { dirname, join } from "node:path";
 import {
   buildBlockResponse as buildBlockResponseCore,
+  buildFinalReportRequestKey as buildFinalReportRequestKeyCore,
   buildFinalResponseReason as buildFinalResponseReasonCore,
   buildPrReportLine as buildPrReportLineCore,
   formatHookJson as formatHookJsonCore,
@@ -578,13 +579,8 @@ function loadStopState() {
   }
 }
 
-function turnKey(value, context) {
-  return JSON.stringify({
-    input: value,
-    branch: context.branch,
-    head: context.currentHead,
-    prUrl: context.prUrl,
-  });
+function turnKey(_value, context) {
+  return buildFinalReportRequestKeyCore(repositoryRoot, context);
 }
 
 function markFinalReportRequested(key) {

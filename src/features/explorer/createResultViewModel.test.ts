@@ -105,6 +105,7 @@ describe("createResultViewModel production metadata", () => {
     const japanMatch = result.matches.find((match) => match.matchNumberLabel === "Match 11");
 
     expect(japanMatch?.stageLabel).toBe("Group F");
+    expect(japanMatch?.dateLabel).toBe("Sun Jun 14");
     expect(japanMatch?.matchupText).toBe("🇳🇱 vs 🇯🇵");
     expect(japanMatch?.matchupAriaLabel).toBe("🇳🇱 Netherlands vs 🇯🇵 Japan");
     expect(japanMatch?.secondaryText).toBe("15:00 CT");
@@ -118,6 +119,7 @@ describe("createResultViewModel production metadata", () => {
 
     expect(final?.matchNumberLabel).toBe("Match 104");
     expect(final?.stageLabel).toBe("Final");
+    expect(final?.dateLabel).toBe("Sun Jul 19");
     expect(final?.secondaryText).toBe("15:00 ET");
     expect(final?.venueLabel).toBe("New York / New Jersey");
     expect(final?.venueDetailLabel).toBe("MetLife Stadium · East Rutherford, USA · ET");
