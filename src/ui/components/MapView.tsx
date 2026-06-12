@@ -137,14 +137,11 @@ type VenueMarkerProps = {
 };
 
 function VenueMarker({ venue, onAction }: VenueMarkerProps) {
-  const labelWidth = Math.min(
-    190,
-    Math.max(76, Math.max(venue.label.length * 10, venue.stadiumName.length * 7) + 26),
-  );
+  const labelWidth = Math.min(136, Math.max(76, venue.label.length * 8 + 24));
   const labelX = clampMapLabelX(venue.position.x - labelWidth / 2, labelWidth);
   const labelY =
-    venue.position.y - 42 > EXPLORER_MAP_VIEWBOX.minY
-      ? venue.position.y - 42
+    venue.position.y - 34 > EXPLORER_MAP_VIEWBOX.minY
+      ? venue.position.y - 34
       : venue.position.y + 18;
 
   function selectVenue() {
@@ -171,13 +168,10 @@ function VenueMarker({ venue, onAction }: VenueMarkerProps) {
         </button>
       </foreignObject>
       <g class="venue-marker__map-label" transform={`translate(${labelX} ${labelY})`}>
-        <rect class="venue-marker__label-bg" width={labelWidth} height="34" rx="12" />
+        <rect class="venue-marker__label-bg" width={labelWidth} height="24" rx="10" />
         <text class="venue-marker__label-text" x={labelWidth / 2} text-anchor="middle">
-          <tspan x={labelWidth / 2} y="14">
+          <tspan x={labelWidth / 2} y="16">
             {venue.label}
-          </tspan>
-          <tspan class="venue-marker__stadium-text" x={labelWidth / 2} y="27">
-            {venue.stadiumName}
           </tspan>
         </text>
       </g>

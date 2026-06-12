@@ -113,6 +113,16 @@ describe("App", () => {
     );
   });
 
+  it("keeps map marker labels compact with visible venue names only", () => {
+    render(<App />);
+
+    const seattleMarker = document.querySelector('[data-venue-id="seattle"]');
+    const labelText = seattleMarker?.querySelector(".venue-marker__label-text");
+
+    expect(labelText).toHaveTextContent("Seattle");
+    expect(labelText).not.toHaveTextContent("Lumen Field");
+  });
+
   it("renders venue results after selecting a venue", () => {
     render(<App />);
 
