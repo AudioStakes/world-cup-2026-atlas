@@ -285,7 +285,7 @@ function createMatchupAriaLabel(indexes: Indexes, match: Match): string {
 
 function formatParticipantFlag(indexes: Indexes, participant: Match["homeParticipant"]): string {
   const countryId = getParticipantCountryId(participant);
-  const country = getMatchCountry(indexes, countryId);
+  const country = getMatchCountry(indexes, countryId ?? undefined);
 
   if (country) return country.flagEmoji;
 
