@@ -53,3 +53,17 @@ Stable development rules, validation commands, delivery rules, and report format
 - Do not modify selection, filtering, URL state, or route logic unless the task explicitly asks for behavior changes.
 - Keep full-viewport app shell behavior intact unless the task is specifically about layout.
 - Preserve the existing map rendering architecture: Natural Earth map data, projected venue positions, SVG-positioned semantic venue buttons.
+
+## In-App Browser Verification
+
+Use this only when a task explicitly needs the Browser plugin or the current in-app browser page.
+
+For the current tab, start with:
+
+```js
+var tab = await browser.tabs.selected();
+await tab.reload();
+await tab.playwright.waitForLoadState("networkidle");
+```
+
+Do not call `browser.tabs()`; `tabs` is an object, not a function.
