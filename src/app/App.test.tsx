@@ -33,6 +33,16 @@ function getVenueMarker(venueId: string) {
   return marker;
 }
 
+function getVenueControl(venueId: string) {
+  const control = document.querySelector(`.venue-marker-control[data-venue-id="${venueId}"]`);
+
+  if (!control) {
+    throw new Error(`Expected ${venueId} marker control to render`);
+  }
+
+  return control as HTMLElement;
+}
+
 function getVenueLabelBox(venueId: string) {
   const marker = getVenueMarker(venueId);
   const label = marker.querySelector(".venue-marker__map-label");
@@ -185,10 +195,18 @@ describe("App", () => {
 
     const svg = document.querySelector(".map-svg");
     const boston = venues.find((venue) => venue.id === "boston");
-    const bostonButton = getVenueMarker("boston").querySelector(".venue-marker__button-object");
+    const bostonControl = getVenueControl("boston");
     const bostonPosition = boston
       ? projectGeoPointToExplorerMap(boston.geoPoint, northAmericaMapBounds)
       : null;
+    const expectedLeft =
+      (((bostonPosition?.x ?? 0) - EXPLORER_MAP_DISPLAY_VIEWBOX.minX) /
+        EXPLORER_MAP_DISPLAY_VIEWBOX.width) *
+      100;
+    const expectedTop =
+      (((bostonPosition?.y ?? 0) - EXPLORER_MAP_DISPLAY_VIEWBOX.minY) /
+        EXPLORER_MAP_DISPLAY_VIEWBOX.height) *
+      100;
 
     expect(svg).toHaveAttribute(
       "viewBox",
@@ -196,8 +214,8 @@ describe("App", () => {
     );
     expect(EXPLORER_MAP_DISPLAY_VIEWBOX.width).toBeLessThan(EXPLORER_MAP_VIEWBOX.width);
     expect(EXPLORER_MAP_DISPLAY_VIEWBOX.height).toBeLessThan(EXPLORER_MAP_VIEWBOX.height);
-    expect(Number(bostonButton?.getAttribute("x"))).toBeCloseTo((bostonPosition?.x ?? 0) - 17);
-    expect(Number(bostonButton?.getAttribute("y"))).toBeCloseTo((bostonPosition?.y ?? 0) - 17);
+    expect(Number.parseFloat(bostonControl.style.left)).toBeCloseTo(expectedLeft);
+    expect(Number.parseFloat(bostonControl.style.top)).toBeCloseTo(expectedTop);
   });
 
   it("stacks dense East Coast venue labels without moving marker centers", () => {

@@ -95,11 +95,20 @@ export function MapView({ map, onAction }: MapViewProps) {
                 key={venue.venueId}
                 labelLayout={venueLabelLayouts[index]}
                 venue={venue}
-                onAction={onAction}
               />
             ))}
           </g>
         </svg>
+        <div class="venue-marker-control-layer">
+          {map.venueMarkers.map((venue) => (
+            <VenueMarkerControl
+              key={venue.venueId}
+              venue={venue}
+              viewBox={viewBox}
+              onAction={onAction}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -143,33 +152,11 @@ function MapBackground() {
 type VenueMarkerProps = {
   readonly labelLayout: VenueLabelLayout | undefined;
   readonly venue: VenueMarkerViewModel;
-  readonly onAction: (action: ExplorerAction) => void;
 };
 
-function VenueMarker({ labelLayout, venue, onAction }: VenueMarkerProps) {
-  function selectVenue() {
-    onAction({ type: "selectVenue", venueId: venue.venueId });
-  }
-
+function VenueMarker({ labelLayout, venue }: VenueMarkerProps) {
   return (
     <g class={classNames("venue-marker", `is-${venue.state}`)} data-venue-id={venue.venueId}>
-      <foreignObject
-        class="venue-marker__button-object"
-        x={venue.position.x - 17}
-        y={venue.position.y - 17}
-        width="34"
-        height="34"
-      >
-        <button
-          class="venue-marker__button"
-          type="button"
-          title={venue.tooltipLabel}
-          aria-label={venue.ariaLabel}
-          onClick={selectVenue}
-        >
-          <span class="venue-marker__dot" aria-hidden="true" />
-        </button>
-      </foreignObject>
       <g
         class="venue-marker__map-label"
         transform={`translate(${labelLayout?.x ?? venue.position.x} ${
@@ -189,6 +176,39 @@ function VenueMarker({ labelLayout, venue, onAction }: VenueMarkerProps) {
       </g>
     </g>
   );
+}
+
+type VenueMarkerControlProps = {
+  readonly venue: VenueMarkerViewModel;
+  readonly viewBox: ExplorerMapViewBox;
+  readonly onAction: (action: ExplorerAction) => void;
+};
+
+function VenueMarkerControl({ venue, viewBox, onAction }: VenueMarkerControlProps) {
+  function selectVenue() {
+    onAction({ type: "selectVenue", venueId: venue.venueId });
+  }
+
+  return (
+    <button
+      class={classNames("venue-marker-control", `is-${venue.state}`)}
+      type="button"
+      data-venue-id={venue.venueId}
+      title={venue.tooltipLabel}
+      aria-label={venue.ariaLabel}
+      style={{
+        left: `${toMapPercent(venue.position.x, viewBox.minX, viewBox.width)}%`,
+        top: `${toMapPercent(venue.position.y, viewBox.minY, viewBox.height)}%`,
+      }}
+      onClick={selectVenue}
+    >
+      <span class="venue-marker-control__dot" aria-hidden="true" />
+    </button>
+  );
+}
+
+function toMapPercent(value: number, min: number, size: number): number {
+  return ((value - min) / size) * 100;
 }
 
 type VenueLabelLayout = {
@@ -234,27 +254,6 @@ function createVenueLabelLayouts(
 
     placedLayouts.push(layout);
     item.layout = layout;
-  }
-
-  for (let index = placedLayouts.length - 1; index >= 0; index -= 1) {
-    const layout = placedLayouts[index];
-    if (!layout) {
-      continue;
-    }
-
-    const nextLayout = placedLayouts[index + 1];
-    const maxY = nextLayout
-      ? nextLayout.y - layout.height - venueLabelGap
-      : viewBox.minY + viewBox.height - layout.height - venueLabelInset;
-
-    if (layout.y > maxY) {
-      const adjustedLayout = { ...layout, y: maxY };
-      placedLayouts[index] = adjustedLayout;
-      const orderedLayout = orderedLayouts.find((item) => item.layout === layout);
-      if (orderedLayout) {
-        orderedLayout.layout = adjustedLayout;
-      }
-    }
   }
 
   return layouts.map(({ layout }) => layout);

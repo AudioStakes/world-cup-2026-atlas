@@ -4,6 +4,63 @@
   pointer-events: auto;
 }
 
+.map-background,
+.map-background *,
+.map-route-group,
+.map-route-group * {
+  pointer-events: none;
+}
+
+.venue-marker-control-layer {
+  position: absolute;
+  inset: 3% 2% 3% 2%;
+  width: 96%;
+  height: 94%;
+  pointer-events: none;
+}
+
+.explorer-output .venue-marker-control-layer {
+  inset: 0;
+}
+
+.venue-marker-control {
+  position: absolute;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  pointer-events: auto;
+  transform: translate(-50%, -50%);
+}
+
+.venue-marker-control__dot {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.96);
+  border-radius: 999px;
+  background: rgba(181, 31, 31, 0.82);
+  box-shadow: 0 0 0 1px rgba(23, 32, 42, 0.1);
+}
+
+.venue-marker-control:hover .venue-marker-control__dot,
+.venue-marker-control:focus-visible .venue-marker-control__dot,
+.venue-marker-control.is-highlighted .venue-marker-control__dot,
+.venue-marker-control.is-selected .venue-marker-control__dot {
+  width: 12px;
+  height: 12px;
+  border: 4px solid rgba(181, 31, 31, 0.28);
+  background: rgba(181, 31, 31, 0.96);
+}
+
+.venue-marker-control.is-dimmed {
+  opacity: 0.62;
+}
+
 .venue-marker {
   display: inline-flex;
   align-items: center;
@@ -26,13 +83,11 @@
 }
 
 .venue-marker__dot {
-  width: 10px;
-  height: 10px;
-  flex: 0 0 auto;
-  border: 3px solid #fff;
-  border-radius: 999px;
-  background: currentColor;
-  box-shadow: 0 5px 8px rgba(23, 32, 42, 0.18);
+  fill: currentColor;
+  filter: drop-shadow(0 5px 8px rgba(23, 32, 42, 0.18));
+  pointer-events: none;
+  stroke: #fff;
+  stroke-width: 2;
 }
 
 .venue-marker__map-label {
@@ -40,6 +95,7 @@
   color: currentColor;
   font-size: 13px;
   font-weight: 900;
+  pointer-events: none;
   text-overflow: ellipsis;
   text-shadow:
     0 1px 0 rgba(255, 255, 255, 0.92),
@@ -70,8 +126,13 @@
 
 .venue-marker.is-highlighted .venue-marker__dot,
 .venue-marker.is-selected .venue-marker__dot {
-  border-width: 4px;
-  box-shadow: 0 8px 12px rgba(181, 31, 31, 0.22);
+  filter: drop-shadow(0 8px 12px rgba(181, 31, 31, 0.22));
+  stroke-width: 3;
+}
+
+.venue-marker__hit-area {
+  fill: rgba(255, 255, 255, 0.001);
+  pointer-events: all;
 }
 
 /* Make venue states visually distinct against the more legible map background. */
@@ -94,12 +155,10 @@
 }
 
 .venue-marker__dot {
-  width: 11px;
-  height: 11px;
-  flex: none;
-  background: rgba(181, 31, 31, 0.82);
-  border: 2px solid rgba(255, 255, 255, 0.96);
-  box-shadow: 0 0 0 1px rgba(23, 32, 42, 0.1);
+  fill: rgba(181, 31, 31, 0.82);
+  filter: drop-shadow(0 0 1px rgba(23, 32, 42, 0.1));
+  stroke: rgba(255, 255, 255, 0.96);
+  stroke-width: 2;
 }
 
 .venue-marker:hover,
@@ -124,8 +183,7 @@
 }
 
 .venue-marker.is-highlighted .venue-marker__dot {
-  transform: scale(1.05);
-  background: rgba(181, 31, 31, 0.92);
+  fill: rgba(181, 31, 31, 0.92);
 }
 
 .venue-marker.is-selected {
@@ -140,13 +198,9 @@
 }
 
 .venue-marker.is-selected .venue-marker__dot {
-  width: 12px;
-  height: 12px;
-  background: rgba(181, 31, 31, 1);
-  transform: scale(1.12);
-  box-shadow:
-    0 0 0 1px rgba(23, 32, 42, 0.12),
-    0 0 0 4px rgba(181, 31, 31, 0.14);
+  fill: rgba(181, 31, 31, 1);
+  filter: drop-shadow(0 0 1px rgba(23, 32, 42, 0.12)) drop-shadow(0 0 4px rgba(181, 31, 31, 0.14));
+  stroke-width: 3;
 }
 
 .venue-marker.is-dimmed {
@@ -158,6 +212,6 @@
 }
 
 .venue-marker.is-dimmed .venue-marker__dot {
-  background: rgba(181, 31, 31, 0.72);
+  fill: rgba(181, 31, 31, 0.72);
   opacity: 0.76;
 }
