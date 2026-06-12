@@ -1274,13 +1274,16 @@ button:focus-visible {
 }
 
 .venue-marker__label-bg {
-  fill: rgba(255, 255, 255, 0.94);
-  stroke: rgba(181, 31, 31, 0.2);
+  fill: transparent;
+  stroke: transparent;
   stroke-width: 1.5;
 }
 
 .venue-marker__label-text {
   fill: rgba(20, 30, 44, 0.88);
+  paint-order: stroke fill;
+  stroke: rgba(255, 255, 255, 0.88);
+  stroke-width: 2.2;
   font-size: 11px;
   font-weight: 950;
 }
