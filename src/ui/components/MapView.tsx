@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import { northAmericaMapBounds, northAmericaMapFeatures } from "../../data/northAmericaMapData";
+import type { VenueId } from "../../domain/ids";
 import {
   EXPLORER_MAP_DISPLAY_VIEWBOX,
   type ExplorerMapViewBox,
@@ -171,6 +172,7 @@ export function MapView({ map, onAction }: MapViewProps) {
           {map.venueMarkers.map((venue) => (
             <VenueMarkerControl
               key={venue.venueId}
+              positions={venueControlPositions}
               position={venueControlPositions[venue.venueId]}
               venue={venue}
               onAction={onAction}
@@ -254,14 +256,17 @@ function VenueMarker({ labelLayout, venue }: VenueMarkerProps) {
 }
 
 type VenueMarkerControlProps = {
+  readonly positions: Readonly<Record<string, VenueControlPosition>>;
   readonly position: VenueControlPosition | undefined;
   readonly venue: VenueMarkerViewModel;
   readonly onAction: (action: ExplorerAction) => void;
 };
 
-function VenueMarkerControl({ position, venue, onAction }: VenueMarkerControlProps) {
-  function selectVenue() {
-    onAction({ type: "selectVenue", venueId: venue.venueId });
+function VenueMarkerControl({ positions, position, venue, onAction }: VenueMarkerControlProps) {
+  function selectVenue(event: MouseEvent) {
+    const nearestVenueId = findNearestVenueId(event, positions) ?? venue.venueId;
+
+    onAction({ type: "selectVenue", venueId: nearestVenueId });
   }
 
   return (
@@ -271,6 +276,7 @@ function VenueMarkerControl({ position, venue, onAction }: VenueMarkerControlPro
       data-venue-id={venue.venueId}
       title={venue.tooltipLabel}
       aria-label={venue.ariaLabel}
+      aria-pressed={venue.state === "selected"}
       style={{
         left: position ? `${position.left}px` : undefined,
         top: position ? `${position.top}px` : undefined,
@@ -285,13 +291,55 @@ function VenueMarkerControl({ position, venue, onAction }: VenueMarkerControlPro
 type VenueControlPosition = {
   readonly left: number;
   readonly top: number;
+  readonly venueId: VenueId;
 };
+
+function findNearestVenueId(
+  event: MouseEvent,
+  positions: Readonly<Record<string, VenueControlPosition>>,
+) {
+  if (event.detail === 0 || event.clientX === 0 || event.clientY === 0) {
+    return null;
+  }
+
+  const layer = (event.currentTarget as HTMLElement).parentElement;
+  const layerRect = layer?.getBoundingClientRect();
+
+  if (!layerRect) {
+    return null;
+  }
+
+  const clickPosition = {
+    left: event.clientX - layerRect.left,
+    top: event.clientY - layerRect.top,
+  };
+
+  return Object.values(positions).reduce<{
+    readonly distance: number;
+    readonly venueId: VenueId;
+  } | null>((closest, position) => {
+    const distance = Math.hypot(
+      position.left - clickPosition.left,
+      position.top - clickPosition.top,
+    );
+
+    if (closest && closest.distance <= distance) {
+      return closest;
+    }
+
+    return { distance, venueId: position.venueId };
+  }, null)?.venueId;
+}
 
 function createVenueControlPositions(
   svg: SVGSVGElement,
   containerRect: DOMRect,
   venues: readonly VenueMarkerViewModel[],
 ): Readonly<Record<string, VenueControlPosition>> {
+  if (typeof svg.getScreenCTM !== "function" || typeof svg.createSVGPoint !== "function") {
+    return {};
+  }
+
   const screenMatrix = svg.getScreenCTM();
 
   if (!screenMatrix) {
@@ -311,6 +359,7 @@ function createVenueControlPositions(
         {
           left: screenPoint.x - containerRect.left,
           top: screenPoint.y - containerRect.top,
+          venueId: venue.venueId,
         },
       ];
     }),

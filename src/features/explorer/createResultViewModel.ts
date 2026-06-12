@@ -310,6 +310,7 @@ function createDetails(
   if (resultType === "group" && viewState.selectedGroupCode) {
     return {
       type: "group",
+      groupLabel: `Group ${viewState.selectedGroupCode}`,
       standings: createGroupStandings(data, indexes, viewState.selectedGroupCode),
     };
   }
@@ -591,7 +592,33 @@ function createCountryRouteSummary(
     venueCountExplanationLabel,
     totalDistanceKm,
     totalDistanceLabel: formatDistanceLabel(totalDistanceKm),
+    legs: createCountryRouteLegs(routeMatches, routeVenues),
   };
+}
+
+function createCountryRouteLegs(
+  routeMatches: readonly Match[],
+  routeVenues: readonly Venue[],
+): CountryRouteSummaryViewModel["legs"] {
+  return routeVenues.slice(0, -1).flatMap((venue, index) => {
+    const nextVenue = routeVenues[index + 1];
+    const match = routeMatches[index];
+    const nextMatch = routeMatches[index + 1];
+
+    if (!nextVenue || !match || !nextMatch) {
+      return [];
+    }
+
+    return [
+      {
+        fromDateLabel: formatDateLabel(match.date),
+        toDateLabel: formatDateLabel(nextMatch.date),
+        fromVenueLabel: venue.name,
+        toVenueLabel: nextVenue.name,
+        distanceLabel: formatDistanceLabel(calculateDistanceKm(venue.geoPoint, nextVenue.geoPoint)),
+      },
+    ];
+  });
 }
 
 function createVenueCountExplanationLabel(routeVenues: readonly Venue[]): string | null {

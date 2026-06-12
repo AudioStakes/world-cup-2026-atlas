@@ -63,6 +63,9 @@ function DateChip({ dateOption, onAction }: DateChipProps) {
       onClick={() => onAction({ type: "selectDate", date: dateOption.date })}
     >
       <span class="date-chip__date">{formatDayOfMonth(dateOption.date)}</span>
+      <span class="date-chip__meta" aria-hidden="true">
+        {createVisibleDateMeta(dateOption)}
+      </span>
     </button>
   );
 }
@@ -108,4 +111,13 @@ function createDateChipAriaLabel(dateOption: DateOptionViewModel): string {
   }
 
   return parts.join(" · ");
+}
+
+function createVisibleDateMeta(dateOption: DateOptionViewModel): string {
+  if (!dateOption.hasFixture) {
+    return "Rest";
+  }
+
+  const matchCount = dateOption.matchCountLabel?.match(/^\d+/)?.[0];
+  return matchCount ?? "Match";
 }

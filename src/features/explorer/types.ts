@@ -153,6 +153,7 @@ export type VenueDetailViewModel = {
 
 export type GroupDetailViewModel = {
   readonly type: "group";
+  readonly groupLabel: string;
   readonly standings: readonly GroupStandingRowViewModel[];
 };
 
@@ -193,6 +194,15 @@ export type CountryRouteSummaryViewModel = {
   readonly venueCountExplanationLabel: string | null;
   readonly totalDistanceKm: number;
   readonly totalDistanceLabel: string;
+  readonly legs: readonly CountryRouteLegViewModel[];
+};
+
+export type CountryRouteLegViewModel = {
+  readonly fromDateLabel: string;
+  readonly toDateLabel: string;
+  readonly fromVenueLabel: string;
+  readonly toVenueLabel: string;
+  readonly distanceLabel: string;
 };
 
 export type ExplorerMapViewModel = {

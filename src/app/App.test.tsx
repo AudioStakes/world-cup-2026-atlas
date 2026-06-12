@@ -208,6 +208,51 @@ describe("App", () => {
     expect(window.location.search).toBe("?date=2026-06-14");
   });
 
+  it("restores the previous explicit selection from browser history", async () => {
+    render(<App />);
+
+    selectJapan();
+    fireEvent.click(screen.getByRole("button", { name: /Select Sun Jun 14/ }));
+    window.history.back();
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Japan" })).toBeInTheDocument();
+    });
+    expect(window.location.search).toBe("?country=jpn");
+  });
+
+  it("shows and clears explicit selections from the header", () => {
+    render(<App />);
+
+    selectJapan();
+
+    expect(screen.getByText("/?country=jpn")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Clear" }));
+
+    expect(window.location.search).toBe("");
+    expect(screen.getByRole("heading", { name: "Start exploring" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Clear" })).not.toBeInTheDocument();
+  });
+
+  it("selects teams and venues from direct search", () => {
+    render(<App />);
+
+    const searchInput = screen.getByRole("combobox", { name: "Search team or city" });
+    const searchButton = screen.getByRole("button", { name: "Search" });
+
+    fireEvent.input(searchInput, { target: { value: "Japan" } });
+    fireEvent.click(searchButton);
+    expect(screen.getByRole("heading", { name: "Japan" })).toBeInTheDocument();
+
+    fireEvent.input(searchInput, { target: { value: "Bosnia" } });
+    fireEvent.keyDown(searchInput, { key: "Enter" });
+    expect(screen.getByRole("heading", { name: "Bosnia and Herzegovina" })).toBeInTheDocument();
+
+    fireEvent.input(searchInput, { target: { value: "Dallas" } });
+    fireEvent.click(searchButton);
+    expect(screen.getByRole("heading", { name: "Dallas" })).toBeInTheDocument();
+  });
+
   it("renders readable country names in the groups table", () => {
     render(<App />);
 
@@ -279,6 +324,15 @@ describe("App", () => {
       "data-venue-id",
       "mexico-city",
     );
+  });
+
+  it("selects a match venue when a match card is clicked", () => {
+    render(<App />);
+
+    fireEvent.click(getFirstMatchCard());
+
+    expect(screen.getByRole("heading", { name: "Mexico City" })).toBeInTheDocument();
+    expect(window.location.search).toBe("?venue=mexico-city");
   });
 
   it("keeps map marker labels compact with visible venue names only", () => {
@@ -397,5 +451,16 @@ describe("App", () => {
 
     expect(screen.getByRole("heading", { name: "Dallas" })).toBeInTheDocument();
     expect(getFirstMatchCard()).not.toHaveTextContent("Arlington, USA");
+    expect(getVenueControl("dallas")).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("renders country route legs in fixture order", () => {
+    render(<App />);
+
+    selectJapan();
+
+    expect(screen.getByRole("list", { name: "Route legs by fixture date" })).toBeInTheDocument();
+    expect(screen.getByText("Dallas → Monterrey")).toBeInTheDocument();
+    expect(screen.getByText("Monterrey → Dallas")).toBeInTheDocument();
   });
 });
