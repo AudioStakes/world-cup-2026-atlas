@@ -24,7 +24,10 @@ export function ResultCard({ result }: ResultCardProps) {
               <span class="match-card__when">
                 {match.dateLabel} {match.secondaryText}
               </span>
-              <span class="match-card__matchup">{match.matchupText}</span>
+              <span class="match-card__matchup">
+                <span aria-hidden="true">{match.matchupText}</span>
+                <span class="visually-hidden">{match.matchupAriaLabel}</span>
+              </span>
               <span class="match-card__venue">{match.venueLabel}</span>
             </li>
           ))}

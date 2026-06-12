@@ -234,6 +234,7 @@ function createMatchListItem(
     dateLabel: formatDateLabel(match.date),
     primaryText: createMatchPrimaryText(indexes, viewState, match),
     matchupText: createMatchupText(indexes, match),
+    matchupAriaLabel: createMatchupAriaLabel(indexes, match),
     secondaryText: `${match.kickoffLocal} ${venue.timeZone.abbreviation}`,
     venueId: venue.id,
     venueLabel: venue.name,
@@ -269,10 +270,26 @@ function formatTournamentStageLabel(stage: TournamentStage): string {
 }
 
 function createMatchupText(indexes: Indexes, match: Match): string {
+  return `${formatParticipantFlag(indexes, match.homeParticipant)} vs ${formatParticipantFlag(
+    indexes,
+    match.awayParticipant,
+  )}`;
+}
+
+function createMatchupAriaLabel(indexes: Indexes, match: Match): string {
   return `${formatParticipant(indexes, match.homeParticipant)} vs ${formatParticipant(
     indexes,
     match.awayParticipant,
   )}`;
+}
+
+function formatParticipantFlag(indexes: Indexes, participant: Match["homeParticipant"]): string {
+  const countryId = getParticipantCountryId(participant);
+  const country = getMatchCountry(indexes, countryId);
+
+  if (country) return country.flagEmoji;
+
+  return formatParticipantLabel(participant);
 }
 
 function createMatchPrimaryText(

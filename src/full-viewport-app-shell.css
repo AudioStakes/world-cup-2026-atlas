@@ -29,10 +29,18 @@ body {
   height: 100%;
   min-height: 0;
   overflow: hidden;
-  grid-template-rows:
-    auto
-    minmax(0, 1.08fr)
-    minmax(0, 0.4fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.groups-section {
+  min-height: 0;
+  overflow: auto;
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+}
+
+.date-section {
+  min-height: auto;
 }
 
 .explorer-output {

@@ -86,7 +86,8 @@ describe("App", () => {
     const matchCard = getFirstMatchCard();
     const matchScope = within(matchCard);
 
-    expect(matchCard).toHaveTextContent("Jun 11 13:00 CT🇲🇽 Mexico vs 🇿🇦 South AfricaMexico City");
+    expect(matchScope.getByText("🇲🇽 vs 🇿🇦")).toBeInTheDocument();
+    expect(matchScope.getByText("🇲🇽 Mexico vs 🇿🇦 South Africa")).toHaveClass("visually-hidden");
     expect(matchScope.queryByText(/Estadio Azteca · Mexico City, Mexico/)).not.toBeInTheDocument();
   });
 
