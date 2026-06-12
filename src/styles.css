@@ -252,7 +252,7 @@ button:focus-visible {
 
 .group-team-card {
   min-width: 0;
-  min-height: 98px;
+  min-height: 126px;
   overflow: hidden;
   border: 1px solid rgba(23, 32, 42, 0.08);
   border-radius: 14px;
@@ -312,7 +312,7 @@ button:focus-visible {
 
 .group-team-row-button {
   display: flex;
-  min-height: 18px;
+  min-height: 22px;
   align-items: center;
   gap: 4px;
   width: 100%;
@@ -538,11 +538,19 @@ button:focus-visible {
 }
 
 .match-card {
+  width: 100%;
   padding: 10px 0;
   border-top: 1px solid rgba(23, 32, 42, 0.08);
+  border-right: 0;
+  border-bottom: 0;
+  border-left: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
-.match-card:first-child {
+.match-list > li:first-child .match-card {
   border-top: 0;
 }
 
@@ -701,26 +709,26 @@ button:focus-visible {
 
 .venue-marker:hover {
   color: var(--color-red);
-  background: rgba(255, 255, 255, 0.96);
-  transform: translate(-50%, -50%) scale(1.06);
+  background: rgba(255, 255, 255, 0.98);
+  transform: translate(-50%, -50%) scale(1.08);
 }
 
 .venue-marker.is-dimmed {
-  opacity: 0.42;
+  opacity: 0.58;
 }
 
 .venue-marker.is-highlighted,
 .venue-marker.is-selected {
   color: var(--color-red);
-  background: rgba(255, 255, 255, 0.98);
+  background: rgba(255, 255, 255, 1);
   box-shadow:
-    0 0 0 2px rgba(181, 31, 31, 0.18),
-    0 12px 28px rgba(181, 31, 31, 0.16);
+    0 0 0 2px rgba(181, 31, 31, 0.24),
+    0 14px 30px rgba(181, 31, 31, 0.18);
 }
 
 .venue-marker__dot {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   flex: 0 0 auto;
   border: 3px solid #fff;
   border-radius: 999px;
@@ -729,10 +737,10 @@ button:focus-visible {
 }
 
 .venue-marker__label {
-  max-width: 148px;
+  max-width: 190px;
   overflow: hidden;
-  font-size: 11px;
-  font-weight: 900;
+  font-size: 10px;
+  font-weight: 950;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -782,7 +790,7 @@ button:focus-visible {
   }
 
   .group-team-card {
-    min-height: 88px;
+    min-height: 126px;
   }
 
   .group-team-header-button {
@@ -791,7 +799,7 @@ button:focus-visible {
   }
 
   .group-team-row-button {
-    min-height: 16px;
+    min-height: 22px;
   }
 
   .date-months {
@@ -870,7 +878,7 @@ button:focus-visible {
   }
 
   .group-team-card {
-    min-height: 84px;
+    min-height: 126px;
   }
 
   .date-chip {
@@ -1213,9 +1221,9 @@ button:focus-visible {
 .match-card__matchup {
   min-width: 0;
   color: var(--color-ink);
-  font-size: 1rem;
+  font-size: 1.18rem;
   font-weight: 900;
-  line-height: 1.18;
+  line-height: 1.08;
 }
 
 @media (max-width: 700px) {
@@ -1249,7 +1257,7 @@ button:focus-visible {
 }
 
 .venue-marker.is-dimmed {
-  opacity: 0.42;
+  opacity: 0.58;
 }
 
 .venue-marker__label {
@@ -1264,8 +1272,14 @@ button:focus-visible {
 
 .venue-marker__label-text {
   fill: rgba(20, 30, 44, 0.88);
-  font-size: 17px;
+  font-size: 10px;
   font-weight: 900;
+}
+
+.venue-marker__stadium-text {
+  fill: rgba(20, 30, 44, 0.62);
+  font-size: 8px;
+  font-weight: 800;
 }
 
 .venue-marker__button-object {
@@ -1274,8 +1288,8 @@ button:focus-visible {
 
 .venue-marker__button {
   display: grid;
-  inline-size: 30px;
-  block-size: 30px;
+  inline-size: 34px;
+  block-size: 34px;
   place-items: center;
   padding: 0;
   border: 0;
@@ -1307,9 +1321,9 @@ button:focus-visible {
 }
 
 .venue-marker.is-dimmed .venue-marker__button {
-  opacity: 0.48;
+  opacity: 0.62;
 }
 
 .venue-marker.is-dimmed .venue-marker__label {
-  opacity: 0.9;
+  opacity: 0.96;
 }

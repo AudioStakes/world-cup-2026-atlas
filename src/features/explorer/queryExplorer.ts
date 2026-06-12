@@ -1,3 +1,4 @@
+import type { VenueId } from "../../domain/ids";
 import type { AppData } from "../../domain/types";
 import type { Indexes } from "../../indexes/createIndexes";
 import { queryMatchesByViewState } from "../../queries/queryMatchesByViewState";
@@ -11,6 +12,7 @@ export function queryExplorer(
   data: AppData,
   indexes: Indexes,
   viewState: Partial<ExplorerViewState>,
+  focusedVenueId: VenueId | null = null,
 ): ExplorerViewModel {
   const normalizedViewState = normalizeExplorerViewState(viewState, indexes);
   const matchingMatches = queryMatchesByViewState(data, normalizedViewState);
@@ -19,6 +21,6 @@ export function queryExplorer(
     viewState: normalizedViewState,
     header: createHeaderViewModel(normalizedViewState),
     explorePanel: createExplorePanelViewModel(data, indexes, normalizedViewState, matchingMatches),
-    map: createMapViewModel(data, indexes, normalizedViewState, matchingMatches),
+    map: createMapViewModel(data, indexes, normalizedViewState, matchingMatches, focusedVenueId),
   };
 }

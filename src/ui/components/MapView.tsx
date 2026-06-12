@@ -137,12 +137,15 @@ type VenueMarkerProps = {
 };
 
 function VenueMarker({ venue, onAction }: VenueMarkerProps) {
-  const labelWidth = Math.max(58, venue.label.length * 12 + 28);
+  const labelWidth = Math.min(
+    190,
+    Math.max(76, Math.max(venue.label.length * 10, venue.stadiumName.length * 7) + 26),
+  );
   const labelX = clampMapLabelX(venue.position.x - labelWidth / 2, labelWidth);
   const labelY =
-    venue.position.y - 34 > EXPLORER_MAP_VIEWBOX.minY
-      ? venue.position.y - 34
-      : venue.position.y + 16;
+    venue.position.y - 42 > EXPLORER_MAP_VIEWBOX.minY
+      ? venue.position.y - 42
+      : venue.position.y + 18;
 
   function selectVenue() {
     onAction({ type: "selectVenue", venueId: venue.venueId });
@@ -152,10 +155,10 @@ function VenueMarker({ venue, onAction }: VenueMarkerProps) {
     <g class={classNames("venue-marker", `is-${venue.state}`)} data-venue-id={venue.venueId}>
       <foreignObject
         class="venue-marker__button-object"
-        x={venue.position.x - 15}
-        y={venue.position.y - 15}
-        width="30"
-        height="30"
+        x={venue.position.x - 17}
+        y={venue.position.y - 17}
+        width="34"
+        height="34"
       >
         <button
           class="venue-marker__button"
@@ -168,9 +171,14 @@ function VenueMarker({ venue, onAction }: VenueMarkerProps) {
         </button>
       </foreignObject>
       <g class="venue-marker__label" transform={`translate(${labelX} ${labelY})`}>
-        <rect class="venue-marker__label-bg" width={labelWidth} height="26" rx="13" />
-        <text class="venue-marker__label-text" x={labelWidth / 2} y="18" text-anchor="middle">
-          {venue.label}
+        <rect class="venue-marker__label-bg" width={labelWidth} height="34" rx="12" />
+        <text class="venue-marker__label-text" x={labelWidth / 2} text-anchor="middle">
+          <tspan x={labelWidth / 2} y="14">
+            {venue.label}
+          </tspan>
+          <tspan class="venue-marker__stadium-text" x={labelWidth / 2} y="27">
+            {venue.stadiumName}
+          </tspan>
         </text>
       </g>
     </g>
