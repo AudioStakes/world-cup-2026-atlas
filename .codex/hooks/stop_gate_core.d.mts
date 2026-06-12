@@ -43,7 +43,6 @@ export function buildBlockResponse(
 };
 export function buildFinalResponseReason(options: {
   prReportLine: string;
-  completionPrompt: string;
   instructionFeedbackPrompt?: string;
 }): string;
 export function parseStatusPaths(statusOutput: string): string[];

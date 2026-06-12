@@ -1,5 +1,4 @@
 const IMPORTANT_LINE_PATTERNS = [
-  /Completion report instruction:/,
   /Review Notes:/,
   /残作業:/,
   /error TS\d+/,
@@ -57,9 +56,7 @@ export function getInputStrings(value) {
 }
 
 export function isFinalReportResponse(value) {
-  return getInputStrings(value).some((text) =>
-    /Completion report instruction:|Review Notes:|残作業:/.test(text),
-  );
+  return getInputStrings(value).some((text) => /Review Notes:|残作業:/.test(text));
 }
 
 export function formatHookJson(value) {
@@ -73,18 +70,8 @@ export function buildBlockResponse(title, reason) {
   };
 }
 
-export function buildFinalResponseReason({
-  prReportLine,
-  completionPrompt,
-  instructionFeedbackPrompt,
-}) {
-  const lines = [
-    "Report data:",
-    prReportLine,
-    "",
-    "Completion report instruction:",
-    completionPrompt,
-  ];
+export function buildFinalResponseReason({ prReportLine, instructionFeedbackPrompt }) {
+  const lines = ["Report data:", prReportLine, ""];
 
   if (instructionFeedbackPrompt !== undefined) {
     lines.push("", "Instruction feedback prompt:", instructionFeedbackPrompt);

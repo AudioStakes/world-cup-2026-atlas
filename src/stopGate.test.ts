@@ -25,8 +25,7 @@ describe("stop_gate.mjs", () => {
     };
     const reason = buildFinalResponseReason({
       prReportLine: buildPrReportLine(context, defaultActions),
-      completionPrompt: "completion prompt",
-      instructionFeedbackPrompt: "instruction feedback prompt",
+      instructionFeedbackPrompt: "Review Notes: なし",
     });
     const response = buildBlockResponse("Completion report required.", reason);
     const stdout = formatHookJson(response);
@@ -36,8 +35,9 @@ describe("stop_gate.mjs", () => {
       reason: expect.stringContaining("https://example.test/pr/456"),
     });
     expect(stdout).toMatch(/^\{.*\}\n$/s);
-    expect(stdout).toContain("completion prompt");
-    expect(stdout).toContain("instruction feedback prompt");
+    expect(stdout).not.toContain("completion prompt");
+    expect(stdout).not.toContain("Completion report instruction:");
+    expect(stdout).toContain("Review Notes: なし");
     expect(isFinalReportResponse(response)).toBe(true);
     expect(shouldSkipVerification(context, true)).toBe(true);
   });

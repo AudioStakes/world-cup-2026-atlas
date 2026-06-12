@@ -32,13 +32,6 @@ const stopHookActions = {
   autoPushPr: readStopHookToggle("STOP_HOOK_AUTO_PUSH_PR", "push/create/update pull request"),
   agentLoadReport: readStopHookToggle("STOP_HOOK_AGENT_LOAD_REPORT", "AI agent load report"),
 };
-const completionPromptPath = join(
-  repositoryRoot,
-  ".codex",
-  "hooks",
-  "prompts",
-  "stop_completion_report.txt",
-);
 const instructionFeedbackPromptPath = join(
   repositoryRoot,
   ".codex",
@@ -501,7 +494,6 @@ function buildPrReportLine(context) {
 }
 
 function buildFinalResponseReason(context) {
-  const completionPrompt = readRequiredPrompt(completionPromptPath);
   let instructionFeedbackPrompt;
 
   if (stopHookActions.agentLoadReport) {
@@ -512,7 +504,6 @@ function buildFinalResponseReason(context) {
 
   return buildFinalResponseReasonCore({
     prReportLine: buildPrReportLine(context),
-    completionPrompt,
     instructionFeedbackPrompt,
   });
 }
@@ -730,7 +721,6 @@ async function main() {
         writePass();
       }
 
-      const completionPrompt = readRequiredPrompt(completionPromptPath);
       const instructionFeedbackPrompt = readRequiredPrompt(instructionFeedbackPromptPath);
       markFinalReportRequested(key);
       writeBlock("Final response required.", buildFinalResponseReason(context));
@@ -739,9 +729,6 @@ async function main() {
         [
           "Report data:",
           "- PR: 変更なし・PR不要",
-          "",
-          "Completion report instruction:",
-          completionPrompt,
           "",
           "Instruction feedback prompt:",
           instructionFeedbackPrompt,
@@ -760,7 +747,6 @@ async function main() {
 
     assertCompletionGitState(context);
 
-    const completionPrompt = readRequiredPrompt(completionPromptPath);
     const instructionFeedbackPrompt = readRequiredPrompt(instructionFeedbackPromptPath);
 
     markFinalReportRequested(key);
@@ -770,9 +756,6 @@ async function main() {
       [
         "Report data:",
         context.hasTaskCommit ? `- PR: ${context.prUrl}` : "- PR: 変更なし・PR不要",
-        "",
-        "Completion report instruction:",
-        completionPrompt,
         "",
         "Instruction feedback prompt:",
         instructionFeedbackPrompt,
