@@ -26,8 +26,7 @@
     "e2e:ui": "playwright test --ui",
     "verify": "pnpm check && pnpm typecheck && pnpm test && pnpm build",
     "verify:full": "pnpm verify && pnpm e2e",
-    "ready": "pnpm fix && pnpm verify",
-    "codex:stop-check": "node scripts/codex-app-stop-check.mjs"
+    "ready": "pnpm fix && pnpm verify"
   },
   "dependencies": {
     "@preact/signals": "^2.0.0",
