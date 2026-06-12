@@ -1,45 +1,109 @@
-以下のみ日本語で出力。新規作業・要約は禁止。
+作業完了後の Efficiency Retrospective を実行してください。
 
-## Codexの作業量を抑える自己改善
+目的は、今回の作業中に発生した不要な作業量・不要な作業時間を見つけ、次回以降の AI 作業を短く正確にすることです。反省文や品質監査ではありません。
 
-### 1. Codexが必要以上に実行時間や探索量を費やした作業
+## 定義
 
-確認観点:
+- 作業ログ: 今回の作業中に実際に参照・生成した情報。例: git diff/status、編集ファイル、実行済みコマンドと出力/終了コード、既に読んだファイル、遭遇したエラー。
+- Finding: 作業ログ上の証拠に基づいて確認できる、不要な作業量・不要な作業時間につながった具体的な出来事。一般論、感想、証拠のない改善案は Finding にしない。
+- Patchable Now: product behavior を変えず、既存の docs / template / script / test に対する小さな変更で、必要最小限の検証ができる状態。
 
-* rule/script/test/lint/format/static analysis で済む作業
-* template/固定文/構造化出力で済む作業
-* grep/search/parser で済む探索・抽出
-* 小さいモデル/単発LLMで済む分類・要約・変換
-* subagent/MCP/tool/automation/skill が不要または時期尚早だった作業
-* task/thread/context が肥大した箇所
-* caching/batching/parallelization/単純な実装で負荷を減らせた箇所
-* 複数コマンドを何度も手動実行せず、script化・alias化・ワンライナー化できた作業
+## 制約
 
-出力形式:
+- 主タスクの成果物や product behavior を変える追加実装は禁止です。
+- DB schema、public API、security policy は変更禁止です。
+- 大規模リファクタは禁止です。
+- 改善パッチは最大1件のみです。
+- 改善パッチが小さく安全で明確でない場合は実装せず、Backlog 候補を最大1件だけ記録してください。
+- 推測は「推測」、証拠がない主張は「未検証」と明記してください。
 
-該当作業をすべて列挙する。複数ある場合は作業ごとに次を繰り返す。1件にまとめない。該当なしは「該当なし」と書く。
+## 調査範囲
 
-* 対象作業:
-  * 代替手段:
-  * evidence:
-  * 次回の改善:
-  * 置き場所: AGENTS.md・script・template・test・lint・skill・hook・docs・その他
-  * 判断: 今すぐ反映・後で検討・反映しない
+- 対象は作業ログから確認できる範囲に限定してください。
+- `git diff`、`git status`、既に見たファイルの再確認は許可します。
+- 未見領域への網羅的探索、repo-wide search、追加設計レビュー、新しい広範な調査は禁止です。
 
-「今すぐ反映」は、次をすべて満たす場合だけ選ぶ:
+## 確認すること
 
-* evidence あり
-* 再発しそう
-* ルールまたは修正内容が短く明確
+以下のうち、実際に不要作業・時間ロスにつながり、かつ次回の作業短縮に役立つものだけ Finding として記録してください。
+該当しない項目について個別に「なし」と書く必要はありません。
 
-### 2. 反映した改善
+- 調査・理解の遠回り: 重複調査、誤った前提、途中で修正した理解、事前確認で避けられた手戻り
+- コンテキストの過不足: 不足していた情報、ノイズだった情報、古い情報、長すぎた情報、曖昧な指示
+- 既存資産の見落とし: helper、script、README、test、pattern、既存実装の見落とし
+- 実行・検証の非効率: 失敗コマンドの試行錯誤、不要に広いテスト、繰り返し発生したコマンド組み合わせ
+- 実装範囲の非効率: 不要な実装、過剰実装、scope creep、不要な変更範囲の拡大
 
-「今すぐ反映」は最終報告で終わらず、その場で最小差分で修正し、必要な確認を実行し、commit してください。
-改善がない場合は「なし」と出力。
+## 判定基準
 
-出力形式:
+- Finding は最大3件まで、時間・作業への影響が大きい順に書いてください。
+- Evidence には具体的な証拠を書いてください。証拠がない場合は `未検証` と書いてください。
+- 証拠が薄く、次回の作業短縮にもつながらないものは Finding にしないでください。
+- Patchable Now は、以下をすべて満たす場合のみ `Yes` にしてください。
+  - product behavior、DB schema、public API、security policy を変えない
+  - 既存の docs / template / script / test の小さな変更に収まる
+  - 変更目的が1つに絞られている
+  - 必要最小限の検証コマンドを実行できる
 
-* 改善内容:
-* 変更ファイル:
-* 動作確認:
-* commit hash:
+## 優先順位
+
+改善パッチを選ぶ場合は、以下の順に優先してください。
+
+1. 今回の手戻り、失敗コマンド、不要な検証を直接減らす変更
+2. 次回の探索・判断の迷いを減らす短い docs / gotcha 更新
+3. 必要な検証証拠を残しやすくする template / script の軽微な改善
+4. 今回の非効率を防ぐ小さな test 追加
+
+## 出力形式
+
+# Efficiency Retrospective
+
+## Findings
+
+| Finding | Evidence | Failure Class | Time/Work Impact | Proposed Prevention | Patchable Now |
+|---|---|---|---|---|---|
+| ... | ... | ... | ... | ... | ... |
+
+Finding がない場合は、以下の1行だけ書いてください。
+
+| Efficiency Findingなし | - | - | - | - | - |
+
+Failure Class は以下から選んでください。
+
+- Missing Context
+- Missing Command
+- Missing Test Guidance
+- Wrong Assumption
+- Over-Implementation
+- Redundant Investigation
+- Tool/Command Failure
+- Documentation Gap
+- Other
+
+Time/Work Impact は `Low / Medium / High` のいずれかで書いてください。
+Patchable Now は `Yes / No` とし、短い理由を添えてください。
+
+## Self-Improvement Patch
+
+Finding のうち、Patchable Now が `Yes` で、効果が明確なものがある場合だけ、最大1件実装してください。
+
+実装した場合:
+- Implemented: Yes
+- Changed files:
+  - ...
+- Verification:
+  - Command: `...`
+  - Exit code: ...
+  - Result: ...
+- Unverified:
+  - ...
+
+実装しなかった場合:
+- Implemented: No
+- Reason: ...
+- Backlog:
+  - ...
+- Unverified:
+  - ...
+
+Backlog は、具体的な候補がある場合のみ最大1件書いてください。具体的な候補がない場合は `なし` と書いてください。
