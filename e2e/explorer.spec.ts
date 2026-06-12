@@ -83,8 +83,56 @@ test.describe("World Cup 2026 Atlas explorer", () => {
       0,
     );
     await expect(
-      page.getByRole("region", { name: "Groups & Teams" }).getByText("Japan"),
+      page.getByRole("region", { name: "Groups & Teams" }).getByRole("button", {
+        name: "Select Japan",
+      }),
     ).toBeVisible();
+  });
+
+  test("keeps every Groups & Teams country flag visible across viewport sizes", async ({
+    page,
+  }) => {
+    const viewports = [
+      { width: 1280, height: 720 },
+      { width: 390, height: 844 },
+      { width: 844, height: 390 },
+      { width: 320, height: 568 },
+    ];
+
+    for (const viewport of viewports) {
+      await page.setViewportSize(viewport);
+      await page.goto("/");
+      await page.getByRole("region", { name: "Groups & Teams" }).scrollIntoViewIfNeeded();
+
+      const flagVisibility = await page.evaluate(() => {
+        const viewport = {
+          bottom: window.innerHeight,
+          left: 0,
+          right: window.innerWidth,
+          top: 0,
+        };
+        const flags = Array.from(document.querySelectorAll(".group-team-flag"));
+
+        return {
+          hiddenFlags: flags.filter((flag) => {
+            const rect = flag.getBoundingClientRect();
+
+            return (
+              rect.width === 0 ||
+              rect.height === 0 ||
+              rect.left < viewport.left ||
+              rect.right > viewport.right ||
+              rect.top < viewport.top ||
+              rect.bottom > viewport.bottom
+            );
+          }).length,
+          totalFlags: flags.length,
+        };
+      });
+
+      expect(flagVisibility.totalFlags).toBe(48);
+      expect(flagVisibility.hiddenFlags).toBe(0);
+    }
   });
 
   test("selects a date and shows that day's fixture details", async ({ page }) => {

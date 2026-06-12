@@ -240,17 +240,17 @@ input:focus-visible,
 .group-team-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 4px;
   align-content: start;
   min-height: 0;
-  padding: 0 10px 10px;
+  padding: 0 8px 4px;
   overflow: auto;
   overscroll-behavior: contain;
 }
 
 .group-team-card {
   display: grid;
-  grid-template-rows: 44px auto;
+  grid-template-columns: 34px minmax(0, 1fr);
   min-width: 0;
   min-height: 0;
   overflow: hidden;
@@ -283,16 +283,16 @@ input:focus-visible,
 
 .group-team-header-button {
   display: flex;
-  width: 100%;
-  min-height: 44px;
+  width: 34px;
+  min-height: 24px;
   align-items: center;
   justify-content: center;
-  padding: 0 6px;
+  padding: 0 3px;
   border: 0;
-  border-bottom: 1px solid rgba(23, 32, 42, 0.07);
+  border-right: 1px solid rgba(23, 32, 42, 0.07);
   color: rgba(23, 32, 42, 0.66);
   background: rgba(255, 255, 255, 0.42);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 950;
   letter-spacing: 0.02em;
   cursor: pointer;
@@ -306,21 +306,22 @@ input:focus-visible,
 
 .group-team-rows {
   display: grid;
-  grid-template-rows: repeat(4, minmax(44px, auto));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1px;
   min-height: 0;
-  padding: 5px;
+  padding: 2px;
 }
 
 .group-team-row-button {
   display: flex;
   min-width: 0;
-  min-height: 44px;
+  min-height: 22px;
   align-items: center;
-  gap: 7px;
+  justify-content: center;
+  gap: 0;
   width: 100%;
   overflow: hidden;
-  padding: 2px 5px;
+  padding: 0;
   border: 1px solid transparent;
   border-radius: 8px;
   color: rgba(23, 32, 42, 0.82);
@@ -358,8 +359,12 @@ input:focus-visible,
   inline-size: 20px;
   justify-content: center;
   flex: 0 0 20px;
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1;
+}
+
+.group-team-copy {
+  display: none;
 }
 
 .group-team-code {
@@ -911,8 +916,8 @@ input:focus-visible,
   }
 
   .group-team-grid {
-    gap: 6px;
-    padding: 0 10px 8px;
+    gap: 4px;
+    padding: 0 8px 4px;
   }
 
   .group-team-card {
@@ -920,12 +925,12 @@ input:focus-visible,
   }
 
   .group-team-header-button {
-    min-height: 44px;
-    padding: 6px 9px 4px;
+    min-height: 24px;
+    padding: 0 3px;
   }
 
   .group-team-row-button {
-    min-height: 44px;
+    min-height: 22px;
   }
 
   .date-months {
@@ -1004,7 +1009,7 @@ input:focus-visible,
   }
 
   .group-team-card {
-    min-height: 126px;
+    min-height: 0;
   }
 
   .date-chip {
@@ -1188,34 +1193,33 @@ input:focus-visible,
 /* Readability pass: calendar dates, larger teams, focused result facts, centered map pins. */
 .groups-section .group-team-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 4px;
 }
 
 .group-team-card {
-  padding: 8px;
+  padding: 0;
 }
 
 .group-team-header-button {
-  font-size: 0.78rem;
+  font-size: 0.68rem;
   letter-spacing: 0.04em;
 }
 
 .group-team-row-button {
-  min-height: 44px;
+  min-height: 22px;
   align-items: center;
-  gap: 7px;
-  padding: 2px 5px;
+  justify-content: center;
+  gap: 0;
+  padding: 0;
 }
 
 .group-team-flag {
-  font-size: 1.12rem;
+  font-size: 1rem;
   line-height: 1;
 }
 
 .group-team-copy {
-  flex: 1 1 auto;
-  min-inline-size: 0;
-  overflow: hidden;
+  display: none;
 }
 
 .group-team-name {
@@ -1526,8 +1530,11 @@ input:focus-visible,
     min-block-size: 44px;
   }
 
-  .group-team-header-button,
+  .group-team-header-button {
+    min-height: 24px;
+  }
+
   .group-team-row-button {
-    min-height: 44px;
+    min-height: 22px;
   }
 }

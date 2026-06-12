@@ -239,19 +239,31 @@ describe("App", () => {
     expect(screen.queryByRole("button", { name: "Search" })).not.toBeInTheDocument();
   });
 
-  it("renders readable country names in the groups table", () => {
+  it("keeps countries selectable from the groups table", () => {
     render(<App />);
 
     const groupsSection = screen.getByRole("region", { name: "Groups & Teams" });
 
-    expect(within(groupsSection).getByText("South Africa")).toBeInTheDocument();
-    expect(within(groupsSection).getByText("Korea Republic")).toBeInTheDocument();
-    expect(within(groupsSection).getByText("Czechia")).toBeInTheDocument();
-    expect(within(groupsSection).getByText("Canada")).toBeInTheDocument();
-    expect(within(groupsSection).getByText("Bosnia and Herzegovina")).toBeInTheDocument();
-    expect(within(groupsSection).getByText("Qatar")).toBeInTheDocument();
-    expect(within(groupsSection).getByText("Switzerland")).toBeInTheDocument();
-    expect(within(groupsSection).getByText("Japan")).toBeInTheDocument();
+    expect(
+      within(groupsSection).getByRole("button", { name: "Select South Africa" }),
+    ).toBeInTheDocument();
+    expect(
+      within(groupsSection).getByRole("button", { name: "Select Korea Republic" }),
+    ).toBeInTheDocument();
+    expect(
+      within(groupsSection).getByRole("button", { name: "Select Czechia" }),
+    ).toBeInTheDocument();
+    expect(
+      within(groupsSection).getByRole("button", { name: "Select Canada" }),
+    ).toBeInTheDocument();
+    expect(
+      within(groupsSection).getByRole("button", { name: "Select Bosnia and Herzegovina" }),
+    ).toBeInTheDocument();
+    expect(within(groupsSection).getByRole("button", { name: "Select Qatar" })).toBeInTheDocument();
+    expect(
+      within(groupsSection).getByRole("button", { name: "Select Switzerland" }),
+    ).toBeInTheDocument();
+    expect(within(groupsSection).getByRole("button", { name: "Select Japan" })).toBeInTheDocument();
     expect(within(groupsSection).queryByText("JPN")).not.toBeInTheDocument();
     expect(within(groupsSection).queryByText("JPN · AFC")).not.toBeInTheDocument();
   });
