@@ -1221,7 +1221,7 @@ button:focus-visible {
 .match-card__matchup {
   min-width: 0;
   color: var(--color-ink);
-  font-size: 1.18rem;
+  font-size: 1.48rem;
   font-weight: 900;
   line-height: 1.08;
 }
@@ -1260,7 +1260,7 @@ button:focus-visible {
   opacity: 0.58;
 }
 
-.venue-marker__label {
+.venue-marker__map-label {
   pointer-events: none;
 }
 
@@ -1324,6 +1324,6 @@ button:focus-visible {
   opacity: 0.62;
 }
 
-.venue-marker.is-dimmed .venue-marker__label {
+.venue-marker.is-dimmed .venue-marker__map-label {
   opacity: 0.96;
 }

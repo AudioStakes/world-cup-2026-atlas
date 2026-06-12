@@ -36,7 +36,7 @@
   box-shadow: 0 5px 8px rgba(23, 32, 42, 0.18);
 }
 
-.venue-marker__label {
+.venue-marker__map-label {
   overflow: hidden;
   color: currentColor;
   font-size: 13px;
@@ -158,7 +158,7 @@
   filter: saturate(0.92);
 }
 
-.venue-marker.is-dimmed .venue-marker__label {
+.venue-marker.is-dimmed .venue-marker__map-label {
   color: rgba(23, 32, 42, 0.9);
 }
 

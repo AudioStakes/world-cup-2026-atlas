@@ -170,7 +170,7 @@ function VenueMarker({ venue, onAction }: VenueMarkerProps) {
           <span class="venue-marker__dot" aria-hidden="true" />
         </button>
       </foreignObject>
-      <g class="venue-marker__label" transform={`translate(${labelX} ${labelY})`}>
+      <g class="venue-marker__map-label" transform={`translate(${labelX} ${labelY})`}>
         <rect class="venue-marker__label-bg" width={labelWidth} height="34" rx="12" />
         <text class="venue-marker__label-text" x={labelWidth / 2} text-anchor="middle">
           <tspan x={labelWidth / 2} y="14">

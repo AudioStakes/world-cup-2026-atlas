@@ -16,7 +16,12 @@ import type {
   Venue,
 } from "../../domain/types";
 import type { Indexes } from "../../indexes/createIndexes";
-import { formatDateLabel, formatDistanceLabel, getRequiredCountry } from "./formatExplorerLabels";
+import {
+  formatDateLabel,
+  formatDistanceLabel,
+  formatWeekdayDateLabel,
+  getRequiredCountry,
+} from "./formatExplorerLabels";
 import type {
   CountryRouteSummaryViewModel,
   ExplorerResultType,
@@ -231,7 +236,7 @@ function createMatchListItem(
     matchId: match.id,
     matchNumberLabel: `Match ${match.matchNumber}`,
     stageLabel: formatStageLabel(match),
-    dateLabel: formatDateLabel(match.date),
+    dateLabel: formatWeekdayDateLabel(match.date),
     primaryText: createMatchPrimaryText(indexes, viewState, match),
     matchupText: createMatchupText(indexes, match),
     matchupAriaLabel: createMatchupAriaLabel(indexes, match),
