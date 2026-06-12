@@ -148,8 +148,8 @@ button:focus-visible {
 .atlas-body {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(320px, 360px) minmax(720px, 1fr);
-  gap: 18px;
+  grid-template-columns: minmax(400px, 440px) minmax(640px, 1fr);
+  gap: 14px;
   min-height: 0;
   padding-top: 18px;
 }
@@ -170,8 +170,8 @@ button:focus-visible {
 
 .explorer-output {
   display: grid;
-  grid-template-rows: minmax(220px, 0.42fr) minmax(440px, 1fr);
-  gap: 18px;
+  grid-template-rows: minmax(128px, max-content) minmax(520px, 1fr);
+  gap: 14px;
   min-height: 0;
 }
 
@@ -241,8 +241,8 @@ button:focus-visible {
 
 .group-team-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 7px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
   align-content: start;
   min-height: 0;
   padding: 0 10px 10px;
@@ -251,8 +251,10 @@ button:focus-visible {
 }
 
 .group-team-card {
+  display: grid;
+  grid-template-rows: 24px minmax(0, 1fr);
   min-width: 0;
-  min-height: 126px;
+  min-height: 132px;
   overflow: hidden;
   border: 1px solid rgba(23, 32, 42, 0.08);
   border-radius: 14px;
@@ -306,17 +308,20 @@ button:focus-visible {
 
 .group-team-rows {
   display: grid;
-  gap: 2px;
+  grid-template-rows: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  min-height: 0;
   padding: 5px;
 }
 
 .group-team-row-button {
   display: flex;
-  min-height: 22px;
+  min-width: 0;
+  min-height: 0;
   align-items: center;
-  gap: 4px;
+  gap: 7px;
   width: 100%;
-  padding: 1px 4px;
+  padding: 2px 5px;
   border: 1px solid transparent;
   border-radius: 8px;
   color: rgba(23, 32, 42, 0.82);
@@ -350,9 +355,10 @@ button:focus-visible {
 
 .group-team-flag {
   display: inline-flex;
-  width: 18px;
+  width: 20px;
   justify-content: center;
-  font-size: 15px;
+  flex: 0 0 20px;
+  font-size: 16px;
   line-height: 1;
 }
 
@@ -1024,12 +1030,12 @@ button:focus-visible {
 }
 /* Readability pass: calendar dates, larger teams, focused result facts, centered map pins. */
 .groups-section .group-team-grid {
-  grid-template-columns: 1fr;
-  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
 }
 
 .group-team-card {
-  padding: 10px;
+  padding: 8px;
 }
 
 .group-team-header-button {
@@ -1038,28 +1044,31 @@ button:focus-visible {
 }
 
 .group-team-row-button {
-  min-height: 54px;
+  min-height: 0;
   align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
+  gap: 7px;
+  padding: 2px 5px;
 }
 
 .group-team-flag {
-  font-size: 1.45rem;
+  font-size: 1.12rem;
   line-height: 1;
 }
 
 .group-team-copy {
+  flex: 1 1 auto;
   min-inline-size: 0;
 }
 
 .group-team-name {
   display: block;
-  overflow-wrap: anywhere;
+  overflow: hidden;
   color: rgba(20, 30, 44, 0.92);
-  font-size: 1.08rem;
+  font-size: 0.88rem;
   font-weight: 900;
-  line-height: 1.05;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .group-team-meta {
@@ -1193,13 +1202,13 @@ button:focus-visible {
 
 .group-team-card.is-related,
 .group-team-card.is-selected {
-  min-height: 264px;
-  overflow: visible;
+  min-height: 132px;
+  overflow: hidden;
 }
 
 .group-team-card.is-related .group-team-row-button,
 .group-team-card.is-selected .group-team-row-button {
-  min-height: 48px;
+  min-height: 0;
 }
 
 .match-card {

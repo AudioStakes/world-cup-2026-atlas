@@ -53,6 +53,10 @@ describe("App", () => {
     expect(within(groupsSection).getByText("South Africa")).toBeInTheDocument();
     expect(within(groupsSection).getByText("Korea Republic")).toBeInTheDocument();
     expect(within(groupsSection).getByText("Czechia")).toBeInTheDocument();
+    expect(within(groupsSection).getByText("Canada")).toBeInTheDocument();
+    expect(within(groupsSection).getByText("Bosnia and Herzegovina")).toBeInTheDocument();
+    expect(within(groupsSection).getByText("Qatar")).toBeInTheDocument();
+    expect(within(groupsSection).getByText("Switzerland")).toBeInTheDocument();
     expect(within(groupsSection).getByText("Japan")).toBeInTheDocument();
     expect(within(groupsSection).queryByText("JPN")).not.toBeInTheDocument();
     expect(within(groupsSection).queryByText("JPN · AFC")).not.toBeInTheDocument();
