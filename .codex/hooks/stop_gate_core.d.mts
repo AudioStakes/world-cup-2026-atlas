@@ -8,7 +8,9 @@ export type StopGateContext = {
   branch?: string;
   branchStatus?: string;
   hasTaskCommit: boolean;
+  currentHead?: string;
   newDirtyPaths: string[];
+  prHeadRefOid?: string;
   prUrl?: string;
   upstream?: string;
 };
@@ -41,7 +43,6 @@ export function buildBlockResponse(
 };
 export function buildFinalResponseReason(options: {
   prReportLine: string;
-  completionPrompt: string;
   instructionFeedbackPrompt?: string;
 }): string;
 export function parseStatusPaths(statusOutput: string): string[];

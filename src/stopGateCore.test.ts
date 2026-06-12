@@ -166,8 +166,7 @@ describe("stopGate core", () => {
         defaultActions,
       ),
     ).toMatchObject({
-      title: "Current branch has no upstream.",
-      nextAction: expect.stringContaining("git branch --set-upstream-to"),
+      title: "No pull request URL found.",
     });
   });
   it("builds dirty file guidance for task-owned changes without staging unrelated work", () => {

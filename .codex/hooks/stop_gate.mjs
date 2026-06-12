@@ -32,13 +32,6 @@ const stopHookActions = {
   autoPushPr: readStopHookToggle("STOP_HOOK_AUTO_PUSH_PR", "push/create/update pull request"),
   agentLoadReport: readStopHookToggle("STOP_HOOK_AGENT_LOAD_REPORT", "AI agent load report"),
 };
-const completionPromptPath = join(
-  repositoryRoot,
-  ".codex",
-  "hooks",
-  "prompts",
-  "stop_completion_report.txt",
-);
 const instructionFeedbackPromptPath = join(
   repositoryRoot,
   ".codex",
@@ -382,6 +375,27 @@ function runCommand(command, args, options = {}) {
   return result.stdout.trimEnd();
 }
 
+function getCurrentPullRequestContext() {
+  const output = runCommand("gh", ["pr", "view", "--json", "url,headRefOid"], {
+    allowFailure: true,
+  });
+
+  if (!output) {
+    return { headRefOid: null, url: null };
+  }
+
+  try {
+    const pullRequest = JSON.parse(output);
+
+    return {
+      headRefOid: pullRequest.headRefOid ?? null,
+      url: pullRequest.url ?? null,
+    };
+  } catch {
+    return { headRefOid: null, url: null };
+  }
+}
+
 function parseStatusPaths(statusOutput) {
   return statusOutput
     .split(/\r?\n/)
@@ -430,9 +444,9 @@ function getGitContext() {
   const baselineHead = getBaselineHead();
   const currentHead = runGit(["rev-parse", "HEAD"]);
   const hasTaskCommit = currentHead !== baselineHead;
-  const prUrl = hasTaskCommit
-    ? runCommand("gh", ["pr", "view", "--json", "url", "--jq", ".url"], { allowFailure: true })
-    : null;
+  const pullRequestContext = hasTaskCommit
+    ? getCurrentPullRequestContext()
+    : { headRefOid: null, url: null };
   const branchLine =
     branchStatus
       .split("\n")[0]
@@ -448,7 +462,8 @@ function getGitContext() {
     latestCommit: currentHead,
     upstream,
     branchStatus,
-    prUrl,
+    prHeadRefOid: pullRequestContext.headRefOid,
+    prUrl: pullRequestContext.url,
     currentDirtyPaths,
     baselineDirtyPaths,
     newDirtyPaths,
@@ -479,7 +494,6 @@ function buildPrReportLine(context) {
 }
 
 function buildFinalResponseReason(context) {
-  const completionPrompt = readRequiredPrompt(completionPromptPath);
   let instructionFeedbackPrompt;
 
   if (stopHookActions.agentLoadReport) {
@@ -490,7 +504,6 @@ function buildFinalResponseReason(context) {
 
   return buildFinalResponseReasonCore({
     prReportLine: buildPrReportLine(context),
-    completionPrompt,
     instructionFeedbackPrompt,
   });
 }
@@ -708,7 +721,6 @@ async function main() {
         writePass();
       }
 
-      const completionPrompt = readRequiredPrompt(completionPromptPath);
       const instructionFeedbackPrompt = readRequiredPrompt(instructionFeedbackPromptPath);
       markFinalReportRequested(key);
       writeBlock("Final response required.", buildFinalResponseReason(context));
@@ -717,9 +729,6 @@ async function main() {
         [
           "Report data:",
           "- PR: 変更なし・PR不要",
-          "",
-          "Completion report instruction:",
-          completionPrompt,
           "",
           "Instruction feedback prompt:",
           instructionFeedbackPrompt,
@@ -738,7 +747,6 @@ async function main() {
 
     assertCompletionGitState(context);
 
-    const completionPrompt = readRequiredPrompt(completionPromptPath);
     const instructionFeedbackPrompt = readRequiredPrompt(instructionFeedbackPromptPath);
 
     markFinalReportRequested(key);
@@ -748,9 +756,6 @@ async function main() {
       [
         "Report data:",
         context.hasTaskCommit ? `- PR: ${context.prUrl}` : "- PR: 変更なし・PR不要",
-        "",
-        "Completion report instruction:",
-        completionPrompt,
         "",
         "Instruction feedback prompt:",
         instructionFeedbackPrompt,

@@ -1,5 +1,4 @@
 const IMPORTANT_LINE_PATTERNS = [
-  /Completion report instruction:/,
   /Review Notes:/,
   /残作業:/,
   /error TS\d+/,
@@ -57,9 +56,7 @@ export function getInputStrings(value) {
 }
 
 export function isFinalReportResponse(value) {
-  return getInputStrings(value).some((text) =>
-    /Completion report instruction:|Review Notes:|残作業:/.test(text),
-  );
+  return getInputStrings(value).some((text) => /Review Notes:|残作業:/.test(text));
 }
 
 export function formatHookJson(value) {
@@ -73,18 +70,8 @@ export function buildBlockResponse(title, reason) {
   };
 }
 
-export function buildFinalResponseReason({
-  prReportLine,
-  completionPrompt,
-  instructionFeedbackPrompt,
-}) {
-  const lines = [
-    "Report data:",
-    prReportLine,
-    "",
-    "Completion report instruction:",
-    completionPrompt,
-  ];
+export function buildFinalResponseReason({ prReportLine, instructionFeedbackPrompt }) {
+  const lines = ["Report data:", prReportLine, ""];
 
   if (instructionFeedbackPrompt !== undefined) {
     lines.push("", "Instruction feedback prompt:", instructionFeedbackPrompt);
@@ -217,29 +204,27 @@ export function getCompletionGitStateIssue(context, stopHookActions) {
     };
   }
 
-  if (!context.upstream) {
-    return {
-      title: "Current branch has no upstream.",
-      reason:
-        "Push the current branch with upstream, create or update the PR, and finish again. If this stop hook still reports no upstream after `git push -u`, check `git config --get branch.<branch>.remote` and `git config --get branch.<branch>.merge`; if either is empty, run `git branch --set-upstream-to=origin/<branch> <branch>`.",
-      nextAction:
-        "Push the current branch with upstream, create or update the PR, and finish again. If this stop hook still reports no upstream after `git push -u`, check `git config --get branch.<branch>.remote` and `git config --get branch.<branch>.merge`; if either is empty, run `git branch --set-upstream-to=origin/<branch> <branch>`.",
-    };
-  }
-
-  if (/\[ahead \d+\]/.test(context.branchStatus)) {
-    return {
-      title: "Current branch has unpushed commits.",
-      reason: "Push the current branch, create or update the PR, and finish again.",
-      nextAction: "Push the current branch, create or update the PR, and finish again.",
-    };
-  }
-
   if (!context.prUrl) {
     return {
       title: "No pull request URL found.",
       reason: "Create or update the pull request for the current branch, then finish again.",
       nextAction: "Create or update the pull request for the current branch, then finish again.",
+    };
+  }
+
+  if (!context.prHeadRefOid) {
+    return {
+      title: "Pull request head commit could not be verified.",
+      reason: "Refresh the pull request metadata, then finish again.",
+      nextAction: "Refresh the pull request metadata, then finish again.",
+    };
+  }
+
+  if (context.prHeadRefOid !== context.currentHead) {
+    return {
+      title: "Pull request is missing the latest local commit.",
+      reason: "Push the current branch, update the PR, and finish again.",
+      nextAction: "Push the current branch, update the PR, and finish again.",
     };
   }
 
