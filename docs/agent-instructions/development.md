@@ -54,6 +54,14 @@ Stable development rules, validation commands, delivery rules, and report format
 - Keep full-viewport app shell behavior intact unless the task is specifically about layout.
 - Preserve the existing map rendering architecture: Natural Earth map data, projected venue positions, SVG-positioned semantic venue buttons.
 
+## Focused Searches
+
+Use this when searching for implementation code or tests.
+
+- Search the narrowest likely source path first, such as `src/`, `.codex/hooks/`, or `docs/agent-instructions/`.
+- Exclude archival/generated/noisy paths unless the task is specifically about them: logs, build output, coverage, caches, and dependency folders.
+- Example: for stop hook implementation, prefer `.codex/hooks --glob '!logs/**'` over searching all of `.codex`.
+
 ## In-App Browser Verification
 
 Use this only when a task explicitly needs the Browser plugin or the current in-app browser page.
