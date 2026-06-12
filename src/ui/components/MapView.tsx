@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import { northAmericaMapBounds, northAmericaMapFeatures } from "../../data/northAmericaMapData";
 import {
   EXPLORER_MAP_DISPLAY_VIEWBOX,
@@ -19,11 +20,78 @@ type MapViewProps = {
 export function MapView({ map, onAction }: MapViewProps) {
   const viewBox = EXPLORER_MAP_DISPLAY_VIEWBOX;
   const venueLabelLayouts = createVenueLabelLayouts(map.venueMarkers, viewBox);
+  const mapCanvasRef = useRef<HTMLDivElement | null>(null);
+  const mapSvgRef = useRef<SVGSVGElement | null>(null);
+  const venueMarkersRef = useRef(map.venueMarkers);
+  const schedulePositionUpdateRef = useRef<(() => void) | null>(null);
+  const [venueControlPositions, setVenueControlPositions] = useState<
+    Readonly<Record<string, VenueControlPosition>>
+  >({});
+
+  venueMarkersRef.current = map.venueMarkers;
+
+  useLayoutEffect(() => {
+    schedulePositionUpdateRef.current?.();
+  }, [map.venueMarkers]);
+
+  useLayoutEffect(() => {
+    const mapCanvas = mapCanvasRef.current;
+    const mapSvg = mapSvgRef.current;
+
+    if (!mapCanvas || !mapSvg) {
+      return;
+    }
+
+    let frame = 0;
+    const updateVenueControlPositions = () => {
+      frame = 0;
+      const nextPositions = createVenueControlPositions(
+        mapSvg,
+        mapCanvas.getBoundingClientRect(),
+        venueMarkersRef.current,
+      );
+
+      setVenueControlPositions(nextPositions);
+    };
+    const schedulePositionUpdate = () => {
+      if (frame !== 0) {
+        return;
+      }
+
+      frame = window.requestAnimationFrame(updateVenueControlPositions);
+    };
+
+    schedulePositionUpdateRef.current = schedulePositionUpdate;
+    schedulePositionUpdate();
+
+    const resizeObserver =
+      typeof ResizeObserver === "undefined" ? null : new ResizeObserver(schedulePositionUpdate);
+    resizeObserver?.observe(mapCanvas);
+    resizeObserver?.observe(mapSvg);
+
+    window.addEventListener("resize", schedulePositionUpdate);
+    window.addEventListener("orientationchange", schedulePositionUpdate);
+    window.visualViewport?.addEventListener("resize", schedulePositionUpdate);
+
+    return () => {
+      schedulePositionUpdateRef.current = null;
+
+      if (frame !== 0) {
+        window.cancelAnimationFrame(frame);
+      }
+
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", schedulePositionUpdate);
+      window.removeEventListener("orientationchange", schedulePositionUpdate);
+      window.visualViewport?.removeEventListener("resize", schedulePositionUpdate);
+    };
+  }, []);
 
   return (
     <section class="map-panel" aria-label="North America venue map">
-      <div class="map-canvas">
+      <div ref={mapCanvasRef} class="map-canvas">
         <svg
+          ref={mapSvgRef}
           class="map-svg"
           viewBox={`${viewBox.minX} ${viewBox.minY} ${viewBox.width} ${viewBox.height}`}
           role="img"
@@ -103,8 +171,8 @@ export function MapView({ map, onAction }: MapViewProps) {
           {map.venueMarkers.map((venue) => (
             <VenueMarkerControl
               key={venue.venueId}
+              position={venueControlPositions[venue.venueId]}
               venue={venue}
-              viewBox={viewBox}
               onAction={onAction}
             />
           ))}
@@ -157,6 +225,13 @@ type VenueMarkerProps = {
 function VenueMarker({ labelLayout, venue }: VenueMarkerProps) {
   return (
     <g class={classNames("venue-marker", `is-${venue.state}`)} data-venue-id={venue.venueId}>
+      <circle
+        class="venue-marker__anchor"
+        data-venue-anchor-id={venue.venueId}
+        cx={venue.position.x}
+        cy={venue.position.y}
+        r="1"
+      />
       <g
         class="venue-marker__map-label"
         transform={`translate(${labelLayout?.x ?? venue.position.x} ${
@@ -179,12 +254,12 @@ function VenueMarker({ labelLayout, venue }: VenueMarkerProps) {
 }
 
 type VenueMarkerControlProps = {
+  readonly position: VenueControlPosition | undefined;
   readonly venue: VenueMarkerViewModel;
-  readonly viewBox: ExplorerMapViewBox;
   readonly onAction: (action: ExplorerAction) => void;
 };
 
-function VenueMarkerControl({ venue, viewBox, onAction }: VenueMarkerControlProps) {
+function VenueMarkerControl({ position, venue, onAction }: VenueMarkerControlProps) {
   function selectVenue() {
     onAction({ type: "selectVenue", venueId: venue.venueId });
   }
@@ -197,8 +272,8 @@ function VenueMarkerControl({ venue, viewBox, onAction }: VenueMarkerControlProp
       title={venue.tooltipLabel}
       aria-label={venue.ariaLabel}
       style={{
-        left: `${toMapPercent(venue.position.x, viewBox.minX, viewBox.width)}%`,
-        top: `${toMapPercent(venue.position.y, viewBox.minY, viewBox.height)}%`,
+        left: position ? `${position.left}px` : undefined,
+        top: position ? `${position.top}px` : undefined,
       }}
       onClick={selectVenue}
     >
@@ -207,8 +282,39 @@ function VenueMarkerControl({ venue, viewBox, onAction }: VenueMarkerControlProp
   );
 }
 
-function toMapPercent(value: number, min: number, size: number): number {
-  return ((value - min) / size) * 100;
+type VenueControlPosition = {
+  readonly left: number;
+  readonly top: number;
+};
+
+function createVenueControlPositions(
+  svg: SVGSVGElement,
+  containerRect: DOMRect,
+  venues: readonly VenueMarkerViewModel[],
+): Readonly<Record<string, VenueControlPosition>> {
+  const screenMatrix = svg.getScreenCTM();
+
+  if (!screenMatrix) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    venues.map((venue) => {
+      const point = svg.createSVGPoint();
+      point.x = venue.position.x;
+      point.y = venue.position.y;
+
+      const screenPoint = point.matrixTransform(screenMatrix);
+
+      return [
+        venue.venueId,
+        {
+          left: screenPoint.x - containerRect.left,
+          top: screenPoint.y - containerRect.top,
+        },
+      ];
+    }),
+  );
 }
 
 type VenueLabelLayout = {

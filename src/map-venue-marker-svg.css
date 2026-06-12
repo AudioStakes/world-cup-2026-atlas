@@ -13,21 +13,15 @@
 
 .venue-marker-control-layer {
   position: absolute;
-  inset: 3% 2% 3% 2%;
-  width: 96%;
-  height: 94%;
-  pointer-events: none;
-}
-
-.explorer-output .venue-marker-control-layer {
   inset: 0;
+  pointer-events: none;
 }
 
 .venue-marker-control {
   position: absolute;
   display: grid;
-  width: 34px;
-  height: 34px;
+  width: 8px;
+  height: 8px;
   place-items: center;
   padding: 0;
   border: 0;
@@ -45,6 +39,7 @@
   border-radius: 999px;
   background: rgba(181, 31, 31, 0.82);
   box-shadow: 0 0 0 1px rgba(23, 32, 42, 0.1);
+  pointer-events: none;
 }
 
 .venue-marker-control:hover .venue-marker-control__dot,
@@ -159,6 +154,11 @@
   filter: drop-shadow(0 0 1px rgba(23, 32, 42, 0.1));
   stroke: rgba(255, 255, 255, 0.96);
   stroke-width: 2;
+}
+
+.venue-marker__anchor {
+  fill: rgba(0, 0, 0, 0.001);
+  pointer-events: none;
 }
 
 .venue-marker:hover,

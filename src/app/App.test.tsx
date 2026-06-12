@@ -1,12 +1,9 @@
-import { fireEvent, render, screen, within } from "@testing-library/preact";
-import { beforeEach, describe, expect, it } from "vitest";
-import { northAmericaMapBounds } from "../data/northAmericaMapData";
-import { venues } from "../data/venues";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/preact";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   EXPLORER_MAP_DISPLAY_VIEWBOX,
   EXPLORER_MAP_VIEWBOX,
 } from "../features/explorer/mapViewport";
-import { projectGeoPointToExplorerMap } from "../features/explorer/projectGeoPoint";
 import { App } from "./App";
 
 function selectJapan() {
@@ -79,9 +76,96 @@ function doBoxesOverlap(
   );
 }
 
+function getVenueAnchorPoint(venueId: string) {
+  const anchor = document.querySelector(`[data-venue-anchor-id="${venueId}"]`);
+
+  if (!(anchor instanceof Element) || anchor.tagName.toLowerCase() !== "circle") {
+    throw new Error(`Expected ${venueId} marker anchor to render`);
+  }
+
+  return {
+    x: Number(anchor.getAttribute("cx")),
+    y: Number(anchor.getAttribute("cy")),
+  };
+}
+
+type MockScreenMatrix = {
+  readonly a: number;
+  readonly d: number;
+  readonly e: number;
+  readonly f: number;
+};
+
+const originalResizeObserver = window.ResizeObserver;
+const originalCreateSvgPoint = Object.getOwnPropertyDescriptor(
+  SVGSVGElement.prototype,
+  "createSVGPoint",
+);
+const originalGetScreenCTM = Object.getOwnPropertyDescriptor(
+  SVGSVGElement.prototype,
+  "getScreenCTM",
+);
+const originalGetBoundingClientRect = Object.getOwnPropertyDescriptor(
+  HTMLElement.prototype,
+  "getBoundingClientRect",
+);
+
+class MockResizeObserver {
+  static instances: MockResizeObserver[] = [];
+
+  readonly disconnect = vi.fn();
+  readonly observe = vi.fn();
+
+  constructor(private readonly callback: ResizeObserverCallback) {
+    MockResizeObserver.instances.push(this);
+  }
+
+  trigger() {
+    this.callback([], this as unknown as ResizeObserver);
+  }
+
+  static reset() {
+    MockResizeObserver.instances = [];
+  }
+
+  static triggerAll() {
+    for (const instance of MockResizeObserver.instances) {
+      instance.trigger();
+    }
+  }
+}
+
 describe("App", () => {
   beforeEach(() => {
     window.history.replaceState(null, "", "/");
+  });
+
+  afterEach(() => {
+    MockResizeObserver.reset();
+    vi.restoreAllMocks();
+
+    if (originalResizeObserver) {
+      globalThis.ResizeObserver = originalResizeObserver;
+    } else {
+      delete (globalThis as typeof globalThis & { ResizeObserver?: typeof ResizeObserver })
+        .ResizeObserver;
+    }
+
+    if (originalCreateSvgPoint) {
+      Object.defineProperty(SVGSVGElement.prototype, "createSVGPoint", originalCreateSvgPoint);
+    }
+
+    if (originalGetScreenCTM) {
+      Object.defineProperty(SVGSVGElement.prototype, "getScreenCTM", originalGetScreenCTM);
+    }
+
+    if (originalGetBoundingClientRect) {
+      Object.defineProperty(
+        HTMLElement.prototype,
+        "getBoundingClientRect",
+        originalGetBoundingClientRect,
+      );
+    }
   });
 
   it("renders the default explorer state from the production A1 country", () => {
@@ -190,23 +274,54 @@ describe("App", () => {
     expect(labelText).not.toHaveTextContent("Lumen Field");
   });
 
-  it("renders a closer map crop while preserving venue center coordinates", () => {
-    render(<App />);
+  it("renders a closer map crop while preserving venue center coordinates", async () => {
+    let screenMatrix: MockScreenMatrix = { a: 0.4, d: 0.5, e: 180, f: 90 };
+    const mapCanvasRect = new DOMRect(24, 36, 960, 720);
+
+    vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
+      callback(0);
+
+      return 1;
+    });
+    vi.spyOn(window, "cancelAnimationFrame").mockImplementation(() => {});
+    globalThis.ResizeObserver = MockResizeObserver as unknown as typeof ResizeObserver;
+    Object.defineProperty(SVGSVGElement.prototype, "createSVGPoint", {
+      configurable: true,
+      value() {
+        return {
+          x: 0,
+          y: 0,
+          matrixTransform(matrix: MockScreenMatrix) {
+            return {
+              x: this.x * matrix.a + matrix.e,
+              y: this.y * matrix.d + matrix.f,
+            };
+          },
+        };
+      },
+    });
+    Object.defineProperty(SVGSVGElement.prototype, "getScreenCTM", {
+      configurable: true,
+      value() {
+        return screenMatrix;
+      },
+    });
+    Object.defineProperty(HTMLElement.prototype, "getBoundingClientRect", {
+      configurable: true,
+      value() {
+        if (this.classList.contains("map-canvas")) {
+          return mapCanvasRect;
+        }
+
+        return new DOMRect();
+      },
+    });
+
+    const firstRender = render(<App />);
 
     const svg = document.querySelector(".map-svg");
-    const boston = venues.find((venue) => venue.id === "boston");
     const bostonControl = getVenueControl("boston");
-    const bostonPosition = boston
-      ? projectGeoPointToExplorerMap(boston.geoPoint, northAmericaMapBounds)
-      : null;
-    const expectedLeft =
-      (((bostonPosition?.x ?? 0) - EXPLORER_MAP_DISPLAY_VIEWBOX.minX) /
-        EXPLORER_MAP_DISPLAY_VIEWBOX.width) *
-      100;
-    const expectedTop =
-      (((bostonPosition?.y ?? 0) - EXPLORER_MAP_DISPLAY_VIEWBOX.minY) /
-        EXPLORER_MAP_DISPLAY_VIEWBOX.height) *
-      100;
+    const bostonPosition = getVenueAnchorPoint("boston");
 
     expect(svg).toHaveAttribute(
       "viewBox",
@@ -214,8 +329,36 @@ describe("App", () => {
     );
     expect(EXPLORER_MAP_DISPLAY_VIEWBOX.width).toBeLessThan(EXPLORER_MAP_VIEWBOX.width);
     expect(EXPLORER_MAP_DISPLAY_VIEWBOX.height).toBeLessThan(EXPLORER_MAP_VIEWBOX.height);
-    expect(Number.parseFloat(bostonControl.style.left)).toBeCloseTo(expectedLeft);
-    expect(Number.parseFloat(bostonControl.style.top)).toBeCloseTo(expectedTop);
+    expect(MockResizeObserver.instances).toHaveLength(1);
+    expect(MockResizeObserver.instances[0]?.observe).toHaveBeenCalledTimes(2);
+
+    await waitFor(() => {
+      expect(Number.isFinite(Number.parseFloat(bostonControl.style.left))).toBe(true);
+      expect(Number.isFinite(Number.parseFloat(bostonControl.style.top))).toBe(true);
+    });
+
+    const initialLeft = Number.parseFloat(bostonControl.style.left);
+    const initialTop = Number.parseFloat(bostonControl.style.top);
+    const initialScreenMatrix = screenMatrix;
+
+    firstRender.unmount();
+    screenMatrix = { a: 0.32, d: 0.44, e: 150, f: 112 };
+    render(<App />);
+
+    const updatedBostonControl = getVenueControl("boston");
+
+    await waitFor(() => {
+      expect(Number.parseFloat(updatedBostonControl.style.left)).toBeCloseTo(
+        initialLeft +
+          bostonPosition.x * (screenMatrix.a - initialScreenMatrix.a) +
+          (screenMatrix.e - initialScreenMatrix.e),
+      );
+      expect(Number.parseFloat(updatedBostonControl.style.top)).toBeCloseTo(
+        initialTop +
+          bostonPosition.y * (screenMatrix.d - initialScreenMatrix.d) +
+          (screenMatrix.f - initialScreenMatrix.f),
+      );
+    });
   });
 
   it("stacks dense East Coast venue labels without moving marker centers", () => {
