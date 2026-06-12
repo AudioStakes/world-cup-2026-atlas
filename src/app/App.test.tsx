@@ -192,6 +192,17 @@ describe("App", () => {
     );
   });
 
+  it("keeps only the last clicked filter in the browser URL", () => {
+    render(<App />);
+
+    selectJapan();
+    expect(window.location.search).toBe("?country=jpn");
+
+    fireEvent.click(screen.getByRole("button", { name: /Select Sun Jun 14/ }));
+
+    expect(window.location.search).toBe("?date=2026-06-14");
+  });
+
   it("renders readable country names in the groups table", () => {
     render(<App />);
 
