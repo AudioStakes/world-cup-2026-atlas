@@ -45,33 +45,49 @@ describe("App", () => {
     );
   });
 
-  it("renders compact country codes in the groups table", () => {
+  it("renders readable country names in the groups table", () => {
     render(<App />);
 
     const groupsSection = screen.getByRole("region", { name: "Groups & Teams" });
 
+    expect(within(groupsSection).getByText("South Africa")).toBeInTheDocument();
+    expect(within(groupsSection).getByText("Korea Republic")).toBeInTheDocument();
+    expect(within(groupsSection).getByText("Czechia")).toBeInTheDocument();
     expect(within(groupsSection).getByText("JPN")).toBeInTheDocument();
-    expect(within(groupsSection).queryByText("Japan")).not.toBeInTheDocument();
+    expect(within(groupsSection).getByText("Japan")).toBeInTheDocument();
     expect(within(groupsSection).queryByText("JPN · AFC")).not.toBeInTheDocument();
+  });
+
+  it("omits redundant panel headings from the visible explorer controls", () => {
+    render(<App />);
+
+    expect(screen.queryByText("Explore")).not.toBeInTheDocument();
+    expect(screen.queryByText("Dates")).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Date" })).toHaveClass("visually-hidden");
+    expect(screen.getByRole("region", { name: "Date" })).toBeInTheDocument();
   });
 
   it("keeps date chips visually compact while preserving date selection", () => {
     render(<App />);
 
-    const dateButton = screen.getByRole("button", { name: /Select Jun 14/ });
+    const dateButton = screen.getByRole("button", { name: /Select Sun Jun 14/ });
     fireEvent.click(dateButton);
 
     expect(dateButton).toHaveAttribute("aria-pressed", "true");
+    expect(dateButton).toHaveTextContent("14");
+    expect(dateButton).not.toHaveTextContent("Sun");
+    expect(dateButton).not.toHaveTextContent("Jun");
     expect(screen.queryByText(/matches/)).not.toBeInTheDocument();
   });
 
-  it("renders match cards without long venue detail lines", () => {
+  it("renders match cards as compact date matchup venue rows", () => {
     render(<App />);
 
     const matchCard = getFirstMatchCard();
     const matchScope = within(matchCard);
 
-    expect(matchCard).toHaveTextContent("Match 1 · Group A");
+    expect(matchScope.getByText("🇲🇽 vs 🇿🇦")).toBeInTheDocument();
+    expect(matchScope.getByText("🇲🇽 Mexico vs 🇿🇦 South Africa")).toHaveClass("visually-hidden");
     expect(matchScope.queryByText(/Estadio Azteca · Mexico City, Mexico/)).not.toBeInTheDocument();
   });
 

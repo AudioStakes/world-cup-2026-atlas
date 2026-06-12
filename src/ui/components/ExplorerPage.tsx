@@ -16,9 +16,6 @@ export function ExplorerPage({ viewModel, onAction }: ExplorerPageProps) {
       <Header header={viewModel.header} />
       <section class="atlas-body" aria-label="Explorer workspace">
         <aside class="explore-panel" aria-label="Explore panel">
-          <div class="explore-panel__intro">
-            <p class="eyebrow">Explore</p>
-          </div>
           <GroupsAndTeamsTable
             groupsAndTeams={viewModel.explorePanel.groupsAndTeams}
             onAction={onAction}

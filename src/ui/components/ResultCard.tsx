@@ -21,13 +21,14 @@ export function ResultCard({ result }: ResultCardProps) {
         <ol class="match-list">
           {result.matches.map((match) => (
             <li class="match-card" key={match.matchId}>
-              <p class="match-card__meta">
-                {match.matchNumberLabel} · {match.stageLabel}
-              </p>
-              <p class="match-card__date">{match.dateLabel}</p>
-              <p class="match-card__primary">{match.primaryText}</p>
-              <p class="match-card__secondary">{match.secondaryText}</p>
-              <p class="match-card__venue">📍 {match.venueLabel}</p>
+              <span class="match-card__when">
+                {match.dateLabel} {match.secondaryText}
+              </span>
+              <span class="match-card__matchup">
+                <span aria-hidden="true">{match.matchupText}</span>
+                <span class="visually-hidden">{match.matchupAriaLabel}</span>
+              </span>
+              <span class="match-card__venue">{match.venueLabel}</span>
             </li>
           ))}
         </ol>

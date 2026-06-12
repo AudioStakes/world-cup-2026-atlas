@@ -29,25 +29,25 @@ export function MapView({ map, onAction }: MapViewProps) {
           <defs>
             <marker
               id="route-arrow"
-              markerWidth="10"
-              markerHeight="10"
-              refX="8"
-              refY="5"
+              markerWidth="6"
+              markerHeight="6"
+              refX="5"
+              refY="3"
               orient="auto"
-              markerUnits="strokeWidth"
+              markerUnits="userSpaceOnUse"
             >
-              <path class="map-route-arrow" d="M0 0 L10 5 L0 10 Z" />
+              <path class="map-route-arrow" d="M0 0 L6 3 L0 6 Z" />
             </marker>
             <marker
               id="route-arrow-knockout"
-              markerWidth="10"
-              markerHeight="10"
-              refX="8"
-              refY="5"
+              markerWidth="6"
+              markerHeight="6"
+              refX="5"
+              refY="3"
               orient="auto"
-              markerUnits="strokeWidth"
+              markerUnits="userSpaceOnUse"
             >
-              <path class="map-route-arrow is-knockout" d="M0 0 L10 5 L0 10 Z" />
+              <path class="map-route-arrow is-knockout" d="M0 0 L6 3 L0 6 Z" />
             </marker>
           </defs>
           <MapBackground />
@@ -136,29 +136,50 @@ type VenueMarkerProps = {
   readonly onAction: (action: ExplorerAction) => void;
 };
 
-const markerWidth = 160;
-const markerHeight = 42;
-
 function VenueMarker({ venue, onAction }: VenueMarkerProps) {
+  const labelWidth = Math.max(58, venue.label.length * 12 + 28);
+  const labelX = clampMapLabelX(venue.position.x - labelWidth / 2, labelWidth);
+  const labelY =
+    venue.position.y - 34 > EXPLORER_MAP_VIEWBOX.minY
+      ? venue.position.y - 34
+      : venue.position.y + 16;
+
+  function selectVenue() {
+    onAction({ type: "selectVenue", venueId: venue.venueId });
+  }
+
   return (
-    <foreignObject
-      class="venue-marker-object"
-      x={venue.position.x - 13}
-      y={venue.position.y - markerHeight / 2}
-      width={markerWidth}
-      height={markerHeight}
-    >
-      <button
-        class={classNames("venue-marker", `is-${venue.state}`)}
-        type="button"
-        data-venue-id={venue.venueId}
-        title={venue.tooltipLabel}
-        aria-label={venue.ariaLabel}
-        onClick={() => onAction({ type: "selectVenue", venueId: venue.venueId })}
+    <g class={classNames("venue-marker", `is-${venue.state}`)} data-venue-id={venue.venueId}>
+      <foreignObject
+        class="venue-marker__button-object"
+        x={venue.position.x - 15}
+        y={venue.position.y - 15}
+        width="30"
+        height="30"
       >
-        <span class="venue-marker__dot" aria-hidden="true" />
-        <span class="venue-marker__label">{venue.label}</span>
-      </button>
-    </foreignObject>
+        <button
+          class="venue-marker__button"
+          type="button"
+          title={venue.tooltipLabel}
+          aria-label={venue.ariaLabel}
+          onClick={selectVenue}
+        >
+          <span class="venue-marker__dot" aria-hidden="true" />
+        </button>
+      </foreignObject>
+      <g class="venue-marker__label" transform={`translate(${labelX} ${labelY})`}>
+        <rect class="venue-marker__label-bg" width={labelWidth} height="26" rx="13" />
+        <text class="venue-marker__label-text" x={labelWidth / 2} y="18" text-anchor="middle">
+          {venue.label}
+        </text>
+      </g>
+    </g>
   );
+}
+
+function clampMapLabelX(x: number, labelWidth: number): number {
+  const minX = EXPLORER_MAP_VIEWBOX.minX + 8;
+  const maxX = EXPLORER_MAP_VIEWBOX.minX + EXPLORER_MAP_VIEWBOX.width - labelWidth - 8;
+
+  return Math.min(Math.max(x, minX), maxX);
 }

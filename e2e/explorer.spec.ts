@@ -24,7 +24,7 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     );
   });
 
-  test("selects team groups from the compact groups table", async ({ page }) => {
+  test("selects team groups from the readable groups table", async ({ page }) => {
     await page.goto("/");
 
     await page.getByRole("button", { name: "Select Japan" }).click();
@@ -36,16 +36,16 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     ).toBeVisible();
     await expect(
       page.getByRole("region", { name: "Groups & Teams" }).getByText("Japan"),
-    ).toHaveCount(0);
+    ).toBeVisible();
   });
 
   test("selects a date without showing match-count chip metadata", async ({ page }) => {
     await page.goto("/");
 
-    await page.getByRole("button", { name: /Select Jun 16/ }).click();
+    await page.getByRole("button", { name: /Select Tue Jun 16/ }).click();
 
     await expect(page).toHaveURL(/date=2026-06-16/);
-    await expect(page.getByRole("button", { name: /Select Jun 16/ })).toHaveAttribute(
+    await expect(page.getByRole("button", { name: /Select Tue Jun 16/ })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
