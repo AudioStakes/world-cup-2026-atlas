@@ -110,26 +110,6 @@ input:focus-visible,
   font-weight: 650;
 }
 
-.atlas-header__state {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-
-.atlas-header__state code {
-  max-width: 420px;
-  overflow: hidden;
-  padding: 7px 10px;
-  border: 1px solid rgba(23, 32, 42, 0.08);
-  border-radius: 999px;
-  color: rgba(23, 32, 42, 0.6);
-  background: rgba(255, 255, 255, 0.68);
-  font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .clear-button {
   min-height: 32px;
   padding: 0 14px;
@@ -168,7 +148,7 @@ input:focus-visible,
   grid-area: controls;
   z-index: 4;
   display: grid;
-  grid-template-rows: auto auto;
+  grid-template-rows: auto;
   gap: 12px;
   min-height: 0;
   padding: 14px;
@@ -185,41 +165,12 @@ input:focus-visible,
 
 .explorer-output {
   grid-area: output;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
   gap: 14px;
   min-height: 0;
-  overflow: auto;
+  overflow: hidden;
   scrollbar-gutter: stable;
-}
-
-.explorer-search {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
-}
-
-.explorer-search__input,
-.explorer-search__button {
-  min-height: 44px;
-  border: 1px solid rgba(23, 32, 42, 0.12);
-  border-radius: 12px;
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.explorer-search__input {
-  min-width: 0;
-  padding: 0 12px;
-  color: var(--color-ink);
-  background: rgba(255, 255, 255, 0.82);
-}
-
-.explorer-search__button {
-  padding: 0 14px;
-  color: #fff;
-  background: var(--color-red);
-  cursor: pointer;
 }
 
 .explore-panel__intro {
@@ -299,7 +250,7 @@ input:focus-visible,
 
 .group-team-card {
   display: grid;
-  grid-template-rows: 34px auto;
+  grid-template-rows: 44px auto;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
@@ -368,6 +319,7 @@ input:focus-visible,
   align-items: center;
   gap: 7px;
   width: 100%;
+  overflow: hidden;
   padding: 2px 5px;
   border: 1px solid transparent;
   border-radius: 8px;
@@ -402,7 +354,8 @@ input:focus-visible,
 
 .group-team-flag {
   display: inline-flex;
-  width: 20px;
+  min-width: 20px;
+  inline-size: 20px;
   justify-content: center;
   flex: 0 0 20px;
   font-size: 16px;
@@ -502,9 +455,9 @@ input:focus-visible,
 .result-card {
   display: grid;
   grid-template-rows: auto auto auto auto;
-  align-self: start;
+  align-self: stretch;
   padding: 12px;
-  overflow: visible;
+  overflow: auto;
   background: var(--color-panel-strong);
   box-shadow: var(--shadow-card);
 }
@@ -749,9 +702,8 @@ input:focus-visible,
 
 .map-panel {
   position: relative;
-  flex: 0 0 420px;
+  min-block-size: 0;
   min-height: 0;
-  min-block-size: 420px;
   overflow: hidden;
   border: 0;
   border-radius: 0;
@@ -947,7 +899,7 @@ input:focus-visible,
 
   .result-card {
     min-height: 0;
-    overflow: visible;
+    overflow: auto;
   }
 
   .section-heading {
@@ -1066,12 +1018,14 @@ input:focus-visible,
 
 @media (max-width: 1180px) {
   html,
-  body {
+  body,
+  #app {
+    min-width: 0;
     overflow: auto;
   }
 
   .atlas-body {
-    grid-template-columns: 360px 760px;
+    grid-template-columns: minmax(320px, 1fr);
   }
 }
 
@@ -1170,7 +1124,14 @@ input:focus-visible,
   }
 
   .explorer-output {
+    display: flex;
+    flex-direction: column;
     overflow: visible;
+  }
+
+  .map-panel {
+    flex: 0 0 420px;
+    min-block-size: min(420px, 80vh);
   }
 }
 
@@ -1187,7 +1148,7 @@ input:focus-visible,
 
   .explore-panel {
     height: auto;
-    grid-template-rows: auto auto;
+    grid-template-rows: auto;
     overflow: visible;
   }
 
@@ -1209,20 +1170,6 @@ input:focus-visible,
     flex-direction: column;
   }
 
-  .atlas-header__state {
-    width: 100%;
-  }
-
-  .atlas-header__state code {
-    flex: 1 1 auto;
-    max-width: none;
-  }
-
-  .explorer-search {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .explorer-search__button,
   .clear-button,
   .group-team-header-button,
   .group-team-row-button,
@@ -1268,6 +1215,7 @@ input:focus-visible,
 .group-team-copy {
   flex: 1 1 auto;
   min-inline-size: 0;
+  overflow: hidden;
 }
 
 .group-team-name {
@@ -1276,7 +1224,9 @@ input:focus-visible,
   font-size: 0.88rem;
   font-weight: 900;
   line-height: 1.1;
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .group-team-meta {

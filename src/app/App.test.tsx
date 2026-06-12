@@ -221,36 +221,22 @@ describe("App", () => {
     expect(window.location.search).toBe("?country=jpn");
   });
 
-  it("shows and clears explicit selections from the header", () => {
+  it("does not show raw URL state or clear actions in the header", () => {
     render(<App />);
 
     selectJapan();
 
-    expect(screen.getByText("/?country=jpn")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Clear" }));
-
-    expect(window.location.search).toBe("");
-    expect(screen.getByRole("heading", { name: "Start exploring" })).toBeInTheDocument();
+    expect(window.location.search).toBe("?country=jpn");
+    expect(screen.queryByText("/?country=jpn")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Clear" })).not.toBeInTheDocument();
   });
 
-  it("selects teams and venues from direct search", () => {
+  it("does not render an explorer search form", () => {
     render(<App />);
 
-    const searchInput = screen.getByRole("combobox", { name: "Search team or city" });
-    const searchButton = screen.getByRole("button", { name: "Search" });
-
-    fireEvent.input(searchInput, { target: { value: "Japan" } });
-    fireEvent.click(searchButton);
-    expect(screen.getByRole("heading", { name: "Japan" })).toBeInTheDocument();
-
-    fireEvent.input(searchInput, { target: { value: "Bosnia" } });
-    fireEvent.keyDown(searchInput, { key: "Enter" });
-    expect(screen.getByRole("heading", { name: "Bosnia and Herzegovina" })).toBeInTheDocument();
-
-    fireEvent.input(searchInput, { target: { value: "Dallas" } });
-    fireEvent.click(searchButton);
-    expect(screen.getByRole("heading", { name: "Dallas" })).toBeInTheDocument();
+    expect(screen.queryByRole("search")).not.toBeInTheDocument();
+    expect(screen.queryByRole("combobox", { name: "Search team or city" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Search" })).not.toBeInTheDocument();
   });
 
   it("renders readable country names in the groups table", () => {

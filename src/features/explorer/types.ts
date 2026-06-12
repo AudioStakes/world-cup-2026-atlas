@@ -52,8 +52,6 @@ export type ExplorerViewModel = {
 export type ExplorerHeaderViewModel = {
   readonly title: string;
   readonly subtitle: string;
-  readonly urlStateLabel: string;
-  readonly canClear: boolean;
 };
 
 export type ExplorePanelViewModel = {
