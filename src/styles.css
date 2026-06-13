@@ -1304,6 +1304,41 @@ input:focus-visible,
   white-space: nowrap;
 }
 
+@media (min-width: 1181px) and (min-height: 900px) {
+  .groups-section .group-team-grid {
+    --group-team-card-gap: clamp(5px, 1.3cqi, 7px);
+    --group-team-label-size: clamp(38px, 9cqi, 44px);
+    --group-team-row-gap: clamp(2px, 0.75cqi, 4px);
+    --group-team-row-padding: clamp(3px, 0.9cqi, 5px);
+    --group-team-target-size: clamp(48px, 13cqi, 64px);
+    --group-team-flag-size: clamp(24px, 6.5cqi, 32px);
+    --group-team-flag-font-size: clamp(20px, 6cqi, 28px);
+
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-rows: minmax(var(--group-team-target-size), 1fr);
+    align-content: stretch;
+    gap: var(--group-team-card-gap);
+    padding: 0 10px 8px;
+  }
+
+  .groups-section .group-team-card {
+    border-radius: 10px;
+  }
+
+  .groups-section .group-team-header-button {
+    font-size: clamp(0.78rem, 3cqi, 1rem);
+  }
+
+  .groups-section .group-team-row-button {
+    flex-direction: column;
+    gap: clamp(2px, 0.8cqi, 5px);
+  }
+
+  .groups-section .group-team-name {
+    font-size: clamp(0.72rem, 3cqi, 0.92rem);
+  }
+}
+
 @media (pointer: coarse), (max-width: 720px) {
   .groups-section .group-team-grid {
     --group-team-label-size: 44px;
