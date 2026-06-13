@@ -26,9 +26,11 @@ async function expectVenueMarkerAlignment(page: Page, venueId: string) {
 }
 
 async function clickVenueControlCenter(page: Page, venueId: string) {
-  const controlBox = await page
-    .locator(`.venue-marker-control[data-venue-id="${venueId}"]`)
-    .boundingBox();
+  const control = page.locator(`.venue-marker-control[data-venue-id="${venueId}"]`);
+
+  await control.scrollIntoViewIfNeeded();
+
+  const controlBox = await control.boundingBox();
 
   if (!controlBox) {
     throw new Error(`Expected ${venueId} venue control to be visible`);
