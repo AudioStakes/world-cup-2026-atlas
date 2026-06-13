@@ -12,7 +12,6 @@ The workflow is defined in:
 
 It runs on:
 
-- pushes to `main`
 - manual `workflow_dispatch`
 
 Workflow steps:

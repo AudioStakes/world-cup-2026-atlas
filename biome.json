@@ -21,7 +21,10 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true
+      "recommended": true,
+      "suspicious": {
+        "noFocusedTests": "error"
+      }
     }
   },
   "assist": {
@@ -52,5 +55,433 @@
     "formatter": {
       "enabled": true
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": [
+        "src/**/*.test.ts",
+        "src/**/*.test.tsx",
+        "src/**/*.spec.ts",
+        "src/**/*.spec.tsx",
+        "e2e/**/*.test.ts",
+        "e2e/**/*.test.tsx",
+        "e2e/**/*.spec.ts",
+        "e2e/**/*.spec.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedGlobals": {
+              "level": "error",
+              "options": {
+                "deniedGlobals": {
+                  "setTimeout": "Fixed sleeps are not allowed. Use deterministic polling, fake timers, or user-visible state instead."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "src/**/*.test.ts",
+        "src/**/*.test.tsx",
+        "!src/**/*.integration.test.ts",
+        "!src/**/*.integration.test.tsx",
+        "!src/**/*.contract.test.ts",
+        "!src/**/*.contract.test.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": [
+                      "@playwright/test",
+                      "playwright",
+                      "playwright/**",
+                      "node:child_process",
+                      "node:fs",
+                      "node:fs/**",
+                      "node:http",
+                      "node:https",
+                      "node:net",
+                      "child_process",
+                      "fs",
+                      "fs/**",
+                      "http",
+                      "https",
+                      "net"
+                    ],
+                    "message": "Unit tests must not use E2E, browser, filesystem, HTTP, or server dependencies."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "src/domain/**",
+        "!src/**/*.test.ts",
+        "!src/**/*.test.tsx",
+        "!src/**/*.spec.ts",
+        "!src/**/*.spec.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": [
+                      "../app/**",
+                      "../calculations/**",
+                      "../data/**",
+                      "../features/**",
+                      "../indexes/**",
+                      "../queries/**",
+                      "../ui/**"
+                    ],
+                    "message": "src/domain is the innermost layer and may only import src/domain."
+                  },
+                  {
+                    "group": [
+                      "@playwright/test",
+                      "@preact/**",
+                      "@testing-library/**",
+                      "preact",
+                      "preact/**",
+                      "vitest",
+                      "vitest/**",
+                      "node:*",
+                      "child_process",
+                      "fs",
+                      "fs/**",
+                      "http",
+                      "https",
+                      "net",
+                      "path"
+                    ],
+                    "message": "src/domain must not import framework, test, browser, or Node infrastructure modules."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "src/calculations/**",
+        "!src/**/*.test.ts",
+        "!src/**/*.test.tsx",
+        "!src/**/*.spec.ts",
+        "!src/**/*.spec.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": [
+                      "../app/**",
+                      "../data/**",
+                      "../features/**",
+                      "../indexes/**",
+                      "../queries/**",
+                      "../ui/**"
+                    ],
+                    "message": "src/calculations is core code and may only import src/calculations or src/domain."
+                  },
+                  {
+                    "group": [
+                      "@playwright/test",
+                      "@preact/**",
+                      "@testing-library/**",
+                      "preact",
+                      "preact/**",
+                      "vitest",
+                      "vitest/**",
+                      "node:*",
+                      "child_process",
+                      "fs",
+                      "fs/**",
+                      "http",
+                      "https",
+                      "net",
+                      "path"
+                    ],
+                    "message": "Core calculations must not import framework, test, browser, or Node infrastructure modules."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "src/data/**",
+        "!src/**/*.test.ts",
+        "!src/**/*.test.tsx",
+        "!src/**/*.spec.ts",
+        "!src/**/*.spec.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": [
+                      "../app/**",
+                      "../calculations/**",
+                      "../features/**",
+                      "../indexes/**",
+                      "../queries/**",
+                      "../ui/**"
+                    ],
+                    "message": "Production data may only import src/data or src/domain."
+                  },
+                  {
+                    "group": [
+                      "@playwright/test",
+                      "@preact/**",
+                      "@testing-library/**",
+                      "preact",
+                      "preact/**",
+                      "vitest",
+                      "vitest/**",
+                      "node:*",
+                      "child_process",
+                      "fs",
+                      "fs/**",
+                      "http",
+                      "https",
+                      "net",
+                      "path"
+                    ],
+                    "message": "Production data must not import framework, test, browser, or Node infrastructure modules."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "src/indexes/**",
+        "!src/**/*.test.ts",
+        "!src/**/*.test.tsx",
+        "!src/**/*.spec.ts",
+        "!src/**/*.spec.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": [
+                      "../app/**",
+                      "../calculations/**",
+                      "../features/**",
+                      "../queries/**",
+                      "../ui/**"
+                    ],
+                    "message": "Indexes may only import src/indexes, src/data, or src/domain."
+                  },
+                  {
+                    "group": [
+                      "@playwright/test",
+                      "@preact/**",
+                      "@testing-library/**",
+                      "preact",
+                      "preact/**",
+                      "vitest",
+                      "vitest/**",
+                      "node:*",
+                      "child_process",
+                      "fs",
+                      "fs/**",
+                      "http",
+                      "https",
+                      "net",
+                      "path"
+                    ],
+                    "message": "Indexes must not import framework, test, browser, or Node infrastructure modules."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "src/queries/**",
+        "!src/**/*.test.ts",
+        "!src/**/*.test.tsx",
+        "!src/**/*.spec.ts",
+        "!src/**/*.spec.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["../app/**", "../ui/**"],
+                    "message": "Query helpers must not import app composition or UI."
+                  },
+                  {
+                    "group": [
+                      "@playwright/test",
+                      "@preact/**",
+                      "@testing-library/**",
+                      "preact",
+                      "preact/**",
+                      "vitest",
+                      "vitest/**",
+                      "node:*",
+                      "child_process",
+                      "fs",
+                      "fs/**",
+                      "http",
+                      "https",
+                      "net",
+                      "path"
+                    ],
+                    "message": "Query helpers must not import framework, test, browser, or Node infrastructure modules."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "src/features/explorer/**",
+        "!src/**/*.test.ts",
+        "!src/**/*.test.tsx",
+        "!src/**/*.spec.ts",
+        "!src/**/*.spec.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["../../app/**", "../../ui/**", "../../../app/**", "../../../ui/**"],
+                    "message": "Explorer application modules must not import app composition or UI."
+                  },
+                  {
+                    "group": [
+                      "@playwright/test",
+                      "@preact/**",
+                      "@testing-library/**",
+                      "preact",
+                      "preact/**",
+                      "vitest",
+                      "vitest/**",
+                      "node:*",
+                      "child_process",
+                      "fs",
+                      "fs/**",
+                      "http",
+                      "https",
+                      "net",
+                      "path"
+                    ],
+                    "message": "Explorer application modules must not import framework, test, browser, or Node infrastructure modules."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "src/ui/**",
+        "!src/**/*.test.ts",
+        "!src/**/*.test.tsx",
+        "!src/**/*.spec.ts",
+        "!src/**/*.spec.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": [
+                      "../data/**",
+                      "../../data/**",
+                      "../../../data/**",
+                      "../indexes/**",
+                      "../../indexes/**",
+                      "../../../indexes/**",
+                      "../queries/**",
+                      "../../queries/**",
+                      "../../../queries/**"
+                    ],
+                    "message": "UI must render ViewModel data and must not import raw data, indexes, or query helpers."
+                  },
+                  {
+                    "group": [
+                      "@playwright/test",
+                      "@testing-library/**",
+                      "vitest",
+                      "vitest/**",
+                      "node:*",
+                      "child_process",
+                      "fs",
+                      "fs/**",
+                      "http",
+                      "https",
+                      "net",
+                      "path"
+                    ],
+                    "message": "UI must not import test or Node infrastructure modules."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }

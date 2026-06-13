@@ -7,21 +7,11 @@
 - Install: `pnpm install`
 - Dev: `pnpm dev`
 - Fix: `pnpm fix`
+- Policy checks: `pnpm check` and `pnpm check:policy`
 - Typecheck: `pnpm typecheck`
 - Test: `pnpm test`
 - E2E: `pnpm e2e`
 - When files change, run only the closest useful check needed for the change; stop hooks run broader verification.
-- Use concise, direct replies
-
-## Tool Policy
-
-- Do not use Serena for design-only discussion when symbol references or refactoring impact analysis are unnecessary.
-
-## Detailed Instructions
-
-- [Development](docs/agent-instructions/development.md)
-- [Testing](docs/agent-instructions/testing.md)
-- [Docs and Domain](docs/agent-instructions/docs-and-domain.md)
 
 ## Git Safety
 

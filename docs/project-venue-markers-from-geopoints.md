@@ -24,4 +24,6 @@ Routes use the same projected positions.
 
 `geoPoint` is the source of truth for geographic placement.
 
-`mapPoint` may remain on the `Venue` type temporarily for compatibility, but `createMapViewModel` must not use it for marker or route placement while the map background is generated from geographic data.
+`mapPoint` remains on the `Venue` type for legacy data integrity checks, but `createMapViewModel`
+must not use it for marker or route placement while the map background is generated from geographic
+data.

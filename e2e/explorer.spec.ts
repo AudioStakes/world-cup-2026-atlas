@@ -46,7 +46,7 @@ async function setBrowserToday(page: Page, dateIso: string) {
 }
 
 test.describe("World Cup 2026 Atlas explorer", () => {
-  test("starts from today's tournament date when no URL query present", async ({ page }) => {
+  test("@smoke starts from today's tournament date when no URL query present", async ({ page }) => {
     await setBrowserToday(page, "2026-06-12");
     await page.goto("/");
 
@@ -75,7 +75,7 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     expect(Math.abs(splitHeights.result - splitHeights.map)).toBeLessThanOrEqual(1);
   });
 
-  test("restores a country selection from the URL query", async ({ page }) => {
+  test("@smoke restores a country selection from the URL query", async ({ page }) => {
     await page.goto("/?country=jpn");
 
     await expect(page).toHaveURL(/country=jpn/);
@@ -86,7 +86,7 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     );
   });
 
-  test("selects team groups from the readable groups table", async ({ page }) => {
+  test("@smoke selects team groups from the readable groups table", async ({ page }) => {
     await page.goto("/");
 
     await page.getByRole("button", { name: "Select Japan" }).click();
@@ -103,7 +103,7 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     ).toBeVisible();
   });
 
-  test("keeps every Groups & Teams country flag visible across viewport sizes", async ({
+  test("@smoke keeps every Groups & Teams country flag visible across viewport sizes", async ({
     page,
   }) => {
     const viewports = [
@@ -149,7 +149,7 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     }
   });
 
-  test("gives Groups & Teams flags larger targets when space allows", async ({ page }) => {
+  test("@smoke gives Groups & Teams flags larger targets when space allows", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto("/");
     await page.getByRole("region", { name: "Groups & Teams" }).scrollIntoViewIfNeeded();
@@ -170,7 +170,7 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     expect(targetSize.flagWidth).toBeGreaterThanOrEqual(24);
   });
 
-  test("selects a date and shows that day's fixture details", async ({ page }) => {
+  test("@smoke selects a date and shows that day's fixture details", async ({ page }) => {
     await page.goto("/");
 
     await page.getByRole("button", { name: /Select Tue Jun 16/ }).click();
@@ -186,7 +186,7 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     ).toBeVisible();
   });
 
-  test("selects a venue from the map", async ({ page }) => {
+  test("@smoke selects a venue from the map", async ({ page }) => {
     await page.goto("/");
 
     await page.getByRole("button", { name: /Select venue Dallas/ }).click();
@@ -198,7 +198,7 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     ).toBeVisible();
   });
 
-  test("keeps HTML venue controls aligned to SVG marker centers across resize changes", async ({
+  test("@smoke keeps HTML venue controls aligned to SVG marker centers across resize changes", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
@@ -216,7 +216,9 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     await expectVenueMarkerAlignment(page, "dallas");
   });
 
-  test("keeps dense East Coast venue controls clickable at their own centers", async ({ page }) => {
+  test("@smoke keeps dense East Coast venue controls clickable at their own centers", async ({
+    page,
+  }) => {
     const viewports = [
       { width: 1280, height: 720 },
       { width: 390, height: 844 },

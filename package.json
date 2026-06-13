@@ -17,6 +17,8 @@
     "format": "pnpm fix",
     "check": "biome check .",
     "lint": "biome lint .",
+    "check:test-policy": "node scripts/check-test-policy.mjs",
+    "check:policy": "pnpm check:test-policy",
     "typecheck": "tsc -p tsconfig.app.json --noEmit --pretty false --noErrorTruncation && tsc -p tsconfig.node.json --noEmit --pretty false --noErrorTruncation",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -24,8 +26,8 @@
     "e2e": "playwright test",
     "e2e:verbose": "PLAYWRIGHT_VERBOSE=true playwright test",
     "e2e:ui": "playwright test --ui",
-    "verify": "pnpm check && pnpm typecheck && pnpm test && pnpm build",
-    "verify:full": "pnpm verify && pnpm e2e",
+    "verify": "pnpm check && pnpm check:policy && pnpm typecheck && pnpm test && pnpm build",
+    "verify:full": "pnpm verify && pnpm test:coverage && pnpm e2e",
     "ready": "pnpm fix && pnpm verify"
   },
   "dependencies": {

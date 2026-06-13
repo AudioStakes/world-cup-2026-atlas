@@ -1,57 +1,13 @@
-# Testing strategy
+# Testing
 
-World Cup 2026 Atlas keeps UI behavior stable by testing pure logic first and browser behavior second.
+Use the lowest useful command while working; use the full gate before UI-heavy handoffs.
 
-## Local quality gate
+## Commands
 
-Run this before handing work off:
+- `pnpm test`: Vitest tests.
+- `pnpm test:coverage`: Vitest with coverage thresholds from `vitest.config.ts`.
+- `pnpm e2e`: Playwright smoke tests.
+- `pnpm verify`: Biome, policy check, typecheck, Vitest, and build.
+- `pnpm verify:full`: `pnpm verify`, coverage thresholds, and Playwright.
 
-```bash
-pnpm verify
-```
-
-`pnpm verify` runs:
-
-1. `pnpm fix`
-2. `pnpm typecheck`
-3. `pnpm test`
-4. `pnpm build`
-
-## End-to-end smoke tests
-
-Install Playwright browsers once:
-
-```bash
-pnpm exec playwright install chromium
-```
-
-Then run:
-
-```bash
-pnpm e2e
-```
-
-Use this before UI-heavy handoffs:
-
-```bash
-pnpm verify:full
-```
-
-`pnpm verify:full` runs the normal quality gate plus Playwright smoke tests.
-
-## Testing priorities
-
-Prefer pure function tests for:
-
-- URL parse/serialize
-- initial state resolution
-- state transitions
-- search behavior
-- ViewModel generation
-
-Use Playwright only for critical browser flows:
-
-- initial A1 fallback selection
-- team selection from Groups & Teams
-- venue selection from the map
-- URL state synchronization
+Config files and scripts are the source of truth for enforced test policy.

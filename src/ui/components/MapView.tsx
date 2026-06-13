@@ -1,13 +1,12 @@
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
-import { northAmericaMapBounds, northAmericaMapFeatures } from "../../data/northAmericaMapData";
 import type { VenueId } from "../../domain/ids";
 import {
   EXPLORER_MAP_DISPLAY_VIEWBOX,
   type ExplorerMapViewBox,
 } from "../../features/explorer/mapViewport";
-import { createSvgPathsFromGeoGeometry } from "../../features/explorer/projectGeoPoint";
 import type {
   ExplorerAction,
+  ExplorerMapBackgroundFeatureViewModel,
   ExplorerMapViewModel,
   VenueMarkerViewModel,
 } from "../../features/explorer/types";
@@ -123,7 +122,7 @@ export function MapView({ map, onAction }: MapViewProps) {
               <path class="map-route-arrow is-knockout" d="M0 0 L6 3 L0 6 Z" />
             </marker>
           </defs>
-          <MapBackground />
+          <MapBackground features={map.backgroundFeatures} />
           {map.routes.map((route) => (
             <g key={`${route.fromVenueId}-${route.toVenueId}`} class="map-route-group">
               <line
@@ -184,27 +183,17 @@ export function MapView({ map, onAction }: MapViewProps) {
   );
 }
 
-function MapBackground() {
+type MapBackgroundProps = {
+  readonly features: readonly ExplorerMapBackgroundFeatureViewModel[];
+};
+
+function MapBackground({ features }: MapBackgroundProps) {
   return (
     <g class="map-background">
       <rect class="map-frame" x="440" y="120" width="900" height="910" rx="42" />
-      {northAmericaMapFeatures.flatMap((feature) =>
-        createSvgPathsFromGeoGeometry(feature.geometry, northAmericaMapBounds).map(
-          (pathData, pathIndex) => (
-            <path
-              key={`${feature.id}-${pathIndex}`}
-              class={classNames(
-                feature.kind === "land" && "country-shape",
-                feature.id === "natural-earth-can" && "canada-shape",
-                feature.id === "natural-earth-usa" && "usa-shape",
-                feature.id === "natural-earth-mex" && "mexico-shape",
-                feature.kind === "water" && "map-lake",
-              )}
-              d={pathData}
-            />
-          ),
-        ),
-      )}
+      {features.map((feature) => (
+        <path key={feature.id} class={feature.className} d={feature.pathData} />
+      ))}
 
       <text class="country-label canada-label" x="705" y="335">
         CANADA

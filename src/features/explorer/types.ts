@@ -205,8 +205,15 @@ export type CountryRouteLegViewModel = {
 };
 
 export type ExplorerMapViewModel = {
+  readonly backgroundFeatures: readonly ExplorerMapBackgroundFeatureViewModel[];
   readonly venueMarkers: readonly VenueMarkerViewModel[];
   readonly routes: readonly MapRouteViewModel[];
+};
+
+export type ExplorerMapBackgroundFeatureViewModel = {
+  readonly id: string;
+  readonly className: string;
+  readonly pathData: string;
 };
 
 export type VenueMarkerState = "selected" | "highlighted" | "dimmed" | "normal";
