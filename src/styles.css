@@ -16,7 +16,7 @@
   --color-red: #b51f1f;
   --color-red-soft: rgba(181, 31, 31, 0.1);
   --color-red-line: rgba(181, 31, 31, 0.34);
-  --shadow-panel: 0 22px 70px rgba(23, 32, 42, 0.12);
+  --shadow-panel: 0 2px 8px rgba(23, 32, 42, 0.04);
   --shadow-card: 0 12px 28px rgba(23, 32, 42, 0.08);
 }
 
