@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { appData } from "../../data/appData";
+import { localDate } from "../../domain/ids";
 import { createDateSelectorViewModel } from "./createDateSelectorViewModel";
 import { emptyExplorerViewState } from "./types";
 
-function getDateOption(date: string) {
-  const viewModel = createDateSelectorViewModel(appData, emptyExplorerViewState);
+function getDateOption(date: string, today = localDate("2026-06-13")) {
+  const viewModel = createDateSelectorViewModel(appData, emptyExplorerViewState, today);
 
   for (const month of viewModel.months) {
     const option = month.dates.find((dateOption) => dateOption.date === date);
@@ -37,6 +38,11 @@ describe("createDateSelectorViewModel", () => {
     const dateOption = getDateOption("2026-06-13");
 
     expect(dateOption.timeZoneSummaryLabel).toBe("PT/ET");
+  });
+
+  it("marks the provided current date", () => {
+    expect(getDateOption("2026-06-13", localDate("2026-06-13")).isToday).toBe(true);
+    expect(getDateOption("2026-06-14", localDate("2026-06-13")).isToday).toBe(false);
   });
 
   it("keeps rest dates without match metadata", () => {

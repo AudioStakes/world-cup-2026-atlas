@@ -61,6 +61,7 @@ function DateChip({ dateOption, onAction }: DateChipProps) {
       class={classNames(
         "date-chip",
         dateOption.isSelected && "is-selected",
+        dateOption.isToday && "is-today",
         !dateOption.hasFixture && "has-no-fixture",
         dateOption.availability === "outsideCurrentFilter" && "is-outside-current-filter",
       )}
@@ -108,6 +109,10 @@ function createDateChipAriaLabel(dateOption: DateOptionViewModel): string {
 
   if (dateOption.matchCountLabel) {
     parts.push(dateOption.matchCountLabel);
+  }
+
+  if (dateOption.isToday) {
+    parts.push("today");
   }
 
   if (dateOption.kickoffRangeLabel) {

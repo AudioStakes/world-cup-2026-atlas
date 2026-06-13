@@ -521,6 +521,17 @@ input:focus-visible,
   color: rgba(23, 32, 42, 0.68);
 }
 
+.date-chip.is-today:not(.is-selected) {
+  border-color: var(--color-red-line);
+  color: var(--color-red);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 4px 12px rgba(181, 31, 31, 0.16);
+}
+
+.date-chip.is-today:not(.is-selected) .date-chip__meta {
+  color: rgba(181, 31, 31, 0.72);
+}
+
 .date-chip.has-no-fixture.is-selected {
   border-color: var(--color-red);
   color: #fff;

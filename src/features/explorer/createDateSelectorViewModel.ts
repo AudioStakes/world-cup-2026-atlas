@@ -1,4 +1,4 @@
-import type { LocalDateString } from "../../domain/ids";
+import { type LocalDateString, localDate } from "../../domain/ids";
 import type { AppData, Match, Venue } from "../../domain/types";
 import { queryMatchesByViewState } from "../../queries/queryMatchesByViewState";
 import { formatDateLabel } from "./formatExplorerLabels";
@@ -16,6 +16,7 @@ const timeZoneDisplayOrder = ["PT", "MT", "CT", "ET"] as const;
 export function createDateSelectorViewModel(
   data: AppData,
   viewState: NormalizedExplorerViewState,
+  today: LocalDateString = createTodayLocalDate(),
 ): DateSelectorViewModel {
   const matchesByDate = createMatchesByDate(data.matches);
   const venuesById = new Map(data.venues.map((venue) => [venue.id, venue] as const));
@@ -44,6 +45,7 @@ export function createDateSelectorViewModel(
       kickoffRangeLabel: createKickoffRangeLabel(matchesForDate),
       timeZoneSummaryLabel: createTimeZoneSummaryLabel(matchesForDate, venuesById),
       isSelected,
+      isToday: today === date,
       availability: getAvailability(hasAnySelection, isSelected || isHit),
       hasFixture,
     };
@@ -63,6 +65,14 @@ export function createDateSelectorViewModel(
       dates,
     })),
   };
+}
+
+function createTodayLocalDate(now = new Date()): LocalDateString {
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+
+  return localDate(`${year}-${month}-${day}`);
 }
 
 function createMatchesByDate(

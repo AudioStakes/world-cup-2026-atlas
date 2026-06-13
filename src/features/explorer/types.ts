@@ -105,6 +105,7 @@ export type DateOptionViewModel = {
   readonly kickoffRangeLabel: string | null;
   readonly timeZoneSummaryLabel: string | null;
   readonly isSelected: boolean;
+  readonly isToday: boolean;
   readonly availability: FilterOptionAvailability;
   readonly hasFixture: boolean;
 };
