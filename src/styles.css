@@ -568,10 +568,49 @@ input:focus-visible,
 }
 
 .result-card__header p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
   margin: 5px 0 0;
   color: var(--color-muted);
   font-size: 12px;
   font-weight: 750;
+}
+
+.result-card__group-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-block-size: 26px;
+  padding: 3px 9px;
+  border: 1px solid var(--color-red-line);
+  border-radius: 999px;
+  background: var(--color-red-soft);
+  color: #8f1414;
+  font-weight: 950;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.result-card__group-link::after {
+  content: "→";
+  font-size: 0.92em;
+  line-height: 1;
+}
+
+.result-card__group-link:hover {
+  border-color: rgba(181, 31, 31, 0.54);
+  background: rgba(181, 31, 31, 0.14);
+}
+
+.result-card__group-link:focus-visible {
+  outline: 3px solid #8f1414;
+  outline-offset: 2px;
+}
+
+.result-card__subtitle-separator {
+  color: rgba(23, 32, 42, 0.38);
 }
 
 .detail-metrics {

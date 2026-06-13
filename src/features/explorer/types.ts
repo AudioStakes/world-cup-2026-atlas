@@ -116,10 +116,19 @@ export type ExplorerResultViewModel = {
   readonly icon: string;
   readonly title: string;
   readonly subtitle: string;
+  readonly groupNavigation: ResultGroupNavigationViewModel | null;
   readonly details: ExplorerDetailViewModel | null;
   readonly emptyMessage: string | null;
   readonly matches: readonly MatchListItemViewModel[];
   readonly routeSummary: CountryRouteSummaryViewModel | null;
+};
+
+export type ResultGroupNavigationViewModel = {
+  readonly groupCode: GroupCode;
+  readonly label: string;
+  readonly trailingLabel: string;
+  readonly href: string;
+  readonly ariaLabel: string;
 };
 
 export type ExplorerDetailViewModel =

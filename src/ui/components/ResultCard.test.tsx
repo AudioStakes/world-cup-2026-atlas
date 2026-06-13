@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/preact";
 import { describe, expect, it, vi } from "vitest";
-import { countryId, matchId, venueId } from "../../domain/ids";
+import { countryId, groupCode, matchId, venueId } from "../../domain/ids";
 import type { ExplorerResultViewModel } from "../../features/explorer/types";
 import { ResultCard } from "./ResultCard";
 
@@ -9,6 +9,7 @@ const completedResult: ExplorerResultViewModel = {
   icon: "D",
   title: "Group D",
   subtitle: "4 teams",
+  groupNavigation: null,
   details: null,
   emptyMessage: null,
   routeSummary: null,
@@ -48,6 +49,43 @@ const completedResult: ExplorerResultViewModel = {
 };
 
 describe("ResultCard", () => {
+  it("renders a country group subtitle as an actionable route", () => {
+    const onAction = vi.fn();
+
+    render(
+      <ResultCard
+        result={{
+          ...completedResult,
+          type: "country",
+          icon: "🇭🇹",
+          title: "Haiti",
+          subtitle: "Group C · HAI · CONCACAF",
+          groupNavigation: {
+            groupCode: groupCode("C"),
+            label: "Group C",
+            trailingLabel: "HAI · CONCACAF",
+            href: "?group=C",
+            ariaLabel: "Show Group C details",
+          },
+          matches: [],
+        }}
+        onAction={onAction}
+        onMatchVenueFocusChange={() => {}}
+      />,
+    );
+
+    const groupLink = screen.getByRole("link", { name: "Show Group C details" });
+
+    expect(groupLink).toHaveClass("result-card__group-link");
+    expect(groupLink).toHaveTextContent("Group C");
+    expect(groupLink.getAttribute("href")).toBe("?group=C");
+    expect(screen.getByText("HAI · CONCACAF")).toBeInTheDocument();
+
+    fireEvent.click(groupLink);
+
+    expect(onAction).toHaveBeenCalledWith({ type: "selectGroup", groupCode: groupCode("C") });
+  });
+
   it("renders group standings with ranks and form without a Matches column", () => {
     render(
       <ResultCard

@@ -33,6 +33,7 @@ import type {
   MatchListItemViewModel,
   MatchTeamViewModel,
   NormalizedExplorerViewState,
+  ResultGroupNavigationViewModel,
 } from "./types";
 
 const timeZoneDisplayOrder = ["PT", "MT", "CT", "ET"] as const;
@@ -52,6 +53,7 @@ export function createResultViewModel(
       icon: "🧭",
       title: "Start exploring",
       subtitle: "",
+      groupNavigation: null,
       details: null,
       emptyMessage: "Select a group, team, date, or venue pin to see matching fixtures here.",
       matches: [],
@@ -66,6 +68,7 @@ export function createResultViewModel(
     icon: title.icon,
     title: title.title,
     subtitle: title.subtitle,
+    groupNavigation: title.groupNavigation,
     details: createDetails(data, indexes, viewState, matchingMatches, resultType),
     emptyMessage:
       matchingMatches.length === 0 ? "No matches found for the current selection." : null,
@@ -101,6 +104,7 @@ type ResultTitle = {
   readonly icon: string;
   readonly title: string;
   readonly subtitle: string;
+  readonly groupNavigation: ResultGroupNavigationViewModel | null;
 };
 
 function createResultTitle(
@@ -117,6 +121,7 @@ function createResultTitle(
       icon: country.flagEmoji,
       title: country.name,
       subtitle: createCountrySubtitle(country, groupCode),
+      groupNavigation: createCountryGroupNavigation(country, groupCode),
     };
   }
 
@@ -126,6 +131,7 @@ function createResultTitle(
       icon: "📍",
       title: venue.name,
       subtitle: createVenueSubtitle(venue),
+      groupNavigation: null,
     };
   }
 
@@ -134,6 +140,7 @@ function createResultTitle(
       icon: "📅",
       title: formatDateLabel(viewState.selectedDate),
       subtitle: createDateSubtitle(indexes, matchingMatches),
+      groupNavigation: null,
     };
   }
 
@@ -142,16 +149,36 @@ function createResultTitle(
       icon: "●",
       title: `Group ${viewState.selectedGroupCode}`,
       subtitle: createGroupSubtitle(indexes, viewState.selectedGroupCode, matchingMatches.length),
+      groupNavigation: null,
     };
   }
 
-  return { icon: "🧭", title: "Start exploring", subtitle: "" };
+  return { icon: "🧭", title: "Start exploring", subtitle: "", groupNavigation: null };
 }
 
-function createCountrySubtitle(country: Country, groupCode: string | null): string {
+function createCountrySubtitle(country: Country, groupCode: GroupCode | null): string {
   const groupLabel = groupCode ? `Group ${groupCode}` : "Team";
 
   return `${groupLabel} · ${country.fifaCode} · ${country.confederation}`;
+}
+
+function createCountryGroupNavigation(
+  country: Country,
+  groupCode: GroupCode | null,
+): ResultGroupNavigationViewModel | null {
+  if (!groupCode) {
+    return null;
+  }
+
+  const label = `Group ${groupCode}`;
+
+  return {
+    groupCode,
+    label,
+    trailingLabel: `${country.fifaCode} · ${country.confederation}`,
+    href: `?group=${encodeURIComponent(groupCode)}`,
+    ariaLabel: `Show ${label} details`,
+  };
 }
 
 function createGroupSubtitle(indexes: Indexes, groupCode: GroupCode, matchCount: number): string {
@@ -782,7 +809,7 @@ function formatCount(count: number, noun: "match" | "venue"): string {
   return `${count} ${count === 1 ? "venue" : "venues"}`;
 }
 
-function findCountryGroupCode(indexes: Indexes, countryId: CountryId): string | null {
+function findCountryGroupCode(indexes: Indexes, countryId: CountryId): GroupCode | null {
   for (const slotEntry of indexes.slotEntriesBySlotId.values()) {
     if (slotEntry.countryId === countryId) {
       return slotEntry.groupCode;

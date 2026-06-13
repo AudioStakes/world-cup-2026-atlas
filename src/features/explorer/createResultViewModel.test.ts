@@ -88,6 +88,13 @@ describe("createResultViewModel production metadata", () => {
 
     expect(result.title).toBe("Japan");
     expect(result.subtitle).toBe("Group F · JPN · AFC");
+    expect(result.groupNavigation).toEqual({
+      groupCode: groupCode("F"),
+      label: "Group F",
+      trailingLabel: "JPN · AFC",
+      href: "?group=F",
+      ariaLabel: "Show Group F details",
+    });
     expect(result.routeSummary?.venueCountExplanationLabel).toBe("Dallas is visited twice.");
     expect(result.details).toMatchObject({
       type: "country",
@@ -120,6 +127,7 @@ describe("createResultViewModel production metadata", () => {
 
     expect(result.title).toBe("Group F");
     expect(result.subtitle).toBe("6 matches · NED · JPN · SWE · TUN");
+    expect(result.groupNavigation).toBeNull();
     expect(result.details).toMatchObject({
       type: "group",
       standings: expect.arrayContaining([

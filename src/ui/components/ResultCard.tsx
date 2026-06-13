@@ -8,6 +8,7 @@ import type {
   GroupStandingFormEntryViewModel,
   MatchListItemViewModel,
   MatchTeamViewModel,
+  ResultGroupNavigationViewModel,
 } from "../../features/explorer/types";
 import { classNames } from "./classNames";
 
@@ -29,7 +30,11 @@ export function ResultCard({ result, onAction, onMatchVenueFocusChange }: Result
         </span>
         <div>
           <h2 id="result-card-title">{result.title}</h2>
-          {result.subtitle ? <p>{result.subtitle}</p> : null}
+          <ResultSubtitle
+            groupNavigation={result.groupNavigation}
+            subtitle={result.subtitle}
+            onAction={onAction}
+          />
         </div>
       </header>
 
@@ -109,6 +114,44 @@ export function ResultCard({ result, onAction, onMatchVenueFocusChange }: Result
         </div>
       )}
     </section>
+  );
+}
+
+function ResultSubtitle({
+  groupNavigation,
+  onAction,
+  subtitle,
+}: {
+  readonly groupNavigation: ResultGroupNavigationViewModel | null;
+  readonly onAction: (action: ExplorerAction) => void;
+  readonly subtitle: string;
+}) {
+  if (!subtitle) {
+    return null;
+  }
+
+  if (!groupNavigation) {
+    return <p class="result-card__subtitle">{subtitle}</p>;
+  }
+
+  return (
+    <p class="result-card__subtitle result-card__subtitle--with-group-link">
+      <a
+        class="result-card__group-link"
+        href={groupNavigation.href}
+        onClick={(event) => {
+          event.preventDefault();
+          onAction({ type: "selectGroup", groupCode: groupNavigation.groupCode });
+        }}
+        aria-label={groupNavigation.ariaLabel}
+      >
+        {groupNavigation.label}
+      </a>
+      <span class="result-card__subtitle-separator" aria-hidden="true">
+        ·
+      </span>
+      <span>{groupNavigation.trailingLabel}</span>
+    </p>
   );
 }
 
