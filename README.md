@@ -67,6 +67,6 @@ The app should prioritize:
 - Map pins as the primary venue selection surface.
 - No explorer search form; discovery should stay anchored in Groups & Teams, map pins, and selected-result context.
 - No raw URL state or Clear action in the header.
-- Country flags in Groups & Teams must always remain visible; collapse secondary text before hiding flags.
+- Country flags in Groups & Teams must always remain visible; users may identify countries by flag alone, and secondary text should collapse before flags are hidden.
 - `queryExplorer()` as the only source of UI-facing ViewModel data.
 - Pure functions for state transitions, queries, and calculations.
