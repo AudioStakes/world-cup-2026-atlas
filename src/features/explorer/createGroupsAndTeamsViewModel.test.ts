@@ -37,4 +37,33 @@ describe("createGroupsAndTeamsViewModel team metadata", () => {
       countryMetaLabel: "USA · CONCACAF",
     });
   });
+
+  it("creates tournament rounds from knockout fixtures", () => {
+    const viewModel = createViewModel();
+    const roundOf32 = viewModel.tournamentRounds.find(
+      (round) => round.stageLabel === "Round of 32",
+    );
+    const final = viewModel.tournamentRounds.find((round) => round.stageLabel === "Final");
+
+    expect(viewModel.tournamentRounds.map((round) => round.stageLabel)).toEqual([
+      "Round of 32",
+      "Round of 16",
+      "Quarter-finals",
+      "Semi-finals",
+      "Third-place match",
+      "Final",
+    ]);
+    expect(roundOf32?.matchCountLabel).toBe("16 matches");
+    expect(roundOf32?.matches[0]).toMatchObject({
+      matchNumberLabel: "Match 73",
+      dateLabel: "Jun 28",
+      venueLabel: "Los Angeles",
+      matchupLabel: "Runner-up Group A vs Runner-up Group B",
+    });
+    expect(final?.matchCountLabel).toBe("1 match");
+    expect(final?.matches[0]).toMatchObject({
+      matchNumberLabel: "Match 104",
+      matchupLabel: "Winner Match 101 vs Winner Match 102",
+    });
+  });
 });

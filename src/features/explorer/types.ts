@@ -77,8 +77,8 @@ export type ExplorePanelViewModel = {
 };
 
 export type GroupsAndTeamsViewModel = {
-  readonly title: string;
   readonly groups: readonly GroupTeamCardViewModel[];
+  readonly tournamentRounds: readonly TournamentRoundViewModel[];
 };
 
 export type GroupTeamCardViewModel = {
@@ -100,6 +100,20 @@ export type GroupTeamRowViewModel = {
   readonly flagEmoji: string;
   readonly isSelected: boolean;
   readonly availability: FilterOptionAvailability;
+};
+
+export type TournamentRoundViewModel = {
+  readonly stageLabel: string;
+  readonly matchCountLabel: string;
+  readonly matches: readonly TournamentMatchViewModel[];
+};
+
+export type TournamentMatchViewModel = {
+  readonly matchId: MatchId;
+  readonly matchNumberLabel: string;
+  readonly dateLabel: string;
+  readonly venueLabel: string;
+  readonly matchupLabel: string;
 };
 
 export type DateSelectorViewModel = {

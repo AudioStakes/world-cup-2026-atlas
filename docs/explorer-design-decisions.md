@@ -21,6 +21,11 @@ When narrow viewports stack the controls and result panels vertically, the Group
 
 The selected or related group/team state should be communicated through stable red border treatments and restrained backgrounds, not extra explanatory text that changes panel height.
 
+The panel uses top-level `Group` and `Tournament` tabs. Do not render a separate visible
+`Groups & Teams` title above those tabs; the selected tab already explains the panel content and
+the extra heading consumes vertical space. The initial tournament view can be a compact round-by-round
+knockout list before investing in a more elaborate bracket layout.
+
 ## Date selector affordances
 
 The current date should be visually findable without changing layout height. Use the same red outline and light red shadow treatment as the selected country tile. If the current date is also selected, the selected-date fill style takes priority.

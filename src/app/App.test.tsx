@@ -312,8 +312,16 @@ describe("App", () => {
   it("keeps countries selectable from the groups table", () => {
     render(<App />);
 
-    const groupsSection = screen.getByRole("region", { name: "Groups & Teams" });
+    const groupsSection = screen.getByRole("region", { name: "Group and Tournament" });
 
+    expect(within(groupsSection).getByRole("tab", { name: "Group" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(within(groupsSection).getByRole("tab", { name: "Tournament" })).toHaveAttribute(
+      "aria-selected",
+      "false",
+    );
     expect(within(groupsSection).getByRole("button", { name: "Select Group A" })).toHaveTextContent(
       "A",
     );
@@ -342,11 +350,32 @@ describe("App", () => {
     expect(within(groupsSection).queryByText("JPN · AFC")).not.toBeInTheDocument();
   });
 
+  it("switches the group panel to tournament rounds", () => {
+    render(<App />);
+
+    const groupsSection = screen.getByRole("region", { name: "Group and Tournament" });
+    fireEvent.click(within(groupsSection).getByRole("tab", { name: "Tournament" }));
+
+    expect(within(groupsSection).getByRole("tab", { name: "Tournament" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(within(groupsSection).getByRole("heading", { name: "Round of 32" })).toBeInTheDocument();
+    expect(within(groupsSection).getByText("Match 73")).toBeInTheDocument();
+    expect(
+      within(groupsSection).getByText("Runner-up Group A vs Runner-up Group B"),
+    ).toBeInTheDocument();
+    expect(
+      within(groupsSection).queryByRole("button", { name: "Select Japan" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("omits redundant panel headings from the visible explorer controls", () => {
     render(<App />);
 
     expect(screen.queryByText("Explore")).not.toBeInTheDocument();
     expect(screen.queryByText("Dates")).not.toBeInTheDocument();
+    expect(screen.queryByText("Groups & Teams")).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Date" })).toHaveClass("visually-hidden");
     expect(screen.getByRole("region", { name: "Date" })).toBeInTheDocument();
   });

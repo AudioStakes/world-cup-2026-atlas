@@ -135,14 +135,29 @@ test.describe("World Cup 2026 Atlas explorer", () => {
 
     await expect(page).toHaveURL(/country=jpn/);
     await expect(page.getByRole("heading", { name: "Japan" })).toBeVisible();
-    await expect(page.getByRole("region", { name: "Groups & Teams" }).getByText("JPN")).toHaveCount(
-      1,
-    );
     await expect(
-      page.getByRole("region", { name: "Groups & Teams" }).getByRole("button", {
+      page.getByRole("region", { name: "Group and Tournament" }).getByText("JPN"),
+    ).toHaveCount(1);
+    await expect(
+      page.getByRole("region", { name: "Group and Tournament" }).getByRole("button", {
         name: "Select Japan",
       }),
     ).toBeVisible();
+  });
+
+  test("@smoke switches the group panel to tournament rounds", async ({ page }) => {
+    await page.goto("/");
+
+    const panel = page.getByRole("region", { name: "Group and Tournament" });
+    await panel.getByRole("tab", { name: "Tournament" }).click();
+
+    await expect(panel.getByRole("tab", { name: "Tournament" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    await expect(panel.getByRole("heading", { name: "Round of 32" })).toBeVisible();
+    await expect(panel.getByText("Match 73", { exact: true })).toBeVisible();
+    await expect(panel.getByText("Runner-up Group A vs Runner-up Group B")).toBeVisible();
   });
 
   test("@smoke keeps a selected filter active when clicked again", async ({ page }) => {
@@ -175,7 +190,7 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     for (const viewport of viewports) {
       await page.setViewportSize(viewport);
       await page.goto("/");
-      await page.getByRole("region", { name: "Groups & Teams" }).scrollIntoViewIfNeeded();
+      await page.getByRole("region", { name: "Group and Tournament" }).scrollIntoViewIfNeeded();
 
       const flagVisibility = await page.evaluate(() => {
         const viewport = {
@@ -211,7 +226,7 @@ test.describe("World Cup 2026 Atlas explorer", () => {
   test("@smoke gives Groups & Teams flags larger targets when space allows", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto("/");
-    await page.getByRole("region", { name: "Groups & Teams" }).scrollIntoViewIfNeeded();
+    await page.getByRole("region", { name: "Group and Tournament" }).scrollIntoViewIfNeeded();
 
     const targetSize = await page.evaluate(() => {
       const button = document.querySelector(".group-team-row-button:not(.is-placeholder)");
