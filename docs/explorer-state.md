@@ -48,13 +48,17 @@ All selection events should go through `updateExplorerViewState`.
 The function is pure and handles:
 
 - selection
-- re-click deselection
-- clear all
+- re-click no-op for the active selection
+- defensive fallback to the default tournament date if a transition would otherwise leave no selection
 - AND filtering
 - automatic removal of conflicting existing selections
 
 The newly selected value always wins. If adding it creates zero matching matches, existing
 selections are removed one by one until matching fixtures are found or only the new selection
 remains.
+
+The explorer should not intentionally enter an empty selection state. The detail panel should not
+show `Start exploring` in normal operation; URL parsing and defensive clear paths fall back to the
+same default tournament date used on first site access.
 
 UI components should not reimplement this logic.

@@ -5,6 +5,7 @@ import { queryMatchesByViewState } from "../../queries/queryMatchesByViewState";
 import { createExplorePanelViewModel } from "./createExplorePanelViewModel";
 import { createHeaderViewModel } from "./createHeaderViewModel";
 import { createMapViewModel } from "./createMapViewModel";
+import { ensureExplorerSelection } from "./defaultExplorerViewState";
 import { venueLocalDisplayTimeZoneId } from "./displayTimeZone";
 import { normalizeExplorerViewState } from "./normalizeExplorerViewState";
 import type { ExplorerViewModel, ExplorerViewState } from "./types";
@@ -16,7 +17,9 @@ export function queryExplorer(
   focusedVenueId: VenueId | null = null,
   displayTimeZoneId = venueLocalDisplayTimeZoneId,
 ): ExplorerViewModel {
-  const normalizedViewState = normalizeExplorerViewState(viewState, indexes);
+  const normalizedViewState = ensureExplorerSelection(
+    normalizeExplorerViewState(viewState, indexes),
+  );
   const matchingMatches = queryMatchesByViewState(data, normalizedViewState);
 
   return {

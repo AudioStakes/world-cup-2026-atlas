@@ -1,6 +1,7 @@
 import type { CountryId, GroupCode, LocalDateString, VenueId } from "../../domain/ids";
 import type { AppData } from "../../domain/types";
 import type { Indexes } from "../../indexes/createIndexes";
+import { createDefaultExplorerViewState } from "./defaultExplorerViewState";
 import { normalizeExplorerViewState } from "./normalizeExplorerViewState";
 import type { ExplorerAction, NormalizedExplorerViewState } from "./types";
 import { emptyExplorerViewState } from "./types";
@@ -17,13 +18,16 @@ export function updateExplorerViewState(
   currentState: NormalizedExplorerViewState,
   action: ExplorerAction,
 ): NormalizedExplorerViewState {
-  if (action.type === "clearAll") return emptyExplorerViewState;
+  if (action.type === "clearAll") return createDefaultExplorerViewState();
 
   const normalizedCurrentState = normalizeExplorerViewState(currentState, indexes);
   const selectionUpdate = getActionSelection(action);
-  const willSelect = normalizedCurrentState[selectionUpdate.stateKey] !== selectionUpdate.value;
 
-  return setSingleSelectionValue(selectionUpdate, willSelect);
+  if (normalizedCurrentState[selectionUpdate.stateKey] === selectionUpdate.value) {
+    return normalizedCurrentState;
+  }
+
+  return setSingleSelectionValue(selectionUpdate);
 }
 
 function getActionSelection(
@@ -41,14 +45,7 @@ function getActionSelection(
   }
 }
 
-function setSingleSelectionValue(
-  selectionUpdate: SelectionUpdate,
-  willSelect: boolean,
-): NormalizedExplorerViewState {
-  if (!willSelect) {
-    return emptyExplorerViewState;
-  }
-
+function setSingleSelectionValue(selectionUpdate: SelectionUpdate): NormalizedExplorerViewState {
   switch (selectionUpdate.stateKey) {
     case "selectedCountryId":
       return { ...emptyExplorerViewState, selectedCountryId: selectionUpdate.value };

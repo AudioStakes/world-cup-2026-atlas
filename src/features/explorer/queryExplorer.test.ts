@@ -26,6 +26,7 @@ describe("queryExplorer", () => {
     expect(viewModel.header.title).toBe("World Cup 2026 Atlas");
     expect(viewModel.explorePanel.groupsAndTeams.groups).toHaveLength(12);
     expect(viewModel.explorePanel.dateSelector.months.length).toBeGreaterThan(0);
+    expect(viewModel.explorePanel.result.type).toBe("date");
     expect(viewModel.map.venueMarkers).toHaveLength(appData.venues.length);
   });
 

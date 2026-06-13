@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { appData } from "../../data/appData";
 import { countryId, groupCode, localDate, venueId } from "../../domain/ids";
@@ -69,6 +69,16 @@ describe("explorer URL state", () => {
     expect(viewState).toEqual(makeState({ selectedDate: localDate("2026-06-11") }));
   });
 
+  it("falls back to the default date when URL parameters do not resolve to a selection", () => {
+    const viewState = resolveInitialExplorerViewState(
+      "?country=not-a-country",
+      indexes,
+      localDate("2026-06-14"),
+    );
+
+    expect(viewState).toEqual(makeState({ selectedDate: localDate("2026-06-14") }));
+  });
+
   it("drops invalid ids while normalizing state", () => {
     const normalized = normalizeExplorerViewState(
       makeState({
@@ -98,7 +108,7 @@ describe("queryMatchesByViewState", () => {
 });
 
 describe("updateExplorerViewState", () => {
-  it("selects and toggles a country", () => {
+  it("keeps a selected country active when it is selected again", () => {
     const selected = updateExplorerViewState(appData, indexes, emptyExplorerViewState, {
       type: "selectCountry",
       countryId: countryId("jpn"),
@@ -111,7 +121,7 @@ describe("updateExplorerViewState", () => {
       countryId: countryId("jpn"),
     });
 
-    expect(cleared.selectedCountryId).toBeNull();
+    expect(cleared).toEqual(selected);
   });
 
   it("keeps only a newly selected date after a country selection", () => {
@@ -144,14 +154,19 @@ describe("updateExplorerViewState", () => {
     expect(nextState).toEqual(makeState({ selectedVenueId: venueId("los-angeles") }));
   });
 
-  it("clears all selections", () => {
+  it("falls back to the default date when a clear action is received", () => {
+    const dateNow = vi.spyOn(Date, "now").mockReturnValue(new Date(2026, 5, 14, 9).getTime());
     const currentState = makeState({
       selectedCountryId: countryId("jpn"),
       selectedDate: localDate("2026-06-14"),
     });
 
-    expect(updateExplorerViewState(appData, indexes, currentState, { type: "clearAll" })).toEqual(
-      emptyExplorerViewState,
-    );
+    try {
+      expect(updateExplorerViewState(appData, indexes, currentState, { type: "clearAll" })).toEqual(
+        makeState({ selectedDate: localDate("2026-06-14") }),
+      );
+    } finally {
+      dateNow.mockRestore();
+    }
   });
 });

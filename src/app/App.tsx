@@ -39,6 +39,11 @@ export function App() {
 
   function dispatchExplorerAction(action: ExplorerAction): void {
     const nextViewState = updateExplorerViewState(appData, indexes, viewState, action);
+
+    if (isSameExplorerViewState(viewState, nextViewState)) {
+      return;
+    }
+
     setViewState(nextViewState);
     setFocusedVenueId(null);
     syncBrowserUrl(nextViewState, "push");
@@ -51,6 +56,18 @@ export function App() {
       onMatchVenueFocusChange={setFocusedVenueId}
       onTimeZoneChange={setDisplayTimeZoneId}
     />
+  );
+}
+
+function isSameExplorerViewState(
+  left: NormalizedExplorerViewState,
+  right: NormalizedExplorerViewState,
+): boolean {
+  return (
+    left.selectedCountryId === right.selectedCountryId &&
+    left.selectedGroupCode === right.selectedGroupCode &&
+    left.selectedDate === right.selectedDate &&
+    left.selectedVenueId === right.selectedVenueId
   );
 }
 

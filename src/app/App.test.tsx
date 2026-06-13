@@ -205,6 +205,34 @@ describe("App", () => {
     );
   });
 
+  it("keeps the active selection when the same selected control is clicked again", () => {
+    render(<App />);
+
+    selectJapan();
+    selectJapan();
+
+    expect(screen.getByRole("heading", { name: "Japan" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Select Japan" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(window.location.search).toBe("?country=jpn");
+    expect(screen.queryByText("Start exploring")).not.toBeInTheDocument();
+  });
+
+  it("keeps the default date selected when the active default date is clicked again", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: /Select Thu Jun 11/ }));
+
+    expect(screen.getByRole("button", { name: /Select Thu Jun 11/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(window.location.search).toBe("");
+    expect(screen.queryByText("Start exploring")).not.toBeInTheDocument();
+  });
+
   it("keeps only the last clicked filter in the browser URL", () => {
     render(<App />);
 

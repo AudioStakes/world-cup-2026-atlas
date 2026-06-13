@@ -103,6 +103,23 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     ).toBeVisible();
   });
 
+  test("@smoke keeps a selected filter active when clicked again", async ({ page }) => {
+    await page.goto("/");
+
+    await page.getByRole("button", { name: "Select Japan" }).click();
+    await expect(page).toHaveURL(/country=jpn/);
+
+    await page.getByRole("button", { name: "Select Japan" }).click();
+
+    await expect(page).toHaveURL(/country=jpn/);
+    await expect(page.getByRole("heading", { name: "Japan" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Select Japan" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await expect(page.getByText("Start exploring")).toHaveCount(0);
+  });
+
   test("@smoke keeps every Groups & Teams country flag visible across viewport sizes", async ({
     page,
   }) => {
