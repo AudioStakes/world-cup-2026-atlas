@@ -38,6 +38,7 @@ Stable development rules, validation commands, delivery rules, and report format
 - Prefer the smallest reviewable change that satisfies the request.
 - Avoid broad refactors unless the task explicitly requires them or the current design blocks the requested behavior.
 - Keep implementation aligned with the Preact/Vite/Vitest/Biome/Playwright/pnpm toolchain.
+- Before adding custom policy scripts, check whether Biome rules or overrides can enforce the rule.
 
 ## UI Behavior
 
