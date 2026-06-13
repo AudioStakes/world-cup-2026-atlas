@@ -151,6 +151,9 @@ describe("createResultViewModel production metadata", () => {
     const standings = result.details?.type === "group" ? result.details.standings : [];
 
     expect(finishedMatch).toMatchObject({
+      homeScoreLabel: "2",
+      awayScoreLabel: "1",
+      winningSide: "home",
       scoreLineLabel: "2-1",
       statusLabel: "Full time",
     });
@@ -219,9 +222,22 @@ describe("createResultViewModel production metadata", () => {
 
     expect(japanMatch?.stageLabel).toBe("Group F");
     expect(japanMatch?.dateLabel).toBe("Sun Jun 14");
+    expect(japanMatch?.dateHeadingLabel).toBe("Sunday 14 June 2026");
+    expect(japanMatch?.homeTeam).toEqual({
+      flagEmoji: "🇳🇱",
+      displayName: "Netherlands",
+      code: "NED",
+    });
+    expect(japanMatch?.awayTeam).toEqual({
+      flagEmoji: "🇯🇵",
+      displayName: "Japan",
+      code: "JPN",
+    });
     expect(japanMatch?.matchupText).toBe("🇳🇱 NED vs 🇯🇵 JPN");
     expect(japanMatch?.matchupAriaLabel).toBe("🇳🇱 Netherlands vs 🇯🇵 Japan");
+    expect(japanMatch?.kickoffLabel).toBe("15:00");
     expect(japanMatch?.secondaryText).toBe("15:00 CT");
+    expect(japanMatch?.fixtureMetaLabel).toBe("First Stage · Group F · AT&T Stadium (Dallas)");
     expect(japanMatch?.venueLabel).toBe("Dallas");
     expect(japanMatch?.venueDetailLabel).toBe("AT&T Stadium · Arlington, USA · CT");
   });

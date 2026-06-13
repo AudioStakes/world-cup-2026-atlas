@@ -3,6 +3,15 @@ import type { Country } from "../../domain/types";
 import type { Indexes } from "../../indexes/createIndexes";
 
 const weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
+const longWeekdayLabels = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+] as const;
 
 export function formatDateLabel(date: LocalDateString): string {
   const [, monthPart, dayPart] = date.split("-");
@@ -12,6 +21,12 @@ export function formatDateLabel(date: LocalDateString): string {
 
 export function formatWeekdayDateLabel(date: LocalDateString): string {
   return `${weekdayLabels[getWeekdayIndex(date)]} ${formatDateLabel(date)}`;
+}
+
+export function formatFullDateHeadingLabel(date: LocalDateString): string {
+  const [yearPart, monthPart, dayPart] = date.split("-");
+  const monthLabel = monthPart === "06" ? "June" : monthPart === "07" ? "July" : monthPart;
+  return `${longWeekdayLabels[getWeekdayIndex(date)]} ${Number(dayPart)} ${monthLabel} ${yearPart}`;
 }
 
 export function formatDistanceLabel(distanceKm: number): string {

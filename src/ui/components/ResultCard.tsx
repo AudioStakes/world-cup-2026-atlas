@@ -5,7 +5,10 @@ import type {
   ExplorerDetailViewModel,
   ExplorerResultViewModel,
   GroupDetailViewModel,
+  MatchListItemViewModel,
+  MatchTeamViewModel,
 } from "../../features/explorer/types";
+import { classNames } from "./classNames";
 
 type ResultCardProps = {
   readonly result: ExplorerResultViewModel;
@@ -61,8 +64,13 @@ export function ResultCard({ result, onAction, onMatchVenueFocusChange }: Result
 
       {result.matches.length > 0 ? (
         <ol class="match-list">
-          {result.matches.map((match) => (
-            <li key={match.matchId}>
+          {result.matches.map((match, index) => (
+            <li class="match-list__item" key={match.matchId}>
+              {shouldShowMatchDateHeading(result.matches, index) ? (
+                <div class="match-list__date-row">
+                  <h3>{match.dateHeadingLabel}</h3>
+                </div>
+              ) : null}
               <button
                 class="match-card"
                 type="button"
@@ -73,15 +81,20 @@ export function ResultCard({ result, onAction, onMatchVenueFocusChange }: Result
                 onMouseLeave={() => onMatchVenueFocusChange(null)}
                 aria-label={`Show venue ${match.venueLabel} for ${match.matchupAriaLabel} on ${match.dateLabel}`}
               >
-                <span class="match-card__when">
-                  {match.dateLabel} {match.secondaryText}
+                <span class="match-card__score-row" aria-hidden="true">
+                  <MatchTeam team={match.homeTeam} side="home" />
+                  <MatchCenter match={match} />
+                  <MatchTeam team={match.awayTeam} side="away" />
                 </span>
-                <span class="match-card__matchup">
-                  <span aria-hidden="true">{match.matchupText}</span>
+                <span class="match-card__meta-line" aria-hidden="true">
+                  {match.fixtureMetaLabel}
+                </span>
+                <span class="match-card__a11y">
                   <span class="visually-hidden">{match.matchupAriaLabel}</span>
+                  <span class="visually-hidden">
+                    {match.scoreLineLabel ?? `${match.statusLabel}, ${match.secondaryText}`}
+                  </span>
                 </span>
-                <span class="match-card__status">{match.scoreLineLabel ?? match.statusLabel}</span>
-                <span class="match-card__venue">{match.venueLabel}</span>
               </button>
             </li>
           ))}
@@ -95,6 +108,77 @@ export function ResultCard({ result, onAction, onMatchVenueFocusChange }: Result
         </div>
       )}
     </section>
+  );
+}
+
+function shouldShowMatchDateHeading(matches: readonly MatchListItemViewModel[], index: number) {
+  const match = matches[index];
+  const previousMatch = matches[index - 1];
+
+  return Boolean(match && match.dateHeadingLabel !== previousMatch?.dateHeadingLabel);
+}
+
+function MatchTeam({
+  side,
+  team,
+}: {
+  readonly side: "home" | "away";
+  readonly team: MatchTeamViewModel;
+}) {
+  const flag = team.flagEmoji ? (
+    <span class="match-card__flag" aria-hidden="true">
+      {team.flagEmoji}
+    </span>
+  ) : null;
+
+  return (
+    <span class={classNames("match-card__team", `match-card__team--${side}`)}>
+      {side === "home" ? (
+        <>
+          <span class="match-card__team-name">{team.displayName}</span>
+          {flag}
+        </>
+      ) : (
+        <>
+          {flag}
+          <span class="match-card__team-name">{team.displayName}</span>
+        </>
+      )}
+    </span>
+  );
+}
+
+function MatchCenter({ match }: { readonly match: MatchListItemViewModel }) {
+  if (match.homeScoreLabel && match.awayScoreLabel) {
+    return (
+      <span class="match-card__center">
+        <span
+          class={classNames(
+            "match-card__score",
+            match.winningSide === "home" && "is-winner",
+            match.winningSide === "away" && "is-muted",
+          )}
+        >
+          {match.homeScoreLabel}
+        </span>
+        <span class="match-card__status">FT</span>
+        <span
+          class={classNames(
+            "match-card__score",
+            match.winningSide === "away" && "is-winner",
+            match.winningSide === "home" && "is-muted",
+          )}
+        >
+          {match.awayScoreLabel}
+        </span>
+      </span>
+    );
+  }
+
+  return (
+    <span class="match-card__center">
+      <span class="match-card__kickoff">{match.kickoffLabel}</span>
+    </span>
   );
 }
 

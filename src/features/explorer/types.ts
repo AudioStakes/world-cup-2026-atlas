@@ -174,15 +174,29 @@ export type MatchListItemViewModel = {
   readonly matchNumberLabel: string;
   readonly stageLabel: string;
   readonly dateLabel: string;
+  readonly dateHeadingLabel: string;
   readonly primaryText: string;
+  readonly homeTeam: MatchTeamViewModel;
+  readonly awayTeam: MatchTeamViewModel;
   readonly matchupText: string;
   readonly matchupAriaLabel: string;
+  readonly kickoffLabel: string;
+  readonly homeScoreLabel: string | null;
+  readonly awayScoreLabel: string | null;
+  readonly winningSide: "home" | "away" | null;
   readonly scoreLineLabel: string | null;
   readonly statusLabel: string;
   readonly secondaryText: string;
+  readonly fixtureMetaLabel: string;
   readonly venueId: VenueId;
   readonly venueLabel: string;
   readonly venueDetailLabel: string;
+};
+
+export type MatchTeamViewModel = {
+  readonly flagEmoji: string | null;
+  readonly displayName: string;
+  readonly code: string | null;
 };
 
 export type CountryRouteSummaryViewModel = {

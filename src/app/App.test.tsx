@@ -296,16 +296,20 @@ describe("App", () => {
     expect(restDateButton).toHaveTextContent("Rest");
   });
 
-  it("renders match cards as compact date matchup venue rows", () => {
+  it("renders match cards as FIFA-style fixture rows", () => {
     render(<App />);
 
     const matchCard = getFirstMatchCard();
     const matchScope = within(matchCard);
 
-    expect(matchScope.getByText("Thu Jun 11 13:00 CT")).toBeInTheDocument();
-    expect(matchScope.getByText("🇲🇽 MEX vs 🇿🇦 RSA")).toBeInTheDocument();
+    expect(screen.getByText("Thursday 11 June 2026")).toBeInTheDocument();
+    expect(matchScope.getByText("Mexico")).toBeInTheDocument();
+    expect(matchScope.getByText("13:00")).toBeInTheDocument();
+    expect(matchScope.getByText("South Africa")).toBeInTheDocument();
+    expect(
+      matchScope.getByText("First Stage · Group A · Estadio Azteca (Mexico City)"),
+    ).toBeInTheDocument();
     expect(matchScope.getByText("🇲🇽 Mexico vs 🇿🇦 South Africa")).toHaveClass("visually-hidden");
-    expect(matchScope.getByText("Scheduled")).toBeInTheDocument();
     expect(matchScope.queryByText(/Estadio Azteca · Mexico City, Mexico/)).not.toBeInTheDocument();
   });
 

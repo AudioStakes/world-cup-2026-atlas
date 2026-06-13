@@ -19,6 +19,7 @@ import type { Indexes } from "../../indexes/createIndexes";
 import {
   formatDateLabel,
   formatDistanceLabel,
+  formatFullDateHeadingLabel,
   formatWeekdayDateLabel,
   getRequiredCountry,
 } from "./formatExplorerLabels";
@@ -29,6 +30,7 @@ import type {
   ExplorerResultViewModel,
   GroupStandingRowViewModel,
   MatchListItemViewModel,
+  MatchTeamViewModel,
   NormalizedExplorerViewState,
 } from "./types";
 
@@ -226,6 +228,10 @@ function createVenueDetailLabel(venue: Venue): string {
   return `${venue.stadiumName} · ${createVenueCityLabel(venue)} · ${venue.timeZone.abbreviation}`;
 }
 
+function createVenueFixtureLabel(venue: Venue): string {
+  return `${venue.stadiumName} (${venue.name})`;
+}
+
 function createVenueCityLabel(venue: Venue): string {
   return `${venue.city}, ${formatHostCountryCode(venue.countryCode)}`;
 }
@@ -253,12 +259,20 @@ function createMatchListItem(
     matchNumberLabel: `Match ${match.matchNumber}`,
     stageLabel: formatStageLabel(match),
     dateLabel: formatWeekdayDateLabel(match.date),
+    dateHeadingLabel: formatFullDateHeadingLabel(match.date),
     primaryText: createMatchPrimaryText(indexes, viewState, match),
+    homeTeam: createMatchTeam(indexes, match.homeParticipant),
+    awayTeam: createMatchTeam(indexes, match.awayParticipant),
     matchupText: createMatchupText(indexes, match),
     matchupAriaLabel: createMatchupAriaLabel(indexes, match),
+    kickoffLabel: match.kickoffLocal,
+    homeScoreLabel: match.result ? String(match.result.homeGoals) : null,
+    awayScoreLabel: match.result ? String(match.result.awayGoals) : null,
+    winningSide: createWinningSide(match),
     scoreLineLabel: createScoreLineLabel(match),
     statusLabel: match.result ? "Full time" : "Scheduled",
     secondaryText: `${match.kickoffLocal} ${venue.timeZone.abbreviation}`,
+    fixtureMetaLabel: createFixtureMetaLabel(match, venue),
     venueId: venue.id,
     venueLabel: venue.name,
     venueDetailLabel: createVenueDetailLabel(venue),
@@ -521,6 +535,44 @@ function createMatchupAriaLabel(indexes: Indexes, match: Match): string {
     indexes,
     match.awayParticipant,
   )}`;
+}
+
+function createMatchTeam(
+  indexes: Indexes,
+  participant: Match["homeParticipant"],
+): MatchTeamViewModel {
+  const countryId = getParticipantCountryId(participant);
+  const country = getMatchCountry(indexes, countryId ?? undefined);
+
+  if (country) {
+    return {
+      flagEmoji: country.flagEmoji,
+      displayName: country.shortName,
+      code: country.fifaCode,
+    };
+  }
+
+  return {
+    flagEmoji: null,
+    displayName: formatParticipantLabel(participant),
+    code: null,
+  };
+}
+
+function createFixtureMetaLabel(match: Match, venue: Venue): string {
+  if (match.stage === "group") {
+    return `First Stage · ${formatStageLabel(match)} · ${createVenueFixtureLabel(venue)}`;
+  }
+
+  return `${formatStageLabel(match)} · ${createVenueFixtureLabel(venue)}`;
+}
+
+function createWinningSide(match: Match): "home" | "away" | null {
+  if (!match.result || match.result.homeGoals === match.result.awayGoals) {
+    return null;
+  }
+
+  return match.result.homeGoals > match.result.awayGoals ? "home" : "away";
 }
 
 function formatParticipantCompact(indexes: Indexes, participant: Match["homeParticipant"]): string {
