@@ -14,3 +14,9 @@
 - For visual polish tasks, prefer CSS-only changes unless behavior changes are required.
 - Do not change tournament data, Natural Earth map data, projection logic, or venue coordinates
   during visual-only tasks.
+
+## TypeScript Checks
+
+- During active TypeScript fixes, run `rtk proxy pnpm typecheck` when you need full compiler
+  diagnostics. The compressed `rtk pnpm typecheck` summary can hide the individual errors that
+  `pnpm verify` will later surface.
