@@ -3,6 +3,7 @@ import { appData } from "../data/appData";
 import type { VenueId } from "../domain/ids";
 import {
   browserLocalDisplayTimeZoneId,
+  type DisplayTimeZoneId,
   getBrowserLocalTimeZone,
   venueLocalDisplayTimeZoneId,
 } from "../features/explorer/displayTimeZone";
@@ -24,7 +25,7 @@ export function App() {
   );
   const [focusedVenueId, setFocusedVenueId] = useState<VenueId | null>(null);
   const [browserLocalTimeZone] = useState<string | null>(() => getBrowserLocalTimeZone());
-  const [displayTimeZoneId, setDisplayTimeZoneId] = useState<string>(() =>
+  const [displayTimeZoneId, setDisplayTimeZoneId] = useState<DisplayTimeZoneId>(() =>
     browserLocalTimeZone ? browserLocalDisplayTimeZoneId : venueLocalDisplayTimeZoneId,
   );
   const [matchResultsSnapshot, setMatchResultsSnapshot] = useState<MatchResultsSnapshot | null>(

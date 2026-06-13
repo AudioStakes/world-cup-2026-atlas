@@ -1,6 +1,7 @@
 import type { Country } from "../../domain/types";
 import {
   createHeaderTimeZoneOptions,
+  type DisplayTimeZoneId,
   resolveDisplayTimeZonePreference,
   venueLocalDisplayTimeZoneId,
 } from "./displayTimeZone";
@@ -8,7 +9,7 @@ import type { ExplorerHeaderViewModel } from "./types";
 
 export function createHeaderViewModel(
   countries: readonly Country[],
-  displayTimeZoneId = venueLocalDisplayTimeZoneId,
+  displayTimeZoneId: DisplayTimeZoneId = venueLocalDisplayTimeZoneId,
   browserLocalTimeZone: string | null = null,
 ): ExplorerHeaderViewModel {
   const displayTimeZone = resolveDisplayTimeZonePreference(
@@ -23,8 +24,11 @@ export function createHeaderViewModel(
     timeZoneSelector: {
       label: "Match times",
       selectedValue: displayTimeZone.id,
-      selectedSummary: displayTimeZone.summaryLabel,
       options: createHeaderTimeZoneOptions(countries, browserLocalTimeZone),
     },
+    statusItems: [
+      { key: "selectedTimeZone", label: displayTimeZone.summaryLabel },
+      { key: "dataSource", label: "Official/trusted sources · direct distances derived" },
+    ],
   };
 }

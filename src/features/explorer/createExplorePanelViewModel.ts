@@ -3,7 +3,7 @@ import type { Indexes } from "../../indexes/createIndexes";
 import { createDateSelectorViewModel } from "./createDateSelectorViewModel";
 import { createGroupsAndTeamsViewModel } from "./createGroupsAndTeamsViewModel";
 import { createResultViewModel } from "./createResultViewModel";
-import { venueLocalDisplayTimeZoneId } from "./displayTimeZone";
+import { type DisplayTimeZoneId, venueLocalDisplayTimeZoneId } from "./displayTimeZone";
 import type { ExplorePanelViewModel, NormalizedExplorerViewState } from "./types";
 
 export function createExplorePanelViewModel(
@@ -11,7 +11,7 @@ export function createExplorePanelViewModel(
   indexes: Indexes,
   viewState: NormalizedExplorerViewState,
   matchingMatches: readonly Match[],
-  displayTimeZoneId = venueLocalDisplayTimeZoneId,
+  displayTimeZoneId: DisplayTimeZoneId = venueLocalDisplayTimeZoneId,
   browserLocalTimeZone: string | null = null,
 ): ExplorePanelViewModel {
   return {

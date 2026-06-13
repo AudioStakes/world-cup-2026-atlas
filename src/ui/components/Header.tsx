@@ -1,8 +1,12 @@
-import type { ExplorerHeaderViewModel } from "../../features/explorer/types";
+import type { DisplayTimeZoneId } from "../../features/explorer/displayTimeZone";
+import type {
+  ExplorerHeaderViewModel,
+  HeaderTimeZoneOptionViewModel,
+} from "../../features/explorer/types";
 
 type HeaderProps = {
   readonly header: ExplorerHeaderViewModel;
-  readonly onTimeZoneChange: (displayTimeZoneId: string) => void;
+  readonly onTimeZoneChange: (displayTimeZoneId: DisplayTimeZoneId) => void;
 };
 
 export function Header({ header, onTimeZoneChange }: HeaderProps) {
@@ -20,7 +24,14 @@ export function Header({ header, onTimeZoneChange }: HeaderProps) {
             name="match-time-zone"
             value={header.timeZoneSelector.selectedValue}
             onChange={(event) => {
-              onTimeZoneChange(event.currentTarget.value);
+              const displayTimeZoneId = getDisplayTimeZoneIdForSelectValue(
+                event.currentTarget.value,
+                header.timeZoneSelector.options,
+              );
+
+              if (displayTimeZoneId) {
+                onTimeZoneChange(displayTimeZoneId);
+              }
             }}
           >
             {header.timeZoneSelector.options.map((option) => (
@@ -30,11 +41,19 @@ export function Header({ header, onTimeZoneChange }: HeaderProps) {
             ))}
           </select>
         </label>
-        <p class="atlas-header__data-status">
-          <span>{header.timeZoneSelector.selectedSummary}</span>
-          <span>Official/trusted sources · direct distances derived</span>
+        <p class="atlas-header__data-status" aria-live="polite">
+          {header.statusItems.map((item) => (
+            <span key={item.key}>{item.label}</span>
+          ))}
         </p>
       </div>
     </header>
   );
+}
+
+function getDisplayTimeZoneIdForSelectValue(
+  value: string,
+  options: readonly HeaderTimeZoneOptionViewModel[],
+): DisplayTimeZoneId | null {
+  return options.find((option) => option.value === value)?.value ?? null;
 }

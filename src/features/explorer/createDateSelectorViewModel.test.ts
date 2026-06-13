@@ -2,13 +2,13 @@ import { describe, expect, it } from "vitest";
 import { appData } from "../../data/appData";
 import { countryId, localDate } from "../../domain/ids";
 import { createDateSelectorViewModel } from "./createDateSelectorViewModel";
-import { browserLocalDisplayTimeZoneId } from "./displayTimeZone";
+import { browserLocalDisplayTimeZoneId, type DisplayTimeZoneId } from "./displayTimeZone";
 import { emptyExplorerViewState } from "./types";
 
 function getDateOption(
   date: string,
   today = localDate("2026-06-13"),
-  displayTimeZoneId: string | undefined = undefined,
+  displayTimeZoneId: DisplayTimeZoneId | undefined = undefined,
   browserLocalTimeZone: string | null = null,
 ) {
   const viewModel = createDateSelectorViewModel(

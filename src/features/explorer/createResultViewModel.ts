@@ -19,6 +19,7 @@ import type {
 import type { Indexes } from "../../indexes/createIndexes";
 import {
   createMatchDisplayDateTime,
+  type DisplayTimeZoneId,
   type DisplayTimeZonePreference,
   resolveDisplayTimeZonePreference,
   venueLocalDisplayTimeZoneId,
@@ -51,7 +52,7 @@ export function createResultViewModel(
   indexes: Indexes,
   viewState: NormalizedExplorerViewState,
   matchingMatches: readonly Match[],
-  displayTimeZoneId = venueLocalDisplayTimeZoneId,
+  displayTimeZoneId: DisplayTimeZoneId = venueLocalDisplayTimeZoneId,
   browserLocalTimeZone: string | null = null,
 ): ExplorerResultViewModel {
   const resultType = deriveResultType(viewState);

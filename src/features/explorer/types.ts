@@ -7,6 +7,7 @@ import type {
   VenueId,
 } from "../../domain/ids";
 import type { MapPoint, MatchStatus } from "../../domain/types";
+import type { DisplayTimeZoneId } from "./displayTimeZone";
 
 export type ExplorerSelectionType = "country" | "group" | "date" | "venue";
 
@@ -53,17 +54,22 @@ export type ExplorerHeaderViewModel = {
   readonly title: string;
   readonly subtitle: string;
   readonly timeZoneSelector: HeaderTimeZoneSelectorViewModel;
+  readonly statusItems: readonly ExplorerHeaderStatusItemViewModel[];
+};
+
+export type ExplorerHeaderStatusItemViewModel = {
+  readonly key: "selectedTimeZone" | "dataSource";
+  readonly label: string;
 };
 
 export type HeaderTimeZoneSelectorViewModel = {
   readonly label: string;
-  readonly selectedValue: string;
-  readonly selectedSummary: string;
+  readonly selectedValue: DisplayTimeZoneId;
   readonly options: readonly HeaderTimeZoneOptionViewModel[];
 };
 
 export type HeaderTimeZoneOptionViewModel = {
-  readonly value: string;
+  readonly value: DisplayTimeZoneId;
   readonly label: string;
   readonly detailLabel: string;
 };

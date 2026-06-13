@@ -137,7 +137,7 @@ export function createHeaderTimeZoneOptions(
 
 export function resolveDisplayTimeZonePreference(
   countries: readonly Country[],
-  displayTimeZoneId: string,
+  displayTimeZoneId: DisplayTimeZoneId,
   browserLocalTimeZone: string | null = null,
 ): DisplayTimeZonePreference {
   if (displayTimeZoneId === browserLocalDisplayTimeZoneId && browserLocalTimeZone) {

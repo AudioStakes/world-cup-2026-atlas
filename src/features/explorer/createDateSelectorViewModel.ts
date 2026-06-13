@@ -3,6 +3,7 @@ import type { AppData, Match, Venue } from "../../domain/types";
 import { queryMatchesByViewState } from "../../queries/queryMatchesByViewState";
 import {
   createMatchDisplayDateTime,
+  type DisplayTimeZoneId,
   type DisplayTimeZonePreference,
   resolveDisplayTimeZonePreference,
   venueLocalDisplayTimeZoneId,
@@ -23,7 +24,7 @@ export function createDateSelectorViewModel(
   data: AppData,
   viewState: NormalizedExplorerViewState,
   today: LocalDateString = createTodayLocalDate(),
-  displayTimeZoneId = venueLocalDisplayTimeZoneId,
+  displayTimeZoneId: DisplayTimeZoneId = venueLocalDisplayTimeZoneId,
   browserLocalTimeZone: string | null = null,
 ): DateSelectorViewModel {
   const matchesByDate = createMatchesByDate(data.matches);

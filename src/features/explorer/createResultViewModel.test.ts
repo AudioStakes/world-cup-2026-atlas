@@ -4,7 +4,7 @@ import { countryId, groupCode, localDate, venueId } from "../../domain/ids";
 import type { AppData } from "../../domain/types";
 import { createIndexes } from "../../indexes/createIndexes";
 import { createResultViewModel } from "./createResultViewModel";
-import { browserLocalDisplayTimeZoneId } from "./displayTimeZone";
+import { browserLocalDisplayTimeZoneId, type DisplayTimeZoneId } from "./displayTimeZone";
 import { emptyExplorerViewState } from "./types";
 
 const indexes = createIndexes(appData);
@@ -29,7 +29,7 @@ function createResultForCountry(countryKey: string) {
 
 function createResultForDate(
   date: string,
-  displayTimeZoneId: string | undefined = undefined,
+  displayTimeZoneId: DisplayTimeZoneId | undefined = undefined,
   browserLocalTimeZone: string | null = null,
 ) {
   const matches = appData.matches.filter((match) => match.date === localDate(date));

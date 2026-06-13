@@ -8,7 +8,7 @@ import { createExplorePanelViewModel } from "./createExplorePanelViewModel";
 import { createHeaderViewModel } from "./createHeaderViewModel";
 import { createMapViewModel } from "./createMapViewModel";
 import { ensureExplorerSelection } from "./defaultExplorerViewState";
-import { venueLocalDisplayTimeZoneId } from "./displayTimeZone";
+import { type DisplayTimeZoneId, venueLocalDisplayTimeZoneId } from "./displayTimeZone";
 import { normalizeExplorerViewState } from "./normalizeExplorerViewState";
 import type { ExplorerViewModel, ExplorerViewState } from "./types";
 
@@ -17,7 +17,7 @@ export function queryExplorer(
   indexes: Indexes,
   viewState: Partial<ExplorerViewState>,
   focusedVenueId: VenueId | null = null,
-  displayTimeZoneId = venueLocalDisplayTimeZoneId,
+  displayTimeZoneId: DisplayTimeZoneId = venueLocalDisplayTimeZoneId,
   browserLocalTimeZone: string | null = null,
   matchResultsSnapshot: MatchResultsSnapshot | null = null,
 ): ExplorerViewModel {

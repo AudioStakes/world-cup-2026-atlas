@@ -105,7 +105,10 @@ describe("queryExplorer", () => {
     );
 
     expect(viewModel.header.timeZoneSelector.selectedValue).toBe(browserLocalDisplayTimeZoneId);
-    expect(viewModel.header.timeZoneSelector.selectedSummary).toBe("Your local time · JST");
+    expect(viewModel.header.statusItems[0]).toEqual({
+      key: "selectedTimeZone",
+      label: "Your local time · JST",
+    });
     expect(viewModel.header.timeZoneSelector.options[0]).toEqual({
       value: browserLocalDisplayTimeZoneId,
       label: "Your local time",

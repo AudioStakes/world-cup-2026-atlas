@@ -1,4 +1,5 @@
 import type { VenueId } from "../../domain/ids";
+import type { DisplayTimeZoneId } from "../../features/explorer/displayTimeZone";
 import type { ExplorerAction, ExplorerViewModel } from "../../features/explorer/types";
 import { DateSelector } from "./DateSelector";
 import { GroupsAndTeamsTable } from "./GroupsAndTeamsTable";
@@ -10,7 +11,7 @@ type ExplorerPageProps = {
   readonly viewModel: ExplorerViewModel;
   readonly onAction: (action: ExplorerAction) => void;
   readonly onMatchVenueFocusChange: (venueId: VenueId | null) => void;
-  readonly onTimeZoneChange: (displayTimeZoneId: string) => void;
+  readonly onTimeZoneChange: (displayTimeZoneId: DisplayTimeZoneId) => void;
 };
 
 export function ExplorerPage({
