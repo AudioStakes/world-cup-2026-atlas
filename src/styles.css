@@ -1397,20 +1397,23 @@ select:focus-visible,
 
 /* Map contrast pass: keep the base map readable without overpowering markers. */
 .map-panel {
+  --map-land-color: rgba(255, 255, 255, 0.88);
+  --map-land-highlight-color: rgba(255, 255, 255, 0.94);
+  --map-line-color: rgba(74, 99, 121, 0.18);
+  --map-water-color: #dceefa;
+  --map-water-soft-color: #edf8ff;
+
   border-color: rgba(23, 32, 42, 0.12);
   background:
-    radial-gradient(circle at 18% 16%, rgba(255, 255, 255, 0.92), transparent 34%),
-    radial-gradient(circle at 74% 18%, rgba(212, 226, 236, 0.55), transparent 28%),
-    linear-gradient(135deg, rgba(248, 251, 253, 0.98), rgba(223, 232, 240, 0.96));
+    radial-gradient(circle at 18% 16%, var(--map-water-soft-color), transparent 34%),
+    linear-gradient(135deg, var(--map-water-soft-color), var(--map-water-color));
   box-shadow:
     0 28px 80px rgba(23, 32, 42, 0.14),
     inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
 .map-canvas {
-  background:
-    radial-gradient(circle at 50% 24%, rgba(255, 255, 255, 0.3), transparent 42%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.26), rgba(235, 242, 248, 0.18));
+  background: var(--map-water-color);
 }
 
 .map-svg {
@@ -1423,26 +1426,26 @@ select:focus-visible,
 }
 
 .country-shape {
-  fill: rgba(209, 220, 231, 0.96);
-  stroke: rgba(23, 32, 42, 0.12);
+  fill: var(--map-land-color);
+  stroke: var(--map-line-color);
   stroke-width: 1.2;
 }
 
 .canada-shape {
-  fill: rgba(216, 227, 237, 0.96);
+  fill: var(--map-land-color);
 }
 
 .usa-shape {
-  fill: rgba(208, 220, 231, 0.96);
+  fill: var(--map-land-highlight-color);
 }
 
 .mexico-shape {
-  fill: rgba(203, 216, 227, 0.96);
+  fill: var(--map-land-color);
 }
 
 .coastline-detail,
 .map-border-line {
-  stroke: rgba(62, 79, 96, 0.2);
+  stroke: var(--map-line-color);
   stroke-width: 1.1;
   opacity: 0.92;
 }
@@ -1452,8 +1455,8 @@ select:focus-visible,
 }
 
 .map-lake {
-  fill: rgba(181, 205, 224, 0.92);
-  stroke: rgba(86, 115, 141, 0.24);
+  fill: var(--map-water-color);
+  stroke: rgba(74, 99, 121, 0.14);
   stroke-width: 1;
 }
 
