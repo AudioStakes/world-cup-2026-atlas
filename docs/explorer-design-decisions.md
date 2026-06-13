@@ -29,7 +29,7 @@ On narrow viewports, the Date selector should minimize vertical space. Hide week
 
 ## Match Time Display
 
-Match time display defaults to each venue's local time because that preserves the official fixture context. The header owns the display-time selector so it affects every visible fixture without being confused with the group/team/date/venue filters.
+Match time display defaults to the visitor's browser local time zone when it can be detected. That makes the first view match the access location without requiring the user to choose a country manually. If browser time-zone detection is unavailable, fall back to each venue's local time because that preserves the official fixture context. The header owns the display-time selector so it affects every visible fixture without being confused with the group/team/date/venue filters.
 
 Country selections use a single primary IANA time zone for that country. When a country is selected, fixture times, date-result kickoff ranges, and visible match-card date headings should all use the selected country's time zone. For example, Japan uses Japan Standard Time (`Asia/Tokyo`, `JST`).
 

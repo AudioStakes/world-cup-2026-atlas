@@ -45,6 +45,16 @@ async function setBrowserToday(page: Page, dateIso: string) {
   }, `${dateIso}T12:00:00`);
 }
 
+async function disableBrowserLocalTimeZone(page: Page) {
+  await page.addInitScript(() => {
+    const originalResolvedOptions = Intl.DateTimeFormat.prototype.resolvedOptions;
+
+    Intl.DateTimeFormat.prototype.resolvedOptions = function resolvedOptionsWithoutTimeZone() {
+      return { ...originalResolvedOptions.call(this), timeZone: "" };
+    };
+  });
+}
+
 test.describe("World Cup 2026 Atlas explorer", () => {
   test("@smoke starts from today's tournament date when no URL query present", async ({ page }) => {
     await setBrowserToday(page, "2026-06-12");
@@ -84,6 +94,36 @@ test.describe("World Cup 2026 Atlas explorer", () => {
       "aria-pressed",
       "true",
     );
+  });
+
+  test("@smoke defaults match times to the browser local time zone", async ({ page }) => {
+    await page.addInitScript(() => {
+      const originalResolvedOptions = Intl.DateTimeFormat.prototype.resolvedOptions;
+
+      Intl.DateTimeFormat.prototype.resolvedOptions = function resolvedOptionsWithLocalTimeZone() {
+        return { ...originalResolvedOptions.call(this), timeZone: "Asia/Tokyo" };
+      };
+    });
+
+    await page.goto("/?group=F");
+
+    const timeZoneState = await page.evaluate(() => {
+      const select = document.querySelector<HTMLSelectElement>("#match-time-zone");
+      const selectedOption = select?.selectedOptions[0];
+
+      return {
+        firstKickoff: document.querySelector(".match-card__kickoff")?.textContent?.trim() ?? "",
+        headerSummary:
+          document.querySelector(".atlas-header__data-status span")?.textContent?.trim() ?? "",
+        selectedOptionText: selectedOption?.textContent?.trim() ?? "",
+        selectValue: select?.value ?? "",
+      };
+    });
+
+    expect(timeZoneState.selectValue).toBe("browser-local");
+    expect(timeZoneState.selectedOptionText).toBe("Your local time · JST · Asia/Tokyo");
+    expect(timeZoneState.headerSummary).toBe("Your local time · JST");
+    expect(timeZoneState.firstKickoff).toBe("05:00");
   });
 
   test("@smoke selects team groups from the readable groups table", async ({ page }) => {
@@ -230,6 +270,7 @@ test.describe("World Cup 2026 Atlas explorer", () => {
   });
 
   test("@smoke selects a date and starts the fixture timeline on that date", async ({ page }) => {
+    await disableBrowserLocalTimeZone(page);
     await page.goto("/");
 
     await page.getByRole("button", { name: /Select Tue Jun 16/ }).click();

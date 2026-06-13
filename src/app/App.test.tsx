@@ -6,8 +6,19 @@ import {
 } from "../features/explorer/mapViewport";
 import { App } from "./App";
 
+const originalDateTimeFormatResolvedOptions = Intl.DateTimeFormat.prototype.resolvedOptions;
+
 function selectJapan() {
   fireEvent.click(screen.getByRole("button", { name: "Select Japan" }));
+}
+
+function mockBrowserTimeZone(timeZone: string | null) {
+  const resolvedOptions = originalDateTimeFormatResolvedOptions.call(new Intl.DateTimeFormat());
+
+  vi.spyOn(Intl.DateTimeFormat.prototype, "resolvedOptions").mockReturnValue({
+    ...resolvedOptions,
+    timeZone: timeZone ?? undefined,
+  } as Intl.ResolvedDateTimeFormatOptions);
 }
 
 function getFirstMatchCard() {
@@ -147,6 +158,7 @@ describe("App", () => {
   beforeEach(() => {
     window.history.replaceState(null, "", "/");
     vi.spyOn(Date, "now").mockReturnValue(new Date(2026, 5, 11, 9).getTime());
+    mockBrowserTimeZone(null);
   });
 
   afterEach(() => {
@@ -360,6 +372,19 @@ describe("App", () => {
     const matchScope = within(getFirstMatchCard());
     expect(timeZoneSelect).toHaveValue("jpn");
     expect(screen.getByText("Japan · JST")).toBeInTheDocument();
+    expect(matchScope.getByText("04:00")).toBeInTheDocument();
+    expect(matchScope.queryByText("13:00")).not.toBeInTheDocument();
+  });
+
+  it("defaults match card times to the browser local time zone when available", () => {
+    mockBrowserTimeZone("Asia/Tokyo");
+    render(<App />);
+
+    const timeZoneSelect = screen.getByRole("combobox", { name: "Match times" });
+    const matchScope = within(getFirstMatchCard());
+
+    expect(timeZoneSelect).toHaveValue("browser-local");
+    expect(screen.getByText("Your local time · JST")).toBeInTheDocument();
     expect(matchScope.getByText("04:00")).toBeInTheDocument();
     expect(matchScope.queryByText("13:00")).not.toBeInTheDocument();
   });

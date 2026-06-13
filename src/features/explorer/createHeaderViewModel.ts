@@ -9,8 +9,13 @@ import type { ExplorerHeaderViewModel } from "./types";
 export function createHeaderViewModel(
   countries: readonly Country[],
   displayTimeZoneId = venueLocalDisplayTimeZoneId,
+  browserLocalTimeZone: string | null = null,
 ): ExplorerHeaderViewModel {
-  const displayTimeZone = resolveDisplayTimeZonePreference(countries, displayTimeZoneId);
+  const displayTimeZone = resolveDisplayTimeZonePreference(
+    countries,
+    displayTimeZoneId,
+    browserLocalTimeZone,
+  );
 
   return {
     title: "World Cup 2026 Atlas",
@@ -19,7 +24,7 @@ export function createHeaderViewModel(
       label: "Match times",
       selectedValue: displayTimeZone.id,
       selectedSummary: displayTimeZone.summaryLabel,
-      options: createHeaderTimeZoneOptions(countries),
+      options: createHeaderTimeZoneOptions(countries, browserLocalTimeZone),
     },
   };
 }

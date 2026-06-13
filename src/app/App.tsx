@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useState } from "preact/hooks";
 import { appData } from "../data/appData";
 import type { VenueId } from "../domain/ids";
-import { venueLocalDisplayTimeZoneId } from "../features/explorer/displayTimeZone";
+import {
+  browserLocalDisplayTimeZoneId,
+  getBrowserLocalTimeZone,
+  venueLocalDisplayTimeZoneId,
+} from "../features/explorer/displayTimeZone";
 import { queryExplorer } from "../features/explorer/queryExplorer";
 import { resolveInitialExplorerViewState } from "../features/explorer/resolveInitialExplorerViewState";
 import { serializeExplorerSearchParams } from "../features/explorer/serializeExplorerSearchParams";
@@ -17,11 +21,22 @@ export function App() {
     resolveInitialExplorerViewState(getInitialSearchParams(), indexes),
   );
   const [focusedVenueId, setFocusedVenueId] = useState<VenueId | null>(null);
-  const [displayTimeZoneId, setDisplayTimeZoneId] = useState<string>(venueLocalDisplayTimeZoneId);
+  const [browserLocalTimeZone] = useState<string | null>(() => getBrowserLocalTimeZone());
+  const [displayTimeZoneId, setDisplayTimeZoneId] = useState<string>(() =>
+    browserLocalTimeZone ? browserLocalDisplayTimeZoneId : venueLocalDisplayTimeZoneId,
+  );
 
   const viewModel = useMemo(
-    () => queryExplorer(appData, indexes, viewState, focusedVenueId, displayTimeZoneId),
-    [displayTimeZoneId, focusedVenueId, viewState],
+    () =>
+      queryExplorer(
+        appData,
+        indexes,
+        viewState,
+        focusedVenueId,
+        displayTimeZoneId,
+        browserLocalTimeZone,
+      ),
+    [browserLocalTimeZone, displayTimeZoneId, focusedVenueId, viewState],
   );
 
   useEffect(() => {

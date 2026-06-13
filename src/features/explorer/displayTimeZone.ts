@@ -3,8 +3,12 @@ import type { Country, Match, Venue } from "../../domain/types";
 import type { HeaderTimeZoneOptionViewModel } from "./types";
 
 export const venueLocalDisplayTimeZoneId = "venue-local";
+export const browserLocalDisplayTimeZoneId = "browser-local";
 
-export type DisplayTimeZoneId = typeof venueLocalDisplayTimeZoneId | CountryId;
+export type DisplayTimeZoneId =
+  | typeof venueLocalDisplayTimeZoneId
+  | typeof browserLocalDisplayTimeZoneId
+  | CountryId;
 
 export type DisplayTimeZonePreference =
   | {
@@ -17,6 +21,14 @@ export type DisplayTimeZonePreference =
       readonly type: "country";
       readonly id: CountryId;
       readonly countryName: string;
+      readonly ianaName: string;
+      readonly abbreviation: string;
+      readonly label: string;
+      readonly summaryLabel: string;
+    }
+  | {
+      readonly type: "browserLocal";
+      readonly id: typeof browserLocalDisplayTimeZoneId;
       readonly ianaName: string;
       readonly abbreviation: string;
       readonly label: string;
@@ -88,8 +100,18 @@ const countryDisplayTimeZonesById = new Map<CountryId, CountryDisplayTimeZone>([
 
 export function createHeaderTimeZoneOptions(
   countries: readonly Country[],
+  browserLocalTimeZone: string | null = null,
 ): readonly HeaderTimeZoneOptionViewModel[] {
   return [
+    ...(browserLocalTimeZone
+      ? [
+          {
+            value: browserLocalDisplayTimeZoneId,
+            label: "Your local time",
+            detailLabel: createBrowserLocalDetailLabel(browserLocalTimeZone),
+          },
+        ]
+      : []),
     {
       value: venueLocalDisplayTimeZoneId,
       label: "Venue local",
@@ -116,7 +138,21 @@ export function createHeaderTimeZoneOptions(
 export function resolveDisplayTimeZonePreference(
   countries: readonly Country[],
   displayTimeZoneId: string,
+  browserLocalTimeZone: string | null = null,
 ): DisplayTimeZonePreference {
+  if (displayTimeZoneId === browserLocalDisplayTimeZoneId && browserLocalTimeZone) {
+    const abbreviation = createTimeZoneAbbreviation(browserLocalTimeZone, referenceInstant);
+
+    return {
+      type: "browserLocal",
+      id: browserLocalDisplayTimeZoneId,
+      ianaName: browserLocalTimeZone,
+      abbreviation,
+      label: "Your local time",
+      summaryLabel: `Your local time · ${abbreviation}`,
+    };
+  }
+
   if (displayTimeZoneId !== venueLocalDisplayTimeZoneId) {
     const country = countries.find((candidate) => candidate.id === displayTimeZoneId);
     const timeZone = country ? countryDisplayTimeZonesById.get(country.id) : null;
@@ -166,8 +202,57 @@ export function createMatchDisplayDateTime(
     instantMs: instant.getTime(),
     date: formatDateInTimeZone(instant, displayTimeZone.ianaName),
     timeLabel: formatTimeInTimeZone(instant, displayTimeZone.ianaName),
-    timeZoneLabel: displayTimeZone.abbreviation,
+    timeZoneLabel:
+      displayTimeZone.type === "browserLocal"
+        ? createTimeZoneAbbreviation(displayTimeZone.ianaName, instant)
+        : displayTimeZone.abbreviation,
   };
+}
+
+const referenceInstant = new Date("2026-06-13T12:00:00Z");
+
+export function getBrowserLocalTimeZone(): string | null {
+  const timeZone = new Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  if (typeof timeZone !== "string" || timeZone.length === 0) {
+    return null;
+  }
+
+  return isSupportedTimeZone(timeZone) ? timeZone : null;
+}
+
+function isSupportedTimeZone(timeZone: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function createBrowserLocalDetailLabel(timeZone: string): string {
+  return `${createTimeZoneAbbreviation(timeZone, referenceInstant)} · ${timeZone}`;
+}
+
+function createTimeZoneAbbreviation(timeZone: string, instant: Date): string {
+  const countryDisplayTimeZone = Array.from(countryDisplayTimeZonesById.values()).find(
+    (displayTimeZone) => displayTimeZone.ianaName === timeZone,
+  );
+
+  if (countryDisplayTimeZone) {
+    return countryDisplayTimeZone.abbreviation;
+  }
+
+  return formatShortTimeZoneName(instant, timeZone);
+}
+
+function formatShortTimeZoneName(instant: Date, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    timeZoneName: "short",
+  }).formatToParts(instant);
+
+  return parts.find((part) => part.type === "timeZoneName")?.value ?? timeZone;
 }
 
 function createUtcInstantForZonedLocalTime(

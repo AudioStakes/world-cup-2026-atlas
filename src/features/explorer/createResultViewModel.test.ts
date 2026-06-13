@@ -4,6 +4,7 @@ import { countryId, groupCode, localDate, venueId } from "../../domain/ids";
 import type { AppData } from "../../domain/types";
 import { createIndexes } from "../../indexes/createIndexes";
 import { createResultViewModel } from "./createResultViewModel";
+import { browserLocalDisplayTimeZoneId } from "./displayTimeZone";
 import { emptyExplorerViewState } from "./types";
 
 const indexes = createIndexes(appData);
@@ -26,7 +27,11 @@ function createResultForCountry(countryKey: string) {
   );
 }
 
-function createResultForDate(date: string, displayTimeZoneId: string | undefined = undefined) {
+function createResultForDate(
+  date: string,
+  displayTimeZoneId: string | undefined = undefined,
+  browserLocalTimeZone: string | null = null,
+) {
   const matches = appData.matches.filter((match) => match.date === localDate(date));
 
   return createResultViewModel(
@@ -35,6 +40,7 @@ function createResultForDate(date: string, displayTimeZoneId: string | undefined
     { ...emptyExplorerViewState, selectedDate: localDate(date) },
     matches,
     displayTimeZoneId,
+    browserLocalTimeZone,
   );
 }
 
@@ -235,6 +241,20 @@ describe("createResultViewModel production metadata", () => {
 
   it("converts date result match cards into a selected country's time zone", () => {
     const result = createResultForDate("2026-06-20", countryId("jpn"));
+    const scrollTargetMatch = result.matches.find((match) => match.isInitialScrollTarget);
+    const japanMatch = result.matches.find((match) => match.matchNumberLabel === "Match 36");
+
+    expect(result.subtitle).toBe("4 matches · 02:00–13:00 · JST");
+    expect(scrollTargetMatch?.matchNumberLabel).toBe("Match 35");
+    expect(scrollTargetMatch?.dateHeadingLabel).toBe("Sunday 21 June 2026");
+    expect(scrollTargetMatch?.kickoffLabel).toBe("02:00");
+    expect(scrollTargetMatch?.secondaryText).toBe("02:00 JST");
+    expect(japanMatch?.kickoffLabel).toBe("13:00");
+    expect(japanMatch?.dateLabel).toBe("Sun Jun 21");
+  });
+
+  it("converts date result match cards into the browser local time zone", () => {
+    const result = createResultForDate("2026-06-20", browserLocalDisplayTimeZoneId, "Asia/Tokyo");
     const scrollTargetMatch = result.matches.find((match) => match.isInitialScrollTarget);
     const japanMatch = result.matches.find((match) => match.matchNumberLabel === "Match 36");
 

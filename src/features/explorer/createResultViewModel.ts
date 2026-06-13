@@ -51,9 +51,14 @@ export function createResultViewModel(
   viewState: NormalizedExplorerViewState,
   matchingMatches: readonly Match[],
   displayTimeZoneId = venueLocalDisplayTimeZoneId,
+  browserLocalTimeZone: string | null = null,
 ): ExplorerResultViewModel {
   const resultType = deriveResultType(viewState);
-  const displayTimeZone = resolveDisplayTimeZonePreference(data.countries, displayTimeZoneId);
+  const displayTimeZone = resolveDisplayTimeZonePreference(
+    data.countries,
+    displayTimeZoneId,
+    browserLocalTimeZone,
+  );
 
   if (resultType === "empty") {
     return {
@@ -288,7 +293,7 @@ function createTimeZoneSummaryLabel(
     return null;
   }
 
-  if (displayTimeZone.type === "country") {
+  if (displayTimeZone.type === "country" || displayTimeZone.type === "browserLocal") {
     return displayTimeZone.abbreviation;
   }
 

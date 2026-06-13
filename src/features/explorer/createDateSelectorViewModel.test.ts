@@ -2,18 +2,21 @@ import { describe, expect, it } from "vitest";
 import { appData } from "../../data/appData";
 import { countryId, localDate } from "../../domain/ids";
 import { createDateSelectorViewModel } from "./createDateSelectorViewModel";
+import { browserLocalDisplayTimeZoneId } from "./displayTimeZone";
 import { emptyExplorerViewState } from "./types";
 
 function getDateOption(
   date: string,
   today = localDate("2026-06-13"),
   displayTimeZoneId: string | undefined = undefined,
+  browserLocalTimeZone: string | null = null,
 ) {
   const viewModel = createDateSelectorViewModel(
     appData,
     emptyExplorerViewState,
     today,
     displayTimeZoneId,
+    browserLocalTimeZone,
   );
 
   for (const month of viewModel.months) {
@@ -51,6 +54,19 @@ describe("createDateSelectorViewModel", () => {
 
   it("converts fixture date metadata into a selected country's time zone", () => {
     const dateOption = getDateOption("2026-06-20", localDate("2026-06-13"), countryId("jpn"));
+
+    expect(dateOption.matchCountLabel).toBe("4 matches");
+    expect(dateOption.kickoffRangeLabel).toBe("02:00–13:00");
+    expect(dateOption.timeZoneSummaryLabel).toBe("JST");
+  });
+
+  it("converts fixture date metadata into the browser local time zone", () => {
+    const dateOption = getDateOption(
+      "2026-06-20",
+      localDate("2026-06-13"),
+      browserLocalDisplayTimeZoneId,
+      "Asia/Tokyo",
+    );
 
     expect(dateOption.matchCountLabel).toBe("4 matches");
     expect(dateOption.kickoffRangeLabel).toBe("02:00–13:00");

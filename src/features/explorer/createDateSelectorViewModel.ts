@@ -24,10 +24,15 @@ export function createDateSelectorViewModel(
   viewState: NormalizedExplorerViewState,
   today: LocalDateString = createTodayLocalDate(),
   displayTimeZoneId = venueLocalDisplayTimeZoneId,
+  browserLocalTimeZone: string | null = null,
 ): DateSelectorViewModel {
   const matchesByDate = createMatchesByDate(data.matches);
   const venuesById = new Map(data.venues.map((venue) => [venue.id, venue] as const));
-  const displayTimeZone = resolveDisplayTimeZonePreference(data.countries, displayTimeZoneId);
+  const displayTimeZone = resolveDisplayTimeZonePreference(
+    data.countries,
+    displayTimeZoneId,
+    browserLocalTimeZone,
+  );
   const fixtureDateSet = new Set(data.matches.map((match) => match.date));
   const hitDateSet = new Set(
     queryMatchesByViewState(data, { ...viewState, selectedDate: null }).map((match) => match.date),
@@ -158,7 +163,7 @@ function createTimeZoneSummaryLabel(
     return null;
   }
 
-  if (displayTimeZone.type === "country") {
+  if (displayTimeZone.type === "country" || displayTimeZone.type === "browserLocal") {
     return displayTimeZone.abbreviation;
   }
 

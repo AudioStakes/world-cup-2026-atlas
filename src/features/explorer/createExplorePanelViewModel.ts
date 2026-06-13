@@ -12,12 +12,26 @@ export function createExplorePanelViewModel(
   viewState: NormalizedExplorerViewState,
   matchingMatches: readonly Match[],
   displayTimeZoneId = venueLocalDisplayTimeZoneId,
+  browserLocalTimeZone: string | null = null,
 ): ExplorePanelViewModel {
   return {
     helpText: "Choose a group, team, date, or venue on the map.",
     venueHelpText: "Click a venue pin on the map to filter by venue.",
     groupsAndTeams: createGroupsAndTeamsViewModel(data, indexes, viewState),
-    dateSelector: createDateSelectorViewModel(data, viewState, undefined, displayTimeZoneId),
-    result: createResultViewModel(data, indexes, viewState, matchingMatches, displayTimeZoneId),
+    dateSelector: createDateSelectorViewModel(
+      data,
+      viewState,
+      undefined,
+      displayTimeZoneId,
+      browserLocalTimeZone,
+    ),
+    result: createResultViewModel(
+      data,
+      indexes,
+      viewState,
+      matchingMatches,
+      displayTimeZoneId,
+      browserLocalTimeZone,
+    ),
   };
 }

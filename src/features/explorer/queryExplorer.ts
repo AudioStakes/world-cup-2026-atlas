@@ -16,6 +16,7 @@ export function queryExplorer(
   viewState: Partial<ExplorerViewState>,
   focusedVenueId: VenueId | null = null,
   displayTimeZoneId = venueLocalDisplayTimeZoneId,
+  browserLocalTimeZone: string | null = null,
 ): ExplorerViewModel {
   const normalizedViewState = ensureExplorerSelection(
     normalizeExplorerViewState(viewState, indexes),
@@ -24,13 +25,14 @@ export function queryExplorer(
 
   return {
     viewState: normalizedViewState,
-    header: createHeaderViewModel(data.countries, displayTimeZoneId),
+    header: createHeaderViewModel(data.countries, displayTimeZoneId, browserLocalTimeZone),
     explorePanel: createExplorePanelViewModel(
       data,
       indexes,
       normalizedViewState,
       matchingMatches,
       displayTimeZoneId,
+      browserLocalTimeZone,
     ),
     map: createMapViewModel(data, indexes, normalizedViewState, matchingMatches, focusedVenueId),
   };

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { appData } from "../../data/appData";
 import { countryId, groupCode, localDate, venueId } from "../../domain/ids";
 import { createIndexes } from "../../indexes/createIndexes";
+import { browserLocalDisplayTimeZoneId } from "./displayTimeZone";
 import { queryExplorer } from "./queryExplorer";
 import type { NormalizedExplorerViewState } from "./types";
 
@@ -90,5 +91,25 @@ describe("queryExplorer", () => {
 
     const dallas = viewModel.map.venueMarkers.find((venue) => venue.venueId === venueId("dallas"));
     expect(dallas?.state).toBe("selected");
+  });
+
+  it("uses browser local time as a header display option", () => {
+    const viewModel = queryExplorer(
+      appData,
+      indexes,
+      createViewState({ selectedDate: localDate("2026-06-20") }),
+      null,
+      browserLocalDisplayTimeZoneId,
+      "Asia/Tokyo",
+    );
+
+    expect(viewModel.header.timeZoneSelector.selectedValue).toBe(browserLocalDisplayTimeZoneId);
+    expect(viewModel.header.timeZoneSelector.selectedSummary).toBe("Your local time · JST");
+    expect(viewModel.header.timeZoneSelector.options[0]).toEqual({
+      value: browserLocalDisplayTimeZoneId,
+      label: "Your local time",
+      detailLabel: "JST · Asia/Tokyo",
+    });
+    expect(viewModel.explorePanel.result.subtitle).toBe("4 matches · 02:00–13:00 · JST");
   });
 });
