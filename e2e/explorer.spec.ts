@@ -107,6 +107,8 @@ test.describe("World Cup 2026 Atlas explorer", () => {
 
     await page.goto("/?group=F");
 
+    await expect(page.locator(".result-card__header")).toHaveCount(0);
+
     const timeZoneState = await page.evaluate(() => {
       const select = document.querySelector<HTMLSelectElement>("#match-time-zone");
       const selectedOption = select?.selectedOptions[0];

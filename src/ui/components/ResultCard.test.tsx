@@ -189,6 +189,8 @@ describe("ResultCard", () => {
     );
 
     expect(screen.getByRole("columnheader", { name: "Group D" })).toBeInTheDocument();
+    expect(document.querySelector(".result-card__header")).not.toBeInTheDocument();
+    expect(screen.queryByText("4 teams")).not.toBeInTheDocument();
     expect(screen.getByText("USA")).toBeInTheDocument();
     expect(screen.getByText("1. 🇺🇸 United States")).toHaveClass("visually-hidden");
     expect(screen.queryByRole("columnheader", { name: "Matches" })).not.toBeInTheDocument();

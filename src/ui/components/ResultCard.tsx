@@ -21,6 +21,8 @@ type ResultCardProps = {
 
 export function ResultCard({ result, onAction, onMatchVenueFocusChange }: ResultCardProps) {
   const isDateTimeline = result.type === "date";
+  const isGroupDetail = result.details?.type === "group";
+  const shouldShowHeader = !isDateTimeline && !isGroupDetail;
   const matchListRef = useRef<HTMLOListElement>(null);
   const initialScrollTargetMatchId =
     result.matches.find((match) => match.isInitialScrollTarget)?.matchId ?? null;
@@ -49,11 +51,7 @@ export function ResultCard({ result, onAction, onMatchVenueFocusChange }: Result
       <p class="visually-hidden" aria-live="polite">
         {createResultStatusLabel(result)}
       </p>
-      {isDateTimeline ? (
-        <h2 id="result-card-title" class="visually-hidden">
-          {result.title}
-        </h2>
-      ) : (
+      {shouldShowHeader ? (
         <header class="result-card__header">
           <span class="result-card__icon" aria-hidden="true">
             {result.icon}
@@ -67,6 +65,10 @@ export function ResultCard({ result, onAction, onMatchVenueFocusChange }: Result
             />
           </div>
         </header>
+      ) : (
+        <h2 id="result-card-title" class="visually-hidden">
+          {result.title}
+        </h2>
       )}
 
       {!isDateTimeline && result.routeSummary ? (

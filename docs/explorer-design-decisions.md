@@ -53,6 +53,8 @@ A selected Group should show standings first, then date-ordered match cards.
 
 Standings should include visible rank, team code/flag, P, W, D, L, GF, GA, GD, Pts, and Form. Do not show a separate Matches column. Match cards below the table keep the same detail-card treatment used elsewhere.
 
+Do not render a separate group result header above the standings table. The standings caption already identifies the group, and the redundant summary consumes vertical space before the primary table content.
+
 ## Country to group navigation
 
 Country detail headers should make the country group feel actionable. Render the group label as a compact chip/link, and route it through the existing `selectGroup` action so the URL and result panel switch to the group detail view.
