@@ -52,6 +52,20 @@ export type ExplorerViewModel = {
 export type ExplorerHeaderViewModel = {
   readonly title: string;
   readonly subtitle: string;
+  readonly timeZoneSelector: HeaderTimeZoneSelectorViewModel;
+};
+
+export type HeaderTimeZoneSelectorViewModel = {
+  readonly label: string;
+  readonly selectedValue: string;
+  readonly selectedSummary: string;
+  readonly options: readonly HeaderTimeZoneOptionViewModel[];
+};
+
+export type HeaderTimeZoneOptionViewModel = {
+  readonly value: string;
+  readonly label: string;
+  readonly detailLabel: string;
 };
 
 export type ExplorePanelViewModel = {

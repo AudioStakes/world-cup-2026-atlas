@@ -3,6 +3,7 @@ import type { Indexes } from "../../indexes/createIndexes";
 import { createDateSelectorViewModel } from "./createDateSelectorViewModel";
 import { createGroupsAndTeamsViewModel } from "./createGroupsAndTeamsViewModel";
 import { createResultViewModel } from "./createResultViewModel";
+import { venueLocalDisplayTimeZoneId } from "./displayTimeZone";
 import type { ExplorePanelViewModel, NormalizedExplorerViewState } from "./types";
 
 export function createExplorePanelViewModel(
@@ -10,12 +11,13 @@ export function createExplorePanelViewModel(
   indexes: Indexes,
   viewState: NormalizedExplorerViewState,
   matchingMatches: readonly Match[],
+  displayTimeZoneId = venueLocalDisplayTimeZoneId,
 ): ExplorePanelViewModel {
   return {
     helpText: "Choose a group, team, date, or venue on the map.",
     venueHelpText: "Click a venue pin on the map to filter by venue.",
     groupsAndTeams: createGroupsAndTeamsViewModel(data, indexes, viewState),
-    dateSelector: createDateSelectorViewModel(data, viewState),
-    result: createResultViewModel(data, indexes, viewState, matchingMatches),
+    dateSelector: createDateSelectorViewModel(data, viewState, undefined, displayTimeZoneId),
+    result: createResultViewModel(data, indexes, viewState, matchingMatches, displayTimeZoneId),
   };
 }

@@ -26,7 +26,7 @@ function createResultForCountry(countryKey: string) {
   );
 }
 
-function createResultForDate(date: string) {
+function createResultForDate(date: string, displayTimeZoneId: string | undefined = undefined) {
   const matches = appData.matches.filter((match) => match.date === localDate(date));
 
   return createResultViewModel(
@@ -34,6 +34,7 @@ function createResultForDate(date: string) {
     indexes,
     { ...emptyExplorerViewState, selectedDate: localDate(date) },
     matches,
+    displayTimeZoneId,
   );
 }
 
@@ -230,6 +231,20 @@ describe("createResultViewModel production metadata", () => {
 
     expect(result.title).toBe("Jul 19");
     expect(result.subtitle).toBe("1 match · 15:00 · ET");
+  });
+
+  it("converts date result match cards into a selected country's time zone", () => {
+    const result = createResultForDate("2026-06-20", countryId("jpn"));
+    const scrollTargetMatch = result.matches.find((match) => match.isInitialScrollTarget);
+    const japanMatch = result.matches.find((match) => match.matchNumberLabel === "Match 36");
+
+    expect(result.subtitle).toBe("4 matches · 02:00–13:00 · JST");
+    expect(scrollTargetMatch?.matchNumberLabel).toBe("Match 35");
+    expect(scrollTargetMatch?.dateHeadingLabel).toBe("Sunday 21 June 2026");
+    expect(scrollTargetMatch?.kickoffLabel).toBe("02:00");
+    expect(scrollTargetMatch?.secondaryText).toBe("02:00 JST");
+    expect(japanMatch?.kickoffLabel).toBe("13:00");
+    expect(japanMatch?.dateLabel).toBe("Sun Jun 21");
   });
 
   it("adds host country metadata to country result subtitles", () => {

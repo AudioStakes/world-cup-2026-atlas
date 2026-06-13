@@ -17,6 +17,12 @@ import type {
 } from "../../domain/types";
 import type { Indexes } from "../../indexes/createIndexes";
 import {
+  createMatchDisplayDateTime,
+  type DisplayTimeZonePreference,
+  resolveDisplayTimeZonePreference,
+  venueLocalDisplayTimeZoneId,
+} from "./displayTimeZone";
+import {
   formatDateLabel,
   formatDistanceLabel,
   formatFullDateHeadingLabel,
@@ -44,8 +50,10 @@ export function createResultViewModel(
   indexes: Indexes,
   viewState: NormalizedExplorerViewState,
   matchingMatches: readonly Match[],
+  displayTimeZoneId = venueLocalDisplayTimeZoneId,
 ): ExplorerResultViewModel {
   const resultType = deriveResultType(viewState);
+  const displayTimeZone = resolveDisplayTimeZonePreference(data.countries, displayTimeZoneId);
 
   if (resultType === "empty") {
     return {
@@ -61,7 +69,7 @@ export function createResultViewModel(
     };
   }
 
-  const title = createResultTitle(indexes, viewState, matchingMatches, resultType);
+  const title = createResultTitle(indexes, viewState, matchingMatches, resultType, displayTimeZone);
 
   return {
     type: resultType,
@@ -72,7 +80,14 @@ export function createResultViewModel(
     details: createDetails(data, indexes, viewState, matchingMatches, resultType),
     emptyMessage:
       matchingMatches.length === 0 ? "No matches found for the current selection." : null,
-    matches: createResultMatches(data, indexes, viewState, matchingMatches, resultType),
+    matches: createResultMatches(
+      data,
+      indexes,
+      viewState,
+      matchingMatches,
+      resultType,
+      displayTimeZone,
+    ),
     routeSummary: shouldShowCountryRouteSummary(resultType, viewState)
       ? createCountryRouteSummary(data, indexes, viewState.selectedCountryId)
       : null,
@@ -85,10 +100,11 @@ function createResultMatches(
   viewState: NormalizedExplorerViewState,
   matchingMatches: readonly Match[],
   resultType: ExplorerResultType,
+  displayTimeZone: DisplayTimeZonePreference,
 ): readonly MatchListItemViewModel[] {
   const matches =
     resultType === "date" && viewState.selectedDate
-      ? sortMatchesChronologically(data.matches)
+      ? sortMatchesChronologically(data.matches, indexes, displayTimeZone)
       : matchingMatches;
   const initialScrollTargetMatchId =
     resultType === "date" && viewState.selectedDate
@@ -96,7 +112,13 @@ function createResultMatches(
       : null;
 
   return matches.map((match) =>
-    createMatchListItem(indexes, viewState, match, match.id === initialScrollTargetMatchId),
+    createMatchListItem(
+      indexes,
+      viewState,
+      match,
+      displayTimeZone,
+      match.id === initialScrollTargetMatchId,
+    ),
   );
 }
 
@@ -133,6 +155,7 @@ function createResultTitle(
   viewState: NormalizedExplorerViewState,
   matchingMatches: readonly Match[],
   resultType: ExplorerResultType,
+  displayTimeZone: DisplayTimeZonePreference,
 ): ResultTitle {
   if (resultType === "country" && viewState.selectedCountryId) {
     const country = getRequiredCountry(indexes, viewState.selectedCountryId);
@@ -160,7 +183,7 @@ function createResultTitle(
     return {
       icon: "📅",
       title: formatDateLabel(viewState.selectedDate),
-      subtitle: createDateSubtitle(indexes, matchingMatches),
+      subtitle: createDateSubtitle(indexes, matchingMatches, displayTimeZone),
       groupNavigation: null,
     };
   }
@@ -220,23 +243,31 @@ function getGroupSlotEntries(indexes: Indexes, groupCode: GroupCode): readonly S
     .sort((left, right) => left.slotIndex - right.slotIndex);
 }
 
-function createDateSubtitle(indexes: Indexes, matches: readonly Match[]): string {
+function createDateSubtitle(
+  indexes: Indexes,
+  matches: readonly Match[],
+  displayTimeZone: DisplayTimeZonePreference,
+): string {
   const matchCountLabel = matches.length === 1 ? "1 match" : `${matches.length} matches`;
-  const kickoffRangeLabel = createKickoffRangeLabel(matches);
-  const timeZoneSummaryLabel = createTimeZoneSummaryLabel(indexes, matches);
+  const kickoffRangeLabel = createKickoffRangeLabel(indexes, matches, displayTimeZone);
+  const timeZoneSummaryLabel = createTimeZoneSummaryLabel(indexes, matches, displayTimeZone);
 
   return [matchCountLabel, kickoffRangeLabel, timeZoneSummaryLabel].filter(Boolean).join(" · ");
 }
 
-function createKickoffRangeLabel(matches: readonly Match[]): string | null {
+function createKickoffRangeLabel(
+  indexes: Indexes,
+  matches: readonly Match[],
+  displayTimeZone: DisplayTimeZonePreference,
+): string | null {
   if (matches.length === 0) {
     return null;
   }
 
   const kickoffTimes = matches
-    .map((match) => match.kickoffLocal)
-    .slice()
-    .sort();
+    .map((match) => createDisplayDateTime(indexes, match, displayTimeZone))
+    .sort((left, right) => left.instantMs - right.instantMs)
+    .map((dateTime) => dateTime.timeLabel);
 
   const firstKickoff = kickoffTimes[0];
   const lastKickoff = kickoffTimes.at(-1);
@@ -248,9 +279,17 @@ function createKickoffRangeLabel(matches: readonly Match[]): string | null {
   return firstKickoff === lastKickoff ? firstKickoff : `${firstKickoff}–${lastKickoff}`;
 }
 
-function createTimeZoneSummaryLabel(indexes: Indexes, matches: readonly Match[]): string | null {
+function createTimeZoneSummaryLabel(
+  indexes: Indexes,
+  matches: readonly Match[],
+  displayTimeZone: DisplayTimeZonePreference,
+): string | null {
   if (matches.length === 0) {
     return null;
+  }
+
+  if (displayTimeZone.type === "country") {
+    return displayTimeZone.abbreviation;
   }
 
   const timeZoneAbbreviations = new Set(
@@ -301,29 +340,31 @@ function createMatchListItem(
   indexes: Indexes,
   viewState: NormalizedExplorerViewState,
   match: Match,
+  displayTimeZone: DisplayTimeZonePreference,
   isInitialScrollTarget = false,
 ): MatchListItemViewModel {
   const venue = getRequiredVenue(indexes, match.venueId);
+  const displayDateTime = createMatchDisplayDateTime(match, venue, displayTimeZone);
 
   return {
     matchId: match.id,
     matchNumberLabel: `Match ${match.matchNumber}`,
     stageLabel: formatStageLabel(match),
-    dateLabel: formatWeekdayDateLabel(match.date),
-    dateHeadingLabel: formatFullDateHeadingLabel(match.date),
+    dateLabel: formatWeekdayDateLabel(displayDateTime.date),
+    dateHeadingLabel: formatFullDateHeadingLabel(displayDateTime.date),
     isInitialScrollTarget,
     primaryText: createMatchPrimaryText(indexes, viewState, match),
     homeTeam: createMatchTeam(indexes, match.homeParticipant),
     awayTeam: createMatchTeam(indexes, match.awayParticipant),
     matchupText: createMatchupText(indexes, match),
     matchupAriaLabel: createMatchupAriaLabel(indexes, match),
-    kickoffLabel: match.kickoffLocal,
+    kickoffLabel: displayDateTime.timeLabel,
     homeScoreLabel: match.result ? String(match.result.homeGoals) : null,
     awayScoreLabel: match.result ? String(match.result.awayGoals) : null,
     winningSide: createWinningSide(match),
     scoreLineLabel: createScoreLineLabel(match),
     statusLabel: match.result ? "Full time" : "Scheduled",
-    secondaryText: `${match.kickoffLocal} ${venue.timeZone.abbreviation}`,
+    secondaryText: `${displayDateTime.timeLabel} ${displayDateTime.timeZoneLabel}`,
     fixtureMetaLabel: createFixtureMetaLabel(match, venue),
     venueId: venue.id,
     venueLabel: venue.name,
@@ -331,15 +372,31 @@ function createMatchListItem(
   };
 }
 
-function sortMatchesChronologically(matches: readonly Match[]): readonly Match[] {
+function sortMatchesChronologically(
+  matches: readonly Match[],
+  indexes: Indexes,
+  displayTimeZone: DisplayTimeZonePreference,
+): readonly Match[] {
   return matches
     .slice()
     .sort(
       (left, right) =>
-        left.date.localeCompare(right.date) ||
-        left.kickoffLocal.localeCompare(right.kickoffLocal) ||
+        createDisplayDateTime(indexes, left, displayTimeZone).instantMs -
+          createDisplayDateTime(indexes, right, displayTimeZone).instantMs ||
         left.matchNumber - right.matchNumber,
     );
+}
+
+function createDisplayDateTime(
+  indexes: Indexes,
+  match: Match,
+  displayTimeZone: DisplayTimeZonePreference,
+) {
+  return createMatchDisplayDateTime(
+    match,
+    getRequiredVenue(indexes, match.venueId),
+    displayTimeZone,
+  );
 }
 
 function createDetails(

@@ -313,6 +313,21 @@ describe("App", () => {
     expect(matchScope.queryByText(/Estadio Azteca · Mexico City, Mexico/)).not.toBeInTheDocument();
   });
 
+  it("changes match card times when a header country time zone is selected", () => {
+    render(<App />);
+
+    const timeZoneSelect = screen.getByRole("combobox", { name: "Match times" });
+    expect(timeZoneSelect).toHaveValue("venue-local");
+
+    fireEvent.change(timeZoneSelect, { target: { value: "jpn" } });
+
+    const matchScope = within(getFirstMatchCard());
+    expect(timeZoneSelect).toHaveValue("jpn");
+    expect(screen.getByText("Japan · JST")).toBeInTheDocument();
+    expect(matchScope.getByText("04:00")).toBeInTheDocument();
+    expect(matchScope.queryByText("13:00")).not.toBeInTheDocument();
+  });
+
   it("highlights the matching venue marker when a match card is hovered or focused", () => {
     render(<App />);
 

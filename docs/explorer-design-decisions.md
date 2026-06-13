@@ -25,6 +25,12 @@ The current date should be visually findable without changing layout height. Use
 
 On narrow viewports, the Date selector should minimize vertical space. Hide weekday headers, leading blank cells, and visible match-count meta, then render each month as a compact row of day chips. Keeping the calendar aligned by weekday is less important than reducing the amount of screen height consumed before Groups & Teams and the fixture cards.
 
+## Match Time Display
+
+Match time display defaults to each venue's local time because that preserves the official fixture context. The header owns the display-time selector so it affects every visible fixture without being confused with the group/team/date/venue filters.
+
+Country selections use a single primary IANA time zone for that country. When a country is selected, fixture times, date-result kickoff ranges, and visible match-card date headings should all use the selected country's time zone. For example, Japan uses Japan Standard Time (`Asia/Tokyo`, `JST`).
+
 ## Detail match cards
 
 Match cards should follow the FIFA-style score and fixture hierarchy:

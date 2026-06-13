@@ -1,6 +1,12 @@
 import { type LocalDateString, localDate } from "../../domain/ids";
 import type { AppData, Match, Venue } from "../../domain/types";
 import { queryMatchesByViewState } from "../../queries/queryMatchesByViewState";
+import {
+  createMatchDisplayDateTime,
+  type DisplayTimeZonePreference,
+  resolveDisplayTimeZonePreference,
+  venueLocalDisplayTimeZoneId,
+} from "./displayTimeZone";
 import { formatDateLabel } from "./formatExplorerLabels";
 import { createTournamentDates } from "./tournamentDates";
 import type {
@@ -17,9 +23,11 @@ export function createDateSelectorViewModel(
   data: AppData,
   viewState: NormalizedExplorerViewState,
   today: LocalDateString = createTodayLocalDate(),
+  displayTimeZoneId = venueLocalDisplayTimeZoneId,
 ): DateSelectorViewModel {
   const matchesByDate = createMatchesByDate(data.matches);
   const venuesById = new Map(data.venues.map((venue) => [venue.id, venue] as const));
+  const displayTimeZone = resolveDisplayTimeZonePreference(data.countries, displayTimeZoneId);
   const fixtureDateSet = new Set(data.matches.map((match) => match.date));
   const hitDateSet = new Set(
     queryMatchesByViewState(data, { ...viewState, selectedDate: null }).map((match) => match.date),
@@ -42,8 +50,8 @@ export function createDateSelectorViewModel(
       date,
       label: formatDateLabel(date),
       matchCountLabel: createMatchCountLabel(matchesForDate),
-      kickoffRangeLabel: createKickoffRangeLabel(matchesForDate),
-      timeZoneSummaryLabel: createTimeZoneSummaryLabel(matchesForDate, venuesById),
+      kickoffRangeLabel: createKickoffRangeLabel(matchesForDate, venuesById, displayTimeZone),
+      timeZoneSummaryLabel: createTimeZoneSummaryLabel(matchesForDate, venuesById, displayTimeZone),
       isSelected,
       isToday: today === date,
       availability: getAvailability(hasAnySelection, isSelected || isHit),
@@ -108,15 +116,28 @@ function createMatchCountLabel(matches: readonly Match[]): string | null {
   return matches.length === 1 ? "1 match" : `${matches.length} matches`;
 }
 
-function createKickoffRangeLabel(matches: readonly Match[]): string | null {
+function createKickoffRangeLabel(
+  matches: readonly Match[],
+  venuesById: ReadonlyMap<Venue["id"], Venue>,
+  displayTimeZone: DisplayTimeZonePreference,
+): string | null {
   if (matches.length === 0) {
     return null;
   }
 
   const kickoffTimes = matches
-    .map((match) => match.kickoffLocal)
-    .slice()
-    .sort();
+    .map((match) => {
+      const venue = venuesById.get(match.venueId);
+
+      if (!venue) {
+        return null;
+      }
+
+      return createMatchDisplayDateTime(match, venue, displayTimeZone);
+    })
+    .filter((dateTime): dateTime is NonNullable<typeof dateTime> => Boolean(dateTime))
+    .sort((left, right) => left.instantMs - right.instantMs)
+    .map((dateTime) => dateTime.timeLabel);
 
   const firstKickoff = kickoffTimes[0];
   const lastKickoff = kickoffTimes.at(-1);
@@ -131,9 +152,14 @@ function createKickoffRangeLabel(matches: readonly Match[]): string | null {
 function createTimeZoneSummaryLabel(
   matches: readonly Match[],
   venuesById: ReadonlyMap<Venue["id"], Venue>,
+  displayTimeZone: DisplayTimeZonePreference,
 ): string | null {
   if (matches.length === 0) {
     return null;
+  }
+
+  if (displayTimeZone.type === "country") {
+    return displayTimeZone.abbreviation;
   }
 
   const timeZoneAbbreviations = new Set(
