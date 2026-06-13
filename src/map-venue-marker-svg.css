@@ -20,8 +20,8 @@
 .venue-marker-control {
   position: absolute;
   display: grid;
-  width: 44px;
-  height: 44px;
+  width: 24px;
+  height: 24px;
   place-items: center;
   padding: 0;
   border: 0;
@@ -59,6 +59,13 @@
 
 .venue-marker-control.is-dimmed {
   opacity: 0.62;
+}
+
+@media (pointer: coarse), (max-width: 720px) {
+  .venue-marker-control {
+    width: 44px;
+    height: 44px;
+  }
 }
 
 .venue-marker {

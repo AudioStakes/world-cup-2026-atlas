@@ -1323,6 +1323,18 @@ input:focus-visible,
   }
 }
 
+@media (max-width: 360px) {
+  .groups-section .group-team-grid {
+    --group-team-target-size: 44px;
+
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .group-team-copy {
+    display: none;
+  }
+}
+
 .group-team-meta {
   display: block;
   margin-block-start: 3px;

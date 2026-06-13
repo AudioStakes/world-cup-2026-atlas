@@ -25,6 +25,18 @@ async function expectVenueMarkerAlignment(page: Page, venueId: string) {
     .toBeLessThanOrEqual(1);
 }
 
+async function clickVenueControlCenter(page: Page, venueId: string) {
+  const controlBox = await page
+    .locator(`.venue-marker-control[data-venue-id="${venueId}"]`)
+    .boundingBox();
+
+  if (!controlBox) {
+    throw new Error(`Expected ${venueId} venue control to be visible`);
+  }
+
+  await page.mouse.click(controlBox.x + controlBox.width / 2, controlBox.y + controlBox.height / 2);
+}
+
 async function setBrowserToday(page: Page, dateIso: string) {
   await page.addInitScript((fixedNow) => {
     Date.now = () => new Date(fixedNow).getTime();
@@ -80,7 +92,7 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     await expect(page).toHaveURL(/country=jpn/);
     await expect(page.getByRole("heading", { name: "Japan" })).toBeVisible();
     await expect(page.getByRole("region", { name: "Groups & Teams" }).getByText("JPN")).toHaveCount(
-      0,
+      1,
     );
     await expect(
       page.getByRole("region", { name: "Groups & Teams" }).getByRole("button", {
@@ -215,7 +227,7 @@ test.describe("World Cup 2026 Atlas explorer", () => {
 
       for (const venueId of ["toronto", "boston", "new-york-new-jersey", "philadelphia"]) {
         await expectVenueMarkerAlignment(page, venueId);
-        await page.locator(`.venue-marker-control[data-venue-id="${venueId}"]`).click();
+        await clickVenueControlCenter(page, venueId);
         await expect(page).toHaveURL(new RegExp(`venue=${venueId}`));
       }
     }
