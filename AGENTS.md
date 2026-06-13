@@ -12,6 +12,7 @@
 - Test: `pnpm test`
 - E2E: `pnpm e2e`
 - When files change, run only the closest useful check needed for the change; stop hooks run broader verification.
+- For Groups & Teams layout/visibility CSS changes, run `pnpm e2e --grep "keeps every Groups"`.
 
 ## Git Safety
 
