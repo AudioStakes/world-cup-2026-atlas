@@ -43,6 +43,8 @@ The cards should be the primary content in date selections. For a selected Date,
 
 Do not make the entire match card clickable or give the full card a clickable hover treatment. A card contains several possible navigation targets, so only the explicit country, group, and venue controls inside the card should be interactive. Country controls select that country, group controls select that group, and venue controls select that venue.
 
+On narrow cards, keep the score row to one line. If there is not enough inline space for team names, hide the names visually before allowing the row to stack; the flags and kickoff/full-time value must remain visible.
+
 ## Group detail panel
 
 A selected Group should show standings first, then date-ordered match cards.

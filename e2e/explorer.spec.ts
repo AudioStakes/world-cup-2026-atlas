@@ -210,6 +210,66 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     expect(timelineState.canScrollDown).toBe(true);
   });
 
+  test("@smoke keeps narrow match cards on one score row with flags and time visible", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 320, height: 568 });
+    await page.goto("/?date=2026-06-20");
+
+    const matchCardLayout = await page.evaluate(() => {
+      const card =
+        document.querySelector<HTMLElement>("[data-initial-scroll-target] .match-card") ??
+        document.querySelector<HTMLElement>(".match-card");
+      const scoreRow = card?.querySelector<HTMLElement>(".match-card__score-row");
+      const homeFlag = card?.querySelector<HTMLElement>(
+        ".match-card__team--home .match-card__flag",
+      );
+      const awayFlag = card?.querySelector<HTMLElement>(
+        ".match-card__team--away .match-card__flag",
+      );
+      const kickoff = card?.querySelector<HTMLElement>(".match-card__kickoff, .match-card__score");
+      const teamName = card?.querySelector<HTMLElement>(".match-card__team-name");
+      const homeFlagRect = homeFlag?.getBoundingClientRect();
+      const awayFlagRect = awayFlag?.getBoundingClientRect();
+      const kickoffRect = kickoff?.getBoundingClientRect();
+      const scoreRowRect = scoreRow?.getBoundingClientRect();
+
+      return {
+        awayFlagWidth: awayFlagRect?.width ?? 0,
+        cardWidth: card?.getBoundingClientRect().width ?? 0,
+        homeFlagWidth: homeFlagRect?.width ?? 0,
+        kickoffText: kickoff?.textContent?.trim() ?? "",
+        kickoffWidth: kickoffRect?.width ?? 0,
+        scoreRowHeight: scoreRowRect?.height ?? 0,
+        teamNameDisplay: teamName ? getComputedStyle(teamName).display : null,
+        verticalCenterSpread:
+          homeFlagRect && awayFlagRect && kickoffRect
+            ? Math.max(
+                Math.abs(
+                  homeFlagRect.top +
+                    homeFlagRect.height / 2 -
+                    (kickoffRect.top + kickoffRect.height / 2),
+                ),
+                Math.abs(
+                  awayFlagRect.top +
+                    awayFlagRect.height / 2 -
+                    (kickoffRect.top + kickoffRect.height / 2),
+                ),
+              )
+            : Number.POSITIVE_INFINITY,
+      };
+    });
+
+    expect(matchCardLayout.cardWidth).toBeLessThanOrEqual(390);
+    expect(matchCardLayout.teamNameDisplay).toBe("none");
+    expect(matchCardLayout.homeFlagWidth).toBeGreaterThan(0);
+    expect(matchCardLayout.awayFlagWidth).toBeGreaterThan(0);
+    expect(matchCardLayout.kickoffText).toMatch(/^\d{2}:\d{2}$|^FT$/);
+    expect(matchCardLayout.kickoffWidth).toBeGreaterThan(0);
+    expect(matchCardLayout.scoreRowHeight).toBeLessThanOrEqual(48);
+    expect(matchCardLayout.verticalCenterSpread).toBeLessThanOrEqual(2);
+  });
+
   test("@smoke selects a venue from the map", async ({ page }) => {
     await page.goto("/");
 
