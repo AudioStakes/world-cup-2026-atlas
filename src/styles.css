@@ -1793,8 +1793,51 @@ input:focus-visible,
 }
 
 @media (max-width: 720px) {
+  .date-months {
+    display: grid;
+    gap: 5px;
+    padding: 0 8px 8px;
+    overflow: visible;
+  }
+
+  .date-month {
+    display: grid;
+    grid-template-columns: 2.25rem minmax(0, 1fr);
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+  }
+
+  .date-month__label {
+    margin: 0;
+    font-size: 0.64rem;
+    line-height: 1;
+  }
+
+  .date-calendar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .date-calendar__weekday,
+  .date-calendar__blank,
+  .date-chip__meta {
+    display: none;
+  }
+
   .date-chip {
-    min-block-size: 44px;
+    min-width: 24px;
+    min-height: 30px;
+    min-inline-size: 24px;
+    min-block-size: 30px;
+    padding: 3px 2px;
+    border-radius: 7px;
+  }
+
+  .date-chip__date {
+    font-size: 0.78rem;
   }
 
   .group-team-header-button {

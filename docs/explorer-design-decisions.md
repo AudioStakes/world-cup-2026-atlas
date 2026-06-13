@@ -23,6 +23,8 @@ The selected or related group/team state should be communicated through stable r
 
 The current date should be visually findable without changing layout height. Use the same red outline and light red shadow treatment as the selected country tile. If the current date is also selected, the selected-date fill style takes priority.
 
+On narrow viewports, the Date selector should minimize vertical space. Hide weekday headers, leading blank cells, and visible match-count meta, then render each month as a compact row of day chips. Keeping the calendar aligned by weekday is less important than reducing the amount of screen height consumed before Groups & Teams and the fixture cards.
+
 ## Detail match cards
 
 Match cards should follow the FIFA-style score and fixture hierarchy:
