@@ -262,11 +262,13 @@ describe("createResultViewModel production metadata", () => {
     expect(japanMatch?.dateLabel).toBe("Sun Jun 14");
     expect(japanMatch?.dateHeadingLabel).toBe("Sunday 14 June 2026");
     expect(japanMatch?.homeTeam).toEqual({
+      countryId: countryId("ned"),
       flagEmoji: "🇳🇱",
       displayName: "Netherlands",
       code: "NED",
     });
     expect(japanMatch?.awayTeam).toEqual({
+      countryId: countryId("jpn"),
       flagEmoji: "🇯🇵",
       displayName: "Japan",
       code: "JPN",
@@ -275,8 +277,12 @@ describe("createResultViewModel production metadata", () => {
     expect(japanMatch?.matchupAriaLabel).toBe("🇳🇱 Netherlands vs 🇯🇵 Japan");
     expect(japanMatch?.kickoffLabel).toBe("15:00");
     expect(japanMatch?.secondaryText).toBe("15:00 CT");
+    expect(japanMatch?.stageMetaLabel).toBe("First Stage");
+    expect(japanMatch?.groupCode).toBe(groupCode("F"));
+    expect(japanMatch?.groupLabel).toBe("Group F");
     expect(japanMatch?.fixtureMetaLabel).toBe("First Stage · Group F · AT&T Stadium (Dallas)");
     expect(japanMatch?.venueLabel).toBe("Dallas");
+    expect(japanMatch?.venueFixtureLabel).toBe("AT&T Stadium (Dallas)");
     expect(japanMatch?.venueDetailLabel).toBe("AT&T Stadium · Arlington, USA · CT");
   });
 
@@ -286,6 +292,9 @@ describe("createResultViewModel production metadata", () => {
 
     expect(final?.matchNumberLabel).toBe("Match 104");
     expect(final?.stageLabel).toBe("Final");
+    expect(final?.stageMetaLabel).toBe("Final");
+    expect(final?.groupCode).toBeNull();
+    expect(final?.groupLabel).toBeNull();
     expect(final?.dateLabel).toBe("Sun Jul 19");
     expect(final?.secondaryText).toBe("15:00 ET");
     expect(final?.venueLabel).toBe("New York / New Jersey");

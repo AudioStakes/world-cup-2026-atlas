@@ -119,31 +119,27 @@ export function ResultCard({ result, onAction, onMatchVenueFocusChange }: Result
                   <h3>{match.dateHeadingLabel}</h3>
                 </div>
               ) : null}
-              <button
+              <article
                 class="match-card"
-                type="button"
-                onBlur={() => onMatchVenueFocusChange(null)}
-                onClick={() => onAction({ type: "selectVenue", venueId: match.venueId })}
-                onFocus={() => onMatchVenueFocusChange(match.venueId)}
-                onMouseEnter={() => onMatchVenueFocusChange(match.venueId)}
-                onMouseLeave={() => onMatchVenueFocusChange(null)}
-                aria-label={`Show venue ${match.venueLabel} for ${match.matchupAriaLabel} on ${match.dateLabel}`}
+                aria-label={`${match.matchupAriaLabel}, ${match.statusLabel}, ${match.secondaryText}`}
               >
-                <span class="match-card__score-row" aria-hidden="true">
-                  <MatchTeam team={match.homeTeam} side="home" />
+                <span class="match-card__score-row">
+                  <MatchTeam team={match.homeTeam} side="home" onAction={onAction} />
                   <MatchCenter match={match} />
-                  <MatchTeam team={match.awayTeam} side="away" />
+                  <MatchTeam team={match.awayTeam} side="away" onAction={onAction} />
                 </span>
-                <span class="match-card__meta-line" aria-hidden="true">
-                  {match.fixtureMetaLabel}
-                </span>
+                <MatchFixtureMeta
+                  match={match}
+                  onAction={onAction}
+                  onMatchVenueFocusChange={onMatchVenueFocusChange}
+                />
                 <span class="match-card__a11y">
                   <span class="visually-hidden">{match.matchupAriaLabel}</span>
                   <span class="visually-hidden">
                     {match.scoreLineLabel ?? `${match.statusLabel}, ${match.secondaryText}`}
                   </span>
                 </span>
-              </button>
+              </article>
             </li>
           ))}
         </ol>
@@ -205,9 +201,11 @@ function shouldShowMatchDateHeading(matches: readonly MatchListItemViewModel[], 
 }
 
 function MatchTeam({
+  onAction,
   side,
   team,
 }: {
+  readonly onAction: (action: ExplorerAction) => void;
   readonly side: "home" | "away";
   readonly team: MatchTeamViewModel;
 }) {
@@ -216,20 +214,83 @@ function MatchTeam({
       {team.flagEmoji}
     </span>
   ) : null;
+  const countryId = team.countryId;
+  const content =
+    side === "home" ? (
+      <>
+        <span class="match-card__team-name">{team.displayName}</span>
+        {flag}
+      </>
+    ) : (
+      <>
+        {flag}
+        <span class="match-card__team-name">{team.displayName}</span>
+      </>
+    );
 
   return (
     <span class={classNames("match-card__team", `match-card__team--${side}`)}>
-      {side === "home" ? (
-        <>
-          <span class="match-card__team-name">{team.displayName}</span>
-          {flag}
-        </>
+      {countryId ? (
+        <button
+          class="match-card__action match-card__team-button"
+          type="button"
+          aria-label={`Select country ${team.displayName}`}
+          onClick={() => onAction({ type: "selectCountry", countryId })}
+        >
+          {content}
+        </button>
       ) : (
-        <>
-          {flag}
-          <span class="match-card__team-name">{team.displayName}</span>
-        </>
+        <span class="match-card__team-copy">{content}</span>
       )}
+    </span>
+  );
+}
+
+function MatchFixtureMeta({
+  match,
+  onAction,
+  onMatchVenueFocusChange,
+}: {
+  readonly match: MatchListItemViewModel;
+  readonly onAction: (action: ExplorerAction) => void;
+  readonly onMatchVenueFocusChange: (venueId: VenueId | null) => void;
+}) {
+  const groupCode = match.groupCode;
+  const groupLabel = match.groupLabel;
+
+  return (
+    <span class="match-card__meta-line">
+      <span>{match.stageMetaLabel}</span>
+      {groupCode && groupLabel ? (
+        <>
+          <span class="match-card__meta-separator" aria-hidden="true">
+            ·
+          </span>
+          <button
+            class="match-card__action match-card__meta-button"
+            type="button"
+            aria-label={`Select group ${groupLabel}`}
+            onClick={() => onAction({ type: "selectGroup", groupCode })}
+          >
+            {groupLabel}
+          </button>
+        </>
+      ) : null}
+      <span class="match-card__meta-separator" aria-hidden="true">
+        ·
+      </span>
+      <button
+        class="match-card__action match-card__meta-button"
+        type="button"
+        aria-label={`Select match venue ${match.venueLabel}`}
+        onBlur={() => onMatchVenueFocusChange(null)}
+        onClick={() => onAction({ type: "selectVenue", venueId: match.venueId })}
+        onFocus={() => onMatchVenueFocusChange(match.venueId)}
+        onMouseEnter={() => onMatchVenueFocusChange(match.venueId)}
+        onMouseLeave={() => onMatchVenueFocusChange(null)}
+      >
+        {match.venueFixtureLabel}
+      </button>
     </span>
   );
 }

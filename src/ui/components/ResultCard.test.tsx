@@ -16,11 +16,13 @@ const completedMatch: MatchListItemViewModel = {
   isInitialScrollTarget: false,
   primaryText: "United States vs Paraguay",
   homeTeam: {
+    countryId: countryId("usa"),
     flagEmoji: "🇺🇸",
     displayName: "United States",
     code: "USA",
   },
   awayTeam: {
+    countryId: countryId("par"),
     flagEmoji: "🇵🇾",
     displayName: "Paraguay",
     code: "PAR",
@@ -34,9 +36,13 @@ const completedMatch: MatchListItemViewModel = {
   scoreLineLabel: "2-1",
   statusLabel: "Full time",
   secondaryText: "12:00 PT",
+  stageMetaLabel: "First Stage",
+  groupCode: groupCode("D"),
+  groupLabel: "Group D",
   fixtureMetaLabel: "First Stage · Group D · Los Angeles Stadium (Los Angeles)",
   venueId: venueId("los-angeles"),
   venueLabel: "Los Angeles",
+  venueFixtureLabel: "Los Angeles Stadium (Los Angeles)",
   venueDetailLabel: "Los Angeles Stadium · Los Angeles, USA · PT",
 };
 
@@ -203,9 +209,12 @@ describe("ResultCard", () => {
       />,
     );
 
-    const matchCard = screen.getByRole("button", {
-      name: /Show venue Los Angeles for 🇺🇸 United States vs 🇵🇾 Paraguay/,
-    });
+    const matchCard = document.querySelector(".match-card");
+
+    if (!(matchCard instanceof HTMLElement)) {
+      throw new Error("Expected match card to render");
+    }
+
     const matchScope = within(matchCard);
 
     expect(screen.getByText("Saturday 13 June 2026")).toBeInTheDocument();
@@ -213,12 +222,26 @@ describe("ResultCard", () => {
     expect(matchScope.getByText("FT")).toBeInTheDocument();
     expect(matchScope.getByText("2")).toHaveClass("is-winner");
     expect(matchScope.getByText("1")).toHaveClass("is-muted");
-    expect(
-      matchScope.getByText("First Stage · Group D · Los Angeles Stadium (Los Angeles)"),
-    ).toBeInTheDocument();
+    expect(matchCard.querySelector(".match-card__meta-line")).toHaveTextContent(
+      "First Stage·Group D·Los Angeles Stadium (Los Angeles)",
+    );
 
     fireEvent.click(matchCard);
 
+    expect(onAction).not.toHaveBeenCalled();
+
+    fireEvent.click(matchScope.getByRole("button", { name: "Select country United States" }));
+    fireEvent.click(matchScope.getByRole("button", { name: "Select group Group D" }));
+    fireEvent.click(matchScope.getByRole("button", { name: "Select match venue Los Angeles" }));
+
+    expect(onAction).toHaveBeenNthCalledWith(1, {
+      type: "selectCountry",
+      countryId: countryId("usa"),
+    });
+    expect(onAction).toHaveBeenNthCalledWith(2, {
+      type: "selectGroup",
+      groupCode: groupCode("D"),
+    });
     expect(onAction).toHaveBeenCalledWith({ type: "selectVenue", venueId: venueId("los-angeles") });
   });
 });

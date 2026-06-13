@@ -350,6 +350,9 @@ function createMatchListItem(
     matchId: match.id,
     matchNumberLabel: `Match ${match.matchNumber}`,
     stageLabel: formatStageLabel(match),
+    stageMetaLabel: createMatchStageMetaLabel(match),
+    groupCode: getMatchGroupCode(match),
+    groupLabel: getMatchGroupCode(match) ? formatStageLabel(match) : null,
     dateLabel: formatWeekdayDateLabel(displayDateTime.date),
     dateHeadingLabel: formatFullDateHeadingLabel(displayDateTime.date),
     isInitialScrollTarget,
@@ -368,6 +371,7 @@ function createMatchListItem(
     fixtureMetaLabel: createFixtureMetaLabel(match, venue),
     venueId: venue.id,
     venueLabel: venue.name,
+    venueFixtureLabel: createVenueFixtureLabel(venue),
     venueDetailLabel: createVenueDetailLabel(venue),
   };
 }
@@ -672,6 +676,16 @@ function formatStageLabel(match: Match): string {
   return formatTournamentStageLabel(match.stage);
 }
 
+function createMatchStageMetaLabel(match: Match): string {
+  return getMatchGroupCode(match) ? "First Stage" : formatStageLabel(match);
+}
+
+function getMatchGroupCode(match: Match): GroupCode | null {
+  return match.stage === "group" && "groupCode" in match && match.groupCode
+    ? match.groupCode
+    : null;
+}
+
 function formatTournamentStageLabel(stage: TournamentStage): string {
   switch (stage) {
     case "group":
@@ -714,6 +728,7 @@ function createMatchTeam(
 
   if (country) {
     return {
+      countryId: country.id,
       flagEmoji: country.flagEmoji,
       displayName: country.shortName,
       code: country.fifaCode,
@@ -721,6 +736,7 @@ function createMatchTeam(
   }
 
   return {
+    countryId: null,
     flagEmoji: null,
     displayName: formatParticipantLabel(participant),
     code: null,

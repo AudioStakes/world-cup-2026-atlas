@@ -205,6 +205,9 @@ export type MatchListItemViewModel = {
   readonly matchId: MatchId;
   readonly matchNumberLabel: string;
   readonly stageLabel: string;
+  readonly stageMetaLabel: string;
+  readonly groupCode: GroupCode | null;
+  readonly groupLabel: string | null;
   readonly dateLabel: string;
   readonly dateHeadingLabel: string;
   readonly isInitialScrollTarget: boolean;
@@ -223,10 +226,12 @@ export type MatchListItemViewModel = {
   readonly fixtureMetaLabel: string;
   readonly venueId: VenueId;
   readonly venueLabel: string;
+  readonly venueFixtureLabel: string;
   readonly venueDetailLabel: string;
 };
 
 export type MatchTeamViewModel = {
+  readonly countryId: CountryId | null;
   readonly flagEmoji: string | null;
   readonly displayName: string;
   readonly code: string | null;

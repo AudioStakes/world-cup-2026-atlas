@@ -20,6 +20,14 @@ function getFirstMatchCard() {
   return matchCard as HTMLElement;
 }
 
+function getFirstMatchVenueButton() {
+  const venueButton = within(getFirstMatchCard()).getByRole("button", {
+    name: "Select match venue Mexico City",
+  });
+
+  return venueButton;
+}
+
 function getVenueMarker(venueId: string) {
   const marker = document.querySelector(`[data-venue-id="${venueId}"]`);
 
@@ -306,9 +314,9 @@ describe("App", () => {
     expect(matchScope.getByText("Mexico")).toBeInTheDocument();
     expect(matchScope.getByText("13:00")).toBeInTheDocument();
     expect(matchScope.getByText("South Africa")).toBeInTheDocument();
-    expect(
-      matchScope.getByText("First Stage · Group A · Estadio Azteca (Mexico City)"),
-    ).toBeInTheDocument();
+    expect(matchCard.querySelector(".match-card__meta-line")).toHaveTextContent(
+      "First Stage·Group A·Estadio Azteca (Mexico City)",
+    );
     expect(matchScope.getByText("🇲🇽 Mexico vs 🇿🇦 South Africa")).toHaveClass("visually-hidden");
     expect(matchScope.queryByText(/Estadio Azteca · Mexico City, Mexico/)).not.toBeInTheDocument();
   });
@@ -328,20 +336,20 @@ describe("App", () => {
     expect(matchScope.queryByText("13:00")).not.toBeInTheDocument();
   });
 
-  it("highlights the matching venue marker when a match card is hovered or focused", () => {
+  it("highlights the matching venue marker when a match venue control is hovered or focused", () => {
     render(<App />);
 
-    const matchCard = getFirstMatchCard();
+    const venueButton = getFirstMatchVenueButton();
 
-    fireEvent.mouseEnter(matchCard);
+    fireEvent.mouseEnter(venueButton);
     expect(document.querySelectorAll(".venue-marker.is-highlighted")).toHaveLength(1);
     expect(document.querySelector(".venue-marker.is-highlighted")).toHaveAttribute(
       "data-venue-id",
       "mexico-city",
     );
 
-    fireEvent.mouseLeave(matchCard);
-    fireEvent.focus(matchCard);
+    fireEvent.mouseLeave(venueButton);
+    fireEvent.focus(venueButton);
     expect(document.querySelectorAll(".venue-marker.is-highlighted")).toHaveLength(1);
     expect(document.querySelector(".venue-marker.is-highlighted")).toHaveAttribute(
       "data-venue-id",
@@ -349,10 +357,33 @@ describe("App", () => {
     );
   });
 
-  it("selects a match venue when a match card is clicked", () => {
+  it("does not select a venue from the match card background", () => {
     render(<App />);
 
     fireEvent.click(getFirstMatchCard());
+
+    expect(screen.queryByRole("heading", { name: "Mexico City" })).not.toBeInTheDocument();
+    expect(window.location.search).toBe("");
+  });
+
+  it("selects a match venue, country, and group from explicit match card controls", () => {
+    render(<App />);
+
+    fireEvent.click(
+      within(getFirstMatchCard()).getByRole("button", { name: "Select country Mexico" }),
+    );
+
+    expect(screen.getByRole("heading", { name: "Mexico" })).toBeInTheDocument();
+    expect(window.location.search).toBe("?country=mex");
+
+    fireEvent.click(
+      within(getFirstMatchCard()).getByRole("button", { name: "Select group Group A" }),
+    );
+
+    expect(screen.getByRole("heading", { name: "Group A" })).toBeInTheDocument();
+    expect(window.location.search).toBe("?group=A");
+
+    fireEvent.click(getFirstMatchVenueButton());
 
     expect(screen.getByRole("heading", { name: "Mexico City" })).toBeInTheDocument();
     expect(window.location.search).toBe("?venue=mexico-city");

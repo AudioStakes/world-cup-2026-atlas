@@ -41,6 +41,8 @@ Match cards should follow the FIFA-style score and fixture hierarchy:
 
 The cards should be the primary content in date selections. For a selected Date, the Result panel displays only the tournament fixture timeline. The selected date's first match starts at the top of the scroll container, and surrounding dates remain available above and below by scrolling.
 
+Do not make the entire match card clickable or give the full card a clickable hover treatment. A card contains several possible navigation targets, so only the explicit country, group, and venue controls inside the card should be interactive. Country controls select that country, group controls select that group, and venue controls select that venue.
+
 ## Group detail panel
 
 A selected Group should show standings first, then date-ordered match cards.
