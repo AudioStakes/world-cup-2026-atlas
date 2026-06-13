@@ -12,10 +12,11 @@ pnpm verify
 
 `pnpm verify` runs:
 
-1. `pnpm fix`
-2. `pnpm typecheck`
-3. `pnpm test`
-4. `pnpm build`
+1. `pnpm check`
+2. `pnpm check:policy`
+3. `pnpm typecheck`
+4. `pnpm test`
+5. `pnpm build`
 
 ## End-to-end smoke tests
 
@@ -37,7 +38,7 @@ Use this before UI-heavy handoffs:
 pnpm verify:full
 ```
 
-`pnpm verify:full` runs the normal quality gate plus Playwright smoke tests.
+`pnpm verify:full` runs the normal quality gate, coverage thresholds, and Playwright smoke tests.
 
 ## Testing priorities
 
@@ -71,3 +72,18 @@ Use Playwright only for critical browser flows:
 Biome enforces focused-test bans, `setTimeout` bans in tests, unit-test dependency restrictions, and
 architecture import rules through `pnpm check`. `pnpm check:policy` enforces E2E tags and
 Playwright `waitForTimeout` bans. `pnpm verify` runs both in CI.
+
+## Coverage thresholds
+
+`pnpm test:coverage` enforces Vitest V8 coverage thresholds from `vitest.config.ts`.
+`pnpm verify:full` runs `pnpm test:coverage`.
+
+Thresholds are intentionally strict for pure logic and lower for UI/browser wiring:
+
+- `src/domain/ids.ts` and `src/calculations/**`: 100% lines/statements/functions/branches.
+- `src/indexes/**` and `src/queries/**`: at least 90% lines/statements/branches and 100%
+  functions.
+- `src/features/explorer/**`: at least 95% lines/statements, 98% functions, and 85% branches.
+- `src/data/**`: at least 99% lines/statements, 100% functions, and 80% branches.
+- `src/ui/components/**`: at least 83% lines/statements, 88% functions, and 74% branches.
+- `src/app/**`: at least 92% lines/statements, 100% functions, and 64% branches.

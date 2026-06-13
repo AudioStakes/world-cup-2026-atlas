@@ -114,10 +114,11 @@ Local commands:
 - `pnpm check:policy`: alias for the E2E policy check that is not covered by Biome.
 - `pnpm typecheck`: app and node TypeScript projects.
 - `pnpm test`: Vitest.
+- `pnpm test:coverage`: Vitest with V8 coverage thresholds.
 - `pnpm build`: typecheck plus Vite build.
 - `pnpm e2e`: Playwright.
 - `pnpm verify`: check, policy, typecheck, test, build.
-- `pnpm verify:full`: verify plus E2E.
+- `pnpm verify:full`: verify plus coverage thresholds and E2E.
 
 GitHub Actions:
 
@@ -157,10 +158,23 @@ not map cleanly to a Biome option.
 Existing E2E tests are tagged `@smoke`. `MapView` no longer reads raw map data; map background path
 data is exposed by the explorer ViewModel.
 
+`vitest.config.ts` enforces V8 coverage thresholds:
+
+- Global minimum: 96% lines/statements/functions and 83% branches.
+- `src/domain/ids.ts` and `src/calculations/**`: 100% lines/statements/functions/branches.
+- `src/indexes/**`: 96% lines/statements, 100% functions, 90% branches.
+- `src/queries/**`: 90% lines/statements, 100% functions, 85% branches.
+- `src/features/explorer/**`: 95% lines/statements, 98% functions, 85% branches.
+- `src/data/**`: 99% lines/statements, 100% functions, 80% branches.
+- `src/ui/components/**`: 83% lines/statements, 88% functions, 74% branches.
+- `src/app/**`: 92% lines/statements, 100% functions, 64% branches.
+
+The UI and app branch thresholds are intentionally lower than the pure logic thresholds. Raising
+them should come from meaningful behavior tests or simpler branching, not tests that only execute
+lines for coverage.
+
 ## Not Implemented Yet
 
-- Domain/core coverage thresholds: Vitest coverage exists, but a fair threshold should be set after
-  collecting a baseline and deciding which files are core coverage-critical.
 - `dependency-cruiser`, `eslint-plugin-boundaries`, or ESLint `no-restricted-imports`: not added
   because the repo currently uses Biome, and the P0 import rules are enforceable with Biome
   `noRestrictedImports`.
@@ -182,7 +196,8 @@ P0 now:
 
 P1 next:
 
-- Add domain/core coverage thresholds after baseline measurement.
+- Raise `src/ui/components/**` and `src/app/**` branch coverage by adding meaningful interaction or
+  ViewModel/browser-wiring tests, or by simplifying branches.
 - Decide whether `src/queries/queryMatchesByViewState.ts` should move under `src/features/explorer/`
   or accept a feature-independent filter criteria type.
 - Add stricter test naming and helper/fixture placement checks if test count increases.
