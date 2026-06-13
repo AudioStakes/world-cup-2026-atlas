@@ -237,10 +237,22 @@ input:focus-visible,
   letter-spacing: -0.02em;
 }
 
+.groups-section {
+  container: groups-section / inline-size;
+}
+
 .group-team-grid {
+  --group-team-card-gap: 4px;
+  --group-team-label-size: 24px;
+  --group-team-row-gap: 1px;
+  --group-team-row-padding: 2px;
+  --group-team-target-size: 22px;
+  --group-team-flag-size: 20px;
+  --group-team-flag-font-size: 15px;
+
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 4px;
+  gap: var(--group-team-card-gap);
   align-content: start;
   min-height: 0;
   padding: 0 8px 4px;
@@ -250,12 +262,12 @@ input:focus-visible,
 
 .group-team-card {
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr);
+  grid-template-columns: var(--group-team-label-size) minmax(0, 1fr);
   min-width: 0;
   min-height: 0;
   overflow: hidden;
   border: 1px solid rgba(23, 32, 42, 0.08);
-  border-radius: 14px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.7);
   box-shadow: 0 6px 16px rgba(23, 32, 42, 0.045);
   transition:
@@ -283,8 +295,8 @@ input:focus-visible,
 
 .group-team-header-button {
   display: flex;
-  width: 34px;
-  min-height: 24px;
+  width: var(--group-team-label-size);
+  min-height: var(--group-team-target-size);
   align-items: center;
   justify-content: center;
   padding: 0 3px;
@@ -307,15 +319,15 @@ input:focus-visible,
 .group-team-rows {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1px;
+  gap: var(--group-team-row-gap);
   min-height: 0;
-  padding: 2px;
+  padding: var(--group-team-row-padding);
 }
 
 .group-team-row-button {
   display: flex;
   min-width: 0;
-  min-height: 22px;
+  min-height: var(--group-team-target-size);
   align-items: center;
   justify-content: center;
   gap: 0;
@@ -355,12 +367,23 @@ input:focus-visible,
 
 .group-team-flag {
   display: inline-flex;
-  min-width: 20px;
-  inline-size: 20px;
+  min-width: var(--group-team-flag-size);
+  inline-size: var(--group-team-flag-size);
   justify-content: center;
-  flex: 0 0 20px;
-  font-size: 15px;
+  flex: 0 0 var(--group-team-flag-size);
+  font-size: var(--group-team-flag-font-size);
   line-height: 1;
+}
+
+@container groups-section (min-width: 420px) {
+  @media (min-height: 680px) {
+    .group-team-grid {
+      --group-team-label-size: 28px;
+      --group-team-target-size: 28px;
+      --group-team-flag-size: 24px;
+      --group-team-flag-font-size: 18px;
+    }
+  }
 }
 
 .group-team-copy {
@@ -925,12 +948,12 @@ input:focus-visible,
   }
 
   .group-team-header-button {
-    min-height: 24px;
+    min-height: var(--group-team-target-size);
     padding: 0 3px;
   }
 
   .group-team-row-button {
-    min-height: 22px;
+    min-height: var(--group-team-target-size);
   }
 
   .date-months {
@@ -1206,7 +1229,7 @@ input:focus-visible,
 }
 
 .group-team-row-button {
-  min-height: 22px;
+  min-height: var(--group-team-target-size);
   align-items: center;
   justify-content: center;
   gap: 0;
@@ -1214,7 +1237,7 @@ input:focus-visible,
 }
 
 .group-team-flag {
-  font-size: 1rem;
+  font-size: var(--group-team-flag-font-size);
   line-height: 1;
 }
 
@@ -1531,10 +1554,10 @@ input:focus-visible,
   }
 
   .group-team-header-button {
-    min-height: 24px;
+    min-height: var(--group-team-target-size);
   }
 
   .group-team-row-button {
-    min-height: 22px;
+    min-height: var(--group-team-target-size);
   }
 }

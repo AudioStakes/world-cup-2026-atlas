@@ -244,6 +244,10 @@ describe("App", () => {
 
     const groupsSection = screen.getByRole("region", { name: "Groups & Teams" });
 
+    expect(within(groupsSection).getByRole("button", { name: "Select Group A" })).toHaveTextContent(
+      "A",
+    );
+    expect(within(groupsSection).queryByText("Group A")).not.toBeInTheDocument();
     expect(
       within(groupsSection).getByRole("button", { name: "Select South Africa" }),
     ).toBeInTheDocument();

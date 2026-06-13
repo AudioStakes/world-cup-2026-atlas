@@ -135,6 +135,27 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     }
   });
 
+  test("gives Groups & Teams flags larger targets when space allows", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.goto("/");
+    await page.getByRole("region", { name: "Groups & Teams" }).scrollIntoViewIfNeeded();
+
+    const targetSize = await page.evaluate(() => {
+      const button = document.querySelector(".group-team-row-button:not(.is-placeholder)");
+      const flag = document.querySelector(".group-team-flag");
+      const buttonRect = button?.getBoundingClientRect();
+      const flagRect = flag?.getBoundingClientRect();
+
+      return {
+        buttonHeight: buttonRect?.height ?? 0,
+        flagWidth: flagRect?.width ?? 0,
+      };
+    });
+
+    expect(targetSize.buttonHeight).toBeGreaterThanOrEqual(28);
+    expect(targetSize.flagWidth).toBeGreaterThanOrEqual(24);
+  });
+
   test("selects a date and shows that day's fixture details", async ({ page }) => {
     await page.goto("/");
 

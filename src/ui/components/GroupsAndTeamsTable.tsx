@@ -48,7 +48,7 @@ function GroupTeamCard({ group, onAction }: GroupTeamCardProps) {
         aria-label={`Select ${group.groupName}`}
         onClick={() => onAction({ type: "selectGroup", groupCode: group.groupCode })}
       >
-        {group.groupName}
+        {group.groupCode}
       </button>
       <div class="group-team-rows">
         {group.teams.map((team) => (
