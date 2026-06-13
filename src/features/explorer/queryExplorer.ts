@@ -19,7 +19,7 @@ export function queryExplorer(
 
   return {
     viewState: normalizedViewState,
-    header: createHeaderViewModel(normalizedViewState),
+    header: createHeaderViewModel(),
     explorePanel: createExplorePanelViewModel(data, indexes, normalizedViewState, matchingMatches),
     map: createMapViewModel(data, indexes, normalizedViewState, matchingMatches, focusedVenueId),
   };

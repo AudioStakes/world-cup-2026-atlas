@@ -25,6 +25,20 @@ async function expectVenueMarkerAlignment(page: Page, venueId: string) {
     .toBeLessThanOrEqual(1);
 }
 
+async function clickVenueControlCenter(page: Page, venueId: string) {
+  const control = page.locator(`.venue-marker-control[data-venue-id="${venueId}"]`);
+
+  await control.scrollIntoViewIfNeeded();
+
+  const controlBox = await control.boundingBox();
+
+  if (!controlBox) {
+    throw new Error(`Expected ${venueId} venue control to be visible`);
+  }
+
+  await page.mouse.click(controlBox.x + controlBox.width / 2, controlBox.y + controlBox.height / 2);
+}
+
 async function setBrowserToday(page: Page, dateIso: string) {
   await page.addInitScript((fixedNow) => {
     Date.now = () => new Date(fixedNow).getTime();
@@ -80,11 +94,80 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     await expect(page).toHaveURL(/country=jpn/);
     await expect(page.getByRole("heading", { name: "Japan" })).toBeVisible();
     await expect(page.getByRole("region", { name: "Groups & Teams" }).getByText("JPN")).toHaveCount(
-      0,
+      1,
     );
     await expect(
-      page.getByRole("region", { name: "Groups & Teams" }).getByText("Japan"),
+      page.getByRole("region", { name: "Groups & Teams" }).getByRole("button", {
+        name: "Select Japan",
+      }),
     ).toBeVisible();
+  });
+
+  test("keeps every Groups & Teams country flag visible across viewport sizes", async ({
+    page,
+  }) => {
+    const viewports = [
+      { width: 1280, height: 720 },
+      { width: 390, height: 844 },
+      { width: 844, height: 390 },
+      { width: 320, height: 568 },
+    ];
+
+    for (const viewport of viewports) {
+      await page.setViewportSize(viewport);
+      await page.goto("/");
+      await page.getByRole("region", { name: "Groups & Teams" }).scrollIntoViewIfNeeded();
+
+      const flagVisibility = await page.evaluate(() => {
+        const viewport = {
+          bottom: window.innerHeight,
+          left: 0,
+          right: window.innerWidth,
+          top: 0,
+        };
+        const flags = Array.from(document.querySelectorAll(".group-team-flag"));
+
+        return {
+          hiddenFlags: flags.filter((flag) => {
+            const rect = flag.getBoundingClientRect();
+
+            return (
+              rect.width === 0 ||
+              rect.height === 0 ||
+              rect.left < viewport.left ||
+              rect.right > viewport.right ||
+              rect.top < viewport.top ||
+              rect.bottom > viewport.bottom
+            );
+          }).length,
+          totalFlags: flags.length,
+        };
+      });
+
+      expect(flagVisibility.totalFlags).toBe(48);
+      expect(flagVisibility.hiddenFlags).toBe(0);
+    }
+  });
+
+  test("gives Groups & Teams flags larger targets when space allows", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.goto("/");
+    await page.getByRole("region", { name: "Groups & Teams" }).scrollIntoViewIfNeeded();
+
+    const targetSize = await page.evaluate(() => {
+      const button = document.querySelector(".group-team-row-button:not(.is-placeholder)");
+      const flag = document.querySelector(".group-team-flag");
+      const buttonRect = button?.getBoundingClientRect();
+      const flagRect = flag?.getBoundingClientRect();
+
+      return {
+        buttonHeight: buttonRect?.height ?? 0,
+        flagWidth: flagRect?.width ?? 0,
+      };
+    });
+
+    expect(targetSize.buttonHeight).toBeGreaterThanOrEqual(28);
+    expect(targetSize.flagWidth).toBeGreaterThanOrEqual(24);
   });
 
   test("selects a date and shows that day's fixture details", async ({ page }) => {
@@ -146,7 +229,7 @@ test.describe("World Cup 2026 Atlas explorer", () => {
 
       for (const venueId of ["toronto", "boston", "new-york-new-jersey", "philadelphia"]) {
         await expectVenueMarkerAlignment(page, venueId);
-        await page.locator(`.venue-marker-control[data-venue-id="${venueId}"]`).click();
+        await clickVenueControlCenter(page, venueId);
         await expect(page).toHaveURL(new RegExp(`venue=${venueId}`));
       }
     }

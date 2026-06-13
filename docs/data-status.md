@@ -58,3 +58,8 @@ A competition record may become `official` only when:
 `placeholder` is acceptable only for hidden or clearly incomplete structures that keep the type system working.
 
 Do not use `placeholder` for visible teams, fixtures, venues, dates, or route data.
+
+## UI disclosure
+
+The app header exposes a compact data-status note: official/trusted sources are used where
+available, and direct distances are marked as derived.

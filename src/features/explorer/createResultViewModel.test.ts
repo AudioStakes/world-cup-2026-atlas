@@ -99,6 +99,22 @@ describe("createResultViewModel production metadata", () => {
     });
   });
 
+  it("omits country route summary when another active filter removes all country matches", () => {
+    const result = createResultViewModel(
+      appData,
+      indexes,
+      {
+        ...emptyExplorerViewState,
+        selectedCountryId: countryId("jpn"),
+        selectedDate: localDate("2026-07-12"),
+      },
+      [],
+    );
+
+    expect(result.emptyMessage).toBe("No matches found for the current selection.");
+    expect(result.routeSummary).toBeNull();
+  });
+
   it("adds group team FIFA codes to group result subtitles", () => {
     const result = createResultForGroup("F");
 
@@ -203,7 +219,7 @@ describe("createResultViewModel production metadata", () => {
 
     expect(japanMatch?.stageLabel).toBe("Group F");
     expect(japanMatch?.dateLabel).toBe("Sun Jun 14");
-    expect(japanMatch?.matchupText).toBe("🇳🇱 vs 🇯🇵");
+    expect(japanMatch?.matchupText).toBe("🇳🇱 NED vs 🇯🇵 JPN");
     expect(japanMatch?.matchupAriaLabel).toBe("🇳🇱 Netherlands vs 🇯🇵 Japan");
     expect(japanMatch?.secondaryText).toBe("15:00 CT");
     expect(japanMatch?.venueLabel).toBe("Dallas");

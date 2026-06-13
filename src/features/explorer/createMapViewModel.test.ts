@@ -35,6 +35,12 @@ function getRequiredVenue(venueKey: string) {
 }
 
 describe("createMapViewModel venue marker metadata", () => {
+  it("keeps venue markers neutral when no explorer selection is active", () => {
+    const map = createMapViewModel(appData, indexes, emptyExplorerViewState, appData.matches);
+
+    expect(map.venueMarkers.every((marker) => marker.state === "normal")).toBe(true);
+  });
+
   it("adds production venue metadata to map markers", () => {
     const dallas = getRequiredVenueMarker("dallas");
 

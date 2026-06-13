@@ -16,17 +16,18 @@ export function ExplorerPage({ viewModel, onAction, onMatchVenueFocusChange }: E
   return (
     <main class="atlas-shell" aria-label="World Cup 2026 Atlas explorer">
       <Header header={viewModel.header} />
-      <section class="atlas-body" aria-label="Explorer workspace">
-        <aside class="explore-panel" aria-label="Explore panel">
+      <section class="atlas-body">
+        <section class="explore-panel">
           <DateSelector dateSelector={viewModel.explorePanel.dateSelector} onAction={onAction} />
-          <GroupsAndTeamsTable
-            groupsAndTeams={viewModel.explorePanel.groupsAndTeams}
-            onAction={onAction}
-          />
-        </aside>
+        </section>
+        <GroupsAndTeamsTable
+          groupsAndTeams={viewModel.explorePanel.groupsAndTeams}
+          onAction={onAction}
+        />
         <section class="explorer-output" aria-label="Selection results">
           <ResultCard
             result={viewModel.explorePanel.result}
+            onAction={onAction}
             onMatchVenueFocusChange={onMatchVenueFocusChange}
           />
           <MapView map={viewModel.map} onAction={onAction} />

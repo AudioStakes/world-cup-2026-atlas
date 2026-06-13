@@ -1,6 +1,7 @@
 import type { VenueId } from "../../domain/ids";
 import type {
   DetailMetricViewModel,
+  ExplorerAction,
   ExplorerDetailViewModel,
   ExplorerResultViewModel,
   GroupDetailViewModel,
@@ -8,12 +9,16 @@ import type {
 
 type ResultCardProps = {
   readonly result: ExplorerResultViewModel;
+  readonly onAction: (action: ExplorerAction) => void;
   readonly onMatchVenueFocusChange: (venueId: VenueId | null) => void;
 };
 
-export function ResultCard({ result, onMatchVenueFocusChange }: ResultCardProps) {
+export function ResultCard({ result, onAction, onMatchVenueFocusChange }: ResultCardProps) {
   return (
-    <section class="result-card" aria-labelledby="result-card-title">
+    <section id="selection-results" class="result-card" aria-labelledby="result-card-title">
+      <p class="visually-hidden" aria-live="polite">
+        {createResultStatusLabel(result)}
+      </p>
       <header class="result-card__header">
         <span class="result-card__icon" aria-hidden="true">
           {result.icon}
@@ -30,8 +35,24 @@ export function ResultCard({ result, onMatchVenueFocusChange }: ResultCardProps)
             <span>{result.routeSummary.itineraryLabel}</span>
             <strong>{result.routeSummary.totalDistanceLabel}</strong>
           </div>
+          <p class="route-summary__note">{result.routeSummary.distanceMethodLabel}</p>
           {result.routeSummary.venueCountExplanationLabel ? (
             <p class="route-summary__note">{result.routeSummary.venueCountExplanationLabel}</p>
+          ) : null}
+          {result.routeSummary.legs.length > 0 ? (
+            <ol class="route-leg-list" aria-label="Route legs by fixture date">
+              {result.routeSummary.legs.map((leg) => (
+                <li key={`${leg.fromDateLabel}-${leg.toDateLabel}-${leg.fromVenueLabel}`}>
+                  <span>{leg.fromDateLabel}</span>
+                  <strong>
+                    {leg.fromVenueLabel} → {leg.toVenueLabel}
+                  </strong>
+                  <span>
+                    {leg.toDateLabel} · {leg.distanceLabel}
+                  </span>
+                </li>
+              ))}
+            </ol>
           ) : null}
         </div>
       ) : null}
@@ -46,10 +67,11 @@ export function ResultCard({ result, onMatchVenueFocusChange }: ResultCardProps)
                 class="match-card"
                 type="button"
                 onBlur={() => onMatchVenueFocusChange(null)}
-                onClick={() => onMatchVenueFocusChange(match.venueId)}
+                onClick={() => onAction({ type: "selectVenue", venueId: match.venueId })}
                 onFocus={() => onMatchVenueFocusChange(match.venueId)}
                 onMouseEnter={() => onMatchVenueFocusChange(match.venueId)}
                 onMouseLeave={() => onMatchVenueFocusChange(null)}
+                aria-label={`Show venue ${match.venueLabel} for ${match.matchupAriaLabel} on ${match.dateLabel}`}
               >
                 <span class="match-card__when">
                   {match.dateLabel} {match.secondaryText}
@@ -65,10 +87,23 @@ export function ResultCard({ result, onMatchVenueFocusChange }: ResultCardProps)
           ))}
         </ol>
       ) : (
-        <p class="result-card__empty">{result.emptyMessage}</p>
+        <div class="result-card__empty">
+          <p>{result.emptyMessage}</p>
+          <button class="clear-button" type="button" onClick={() => onAction({ type: "clearAll" })}>
+            Clear selection
+          </button>
+        </div>
       )}
     </section>
   );
+}
+
+function createResultStatusLabel(result: ExplorerResultViewModel): string {
+  if (result.type === "empty") {
+    return result.title;
+  }
+
+  return `${result.title}, ${result.matches.length} ${result.matches.length === 1 ? "match" : "matches"}`;
 }
 
 function ResultDetails({ details }: { readonly details: ExplorerDetailViewModel | null }) {
@@ -98,8 +133,15 @@ function MetricGrid({ metrics }: { readonly metrics: readonly DetailMetricViewMo
 
 function GroupStandings({ details }: { readonly details: GroupDetailViewModel }) {
   return (
-    <section class="group-standings" aria-label="Group table">
+    // biome-ignore-start lint/a11y/noNoninteractiveTabindex: Wide standings tables need a keyboard-focusable scroll container.
+    <section
+      class="group-standings"
+      aria-label="Scrollable group table"
+      tabIndex={0}
+      onKeyDown={handleGroupStandingsKeyDown}
+    >
       <table>
+        <caption>{details.groupLabel} standings and fixture summary</caption>
         <thead>
           <tr>
             <th scope="col">Team</th>
@@ -132,5 +174,35 @@ function GroupStandings({ details }: { readonly details: GroupDetailViewModel })
         </tbody>
       </table>
     </section>
+    // biome-ignore-end lint/a11y/noNoninteractiveTabindex: Wide standings tables need a keyboard-focusable scroll container.
   );
+}
+
+function handleGroupStandingsKeyDown(event: KeyboardEvent) {
+  const scrollContainer = event.currentTarget as HTMLElement;
+  const pageStep = Math.max(80, scrollContainer.clientWidth * 0.8);
+  const keyScrollSteps: Readonly<Record<string, number>> = {
+    ArrowLeft: -40,
+    ArrowRight: 40,
+    PageUp: -pageStep,
+    PageDown: pageStep,
+  };
+  const scrollStep = keyScrollSteps[event.key];
+
+  if (scrollStep !== undefined) {
+    event.preventDefault();
+    scrollContainer.scrollLeft += scrollStep;
+    return;
+  }
+
+  if (event.key === "Home") {
+    event.preventDefault();
+    scrollContainer.scrollLeft = 0;
+    return;
+  }
+
+  if (event.key === "End") {
+    event.preventDefault();
+    scrollContainer.scrollLeft = scrollContainer.scrollWidth;
+  }
 }

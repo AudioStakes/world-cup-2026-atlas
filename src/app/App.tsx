@@ -1,4 +1,4 @@
-import { useMemo, useState } from "preact/hooks";
+import { useEffect, useMemo, useState } from "preact/hooks";
 import { appData } from "../data/appData";
 import type { VenueId } from "../domain/ids";
 import { queryExplorer } from "../features/explorer/queryExplorer";
@@ -22,10 +22,24 @@ export function App() {
     [focusedVenueId, viewState],
   );
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handlePopState = () => {
+      setViewState(resolveInitialExplorerViewState(window.location.search, indexes));
+      setFocusedVenueId(null);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
   function dispatchExplorerAction(action: ExplorerAction): void {
     const nextViewState = updateExplorerViewState(appData, indexes, viewState, action);
     setViewState(nextViewState);
-    syncBrowserUrl(nextViewState);
+    setFocusedVenueId(null);
+    syncBrowserUrl(nextViewState, "push");
   }
 
   return (
@@ -42,10 +56,19 @@ function getInitialSearchParams(): URLSearchParams | string {
   return window.location.search;
 }
 
-function syncBrowserUrl(viewState: NormalizedExplorerViewState): void {
+function syncBrowserUrl(viewState: NormalizedExplorerViewState, mode: "push" | "replace"): void {
   if (typeof window === "undefined") return;
 
   const nextSearch = serializeExplorerSearchParams(viewState);
   const nextUrl = `${window.location.pathname}${nextSearch}${window.location.hash}`;
-  window.history.replaceState(null, "", nextUrl);
+
+  if (nextUrl === `${window.location.pathname}${window.location.search}${window.location.hash}`) {
+    return;
+  }
+
+  if (mode === "push") {
+    window.history.pushState(null, "", nextUrl);
+  } else {
+    window.history.replaceState(null, "", nextUrl);
+  }
 }

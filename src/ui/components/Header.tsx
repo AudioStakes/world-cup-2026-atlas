@@ -8,9 +8,10 @@ export function Header({ header }: HeaderProps) {
   return (
     <header class="atlas-header">
       <div>
-        <p class="atlas-header__title">{header.title}</p>
+        <h1 class="atlas-header__title">{header.title}</h1>
         <p class="atlas-header__subtitle">{header.subtitle}</p>
       </div>
+      <p class="atlas-header__data-status">Official/trusted sources · direct distances derived</p>
     </header>
   );
 }

@@ -63,7 +63,13 @@ button {
 }
 
 button:focus-visible {
-  outline: 3px solid rgba(181, 31, 31, 0.34);
+  outline: 3px solid #8f1414;
+  outline-offset: 2px;
+}
+
+input:focus-visible,
+.group-standings:focus-visible {
+  outline: 3px solid #8f1414;
   outline-offset: 2px;
 }
 
@@ -99,29 +105,19 @@ button:focus-visible {
 
 .atlas-header__subtitle {
   margin: 4px 0 0;
-  color: var(--color-muted);
+  color: rgba(23, 32, 42, 0.68);
   font-size: 12px;
   font-weight: 650;
 }
 
-.atlas-header__state {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-
-.atlas-header__state code {
-  max-width: 420px;
-  overflow: hidden;
-  padding: 7px 10px;
-  border: 1px solid rgba(23, 32, 42, 0.08);
-  border-radius: 999px;
-  color: rgba(23, 32, 42, 0.6);
-  background: rgba(255, 255, 255, 0.68);
-  font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.atlas-header__data-status {
+  max-width: 260px;
+  margin: 0;
+  color: rgba(23, 32, 42, 0.68);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.25;
+  text-align: right;
 }
 
 .clear-button {
@@ -149,15 +145,20 @@ button:focus-visible {
   position: relative;
   display: grid;
   grid-template-columns: minmax(400px, 440px) minmax(640px, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas:
+    "controls output"
+    "groups output";
   gap: 14px;
   min-height: 0;
   padding-top: 18px;
 }
 
 .explore-panel {
+  grid-area: controls;
   z-index: 4;
   display: grid;
-  grid-template-rows: auto minmax(360px, 1fr) minmax(116px, 0.32fr);
+  grid-template-rows: auto;
   gap: 12px;
   min-height: 0;
   padding: 14px;
@@ -168,11 +169,18 @@ button:focus-visible {
   backdrop-filter: blur(18px);
 }
 
+.groups-section {
+  grid-area: groups;
+}
+
 .explorer-output {
+  grid-area: output;
   display: grid;
   grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
   gap: 14px;
   min-height: 0;
+  overflow: hidden;
+  scrollbar-gutter: stable;
 }
 
 .explore-panel__intro {
@@ -221,7 +229,7 @@ button:focus-visible {
 
 .panel-section {
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto auto minmax(0, 1fr);
   overflow: hidden;
 }
 
@@ -239,25 +247,42 @@ button:focus-visible {
   letter-spacing: -0.02em;
 }
 
+.groups-section {
+  container: groups-section / inline-size;
+}
+
 .group-team-grid {
+  --group-team-card-gap: 4px;
+  --group-team-label-size: 24px;
+  --group-team-row-gap: 1px;
+  --group-team-row-padding: 2px;
+  --group-team-target-size: 24px;
+  --group-team-flag-size: 20px;
+  --group-team-flag-font-size: 15px;
+
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: var(--group-team-card-gap);
   align-content: start;
   min-height: 0;
-  padding: 0 10px 10px;
+  padding: 0 8px 4px;
   overflow: auto;
   overscroll-behavior: contain;
 }
 
+.date-months,
+.group-team-grid {
+  grid-row: 3;
+}
+
 .group-team-card {
   display: grid;
-  grid-template-rows: 24px minmax(0, 1fr);
+  grid-template-columns: var(--group-team-label-size) minmax(0, 1fr);
   min-width: 0;
-  min-height: 132px;
+  min-height: 0;
   overflow: hidden;
   border: 1px solid rgba(23, 32, 42, 0.08);
-  border-radius: 14px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.7);
   box-shadow: 0 6px 16px rgba(23, 32, 42, 0.045);
   transition:
@@ -285,16 +310,16 @@ button:focus-visible {
 
 .group-team-header-button {
   display: flex;
-  width: 100%;
-  min-height: 24px;
+  width: var(--group-team-label-size);
+  min-height: var(--group-team-target-size);
   align-items: center;
   justify-content: center;
-  padding: 0 6px;
+  padding: 0 3px;
   border: 0;
-  border-bottom: 1px solid rgba(23, 32, 42, 0.07);
+  border-right: 1px solid rgba(23, 32, 42, 0.07);
   color: rgba(23, 32, 42, 0.66);
   background: rgba(255, 255, 255, 0.42);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 950;
   letter-spacing: 0.02em;
   cursor: pointer;
@@ -308,27 +333,29 @@ button:focus-visible {
 
 .group-team-rows {
   display: grid;
-  grid-template-rows: repeat(4, minmax(0, 1fr));
-  gap: 1px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--group-team-row-gap);
   min-height: 0;
-  padding: 5px;
+  padding: var(--group-team-row-padding);
 }
 
 .group-team-row-button {
   display: flex;
   min-width: 0;
-  min-height: 0;
+  min-height: var(--group-team-target-size);
   align-items: center;
-  gap: 7px;
+  justify-content: center;
+  gap: 0;
   width: 100%;
-  padding: 2px 5px;
+  overflow: hidden;
+  padding: 0;
   border: 1px solid transparent;
   border-radius: 8px;
   color: rgba(23, 32, 42, 0.82);
   background: transparent;
   font-size: 11px;
   font-weight: 900;
-  line-height: 1;
+  line-height: 1.15;
   cursor: pointer;
 }
 
@@ -355,11 +382,47 @@ button:focus-visible {
 
 .group-team-flag {
   display: inline-flex;
-  width: 20px;
+  min-width: var(--group-team-flag-size);
+  inline-size: var(--group-team-flag-size);
   justify-content: center;
-  flex: 0 0 20px;
-  font-size: 16px;
+  flex: 0 0 var(--group-team-flag-size);
+  font-size: var(--group-team-flag-font-size);
   line-height: 1;
+}
+
+@container groups-section (min-width: 420px) {
+  @media (min-height: 680px) {
+    .group-team-grid {
+      --group-team-label-size: 28px;
+      --group-team-target-size: 28px;
+      --group-team-flag-size: 24px;
+      --group-team-flag-font-size: 18px;
+    }
+  }
+}
+
+.group-team-copy {
+  display: block;
+  min-width: 0;
+}
+
+.group-team-name {
+  display: block;
+  overflow: hidden;
+  color: rgba(20, 30, 44, 0.86);
+  font-size: 9px;
+  font-weight: 950;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.filter-hint {
+  margin: 0 10px 8px;
+  color: rgba(23, 32, 42, 0.68);
+  font-size: 10px;
+  font-weight: 750;
+  line-height: 1.3;
 }
 
 .group-team-code {
@@ -400,7 +463,8 @@ button:focus-visible {
   align-items: center;
   justify-content: center;
   gap: 1px;
-  min-height: 40px;
+  min-width: 44px;
+  min-height: 44px;
   padding: 5px 4px;
   border: 1px solid rgba(23, 32, 42, 0.08);
   border-radius: 9px;
@@ -418,7 +482,7 @@ button:focus-visible {
 }
 
 .date-chip__meta {
-  color: rgba(23, 32, 42, 0.56);
+  color: rgba(23, 32, 42, 0.68);
   font-size: 9px;
   font-weight: 750;
 }
@@ -439,21 +503,38 @@ button:focus-visible {
 }
 
 .date-chip.is-outside-current-filter {
-  opacity: 0.58;
+  border-color: rgba(23, 32, 42, 0.14);
+  color: rgba(23, 32, 42, 0.7);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.date-chip.is-outside-current-filter .date-chip__meta {
+  color: rgba(23, 32, 42, 0.68);
 }
 
 .date-chip.has-no-fixture {
-  color: rgba(23, 32, 42, 0.28);
+  color: rgba(23, 32, 42, 0.62);
   background: rgba(255, 255, 255, 0.42);
 }
 
 .date-chip.has-no-fixture .date-chip__meta {
-  color: rgba(23, 32, 42, 0.26);
+  color: rgba(23, 32, 42, 0.68);
+}
+
+.date-chip.has-no-fixture.is-selected {
+  border-color: var(--color-red);
+  color: #fff;
+  background: var(--color-red);
+}
+
+.date-chip.has-no-fixture.is-selected .date-chip__meta {
+  color: rgba(255, 255, 255, 0.82);
 }
 
 .result-card {
   display: grid;
   grid-template-rows: auto auto auto minmax(0, 1fr);
+  align-self: stretch;
   padding: 12px;
   overflow: hidden;
   background: var(--color-panel-strong);
@@ -494,7 +575,7 @@ button:focus-visible {
 
 .detail-metrics {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 8px;
   margin: 10px 0 0;
 }
@@ -517,13 +598,11 @@ button:focus-visible {
 
 .detail-metric dd {
   margin: 3px 0 0;
-  overflow: hidden;
   color: var(--color-ink);
   font-size: 12px;
   font-weight: 900;
   line-height: 1.25;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .group-standings {
@@ -531,6 +610,14 @@ button:focus-visible {
   margin: 10px 0 0;
   overflow: auto;
   scrollbar-gutter: stable;
+}
+
+.group-standings caption {
+  padding: 0 0 8px;
+  color: rgba(23, 32, 42, 0.58);
+  font-size: 11px;
+  font-weight: 850;
+  text-align: left;
 }
 
 .group-standings table {
@@ -589,10 +676,37 @@ button:focus-visible {
 
 .route-summary__note {
   margin: 0;
-  color: rgba(23, 32, 42, 0.58);
+  color: rgba(23, 32, 42, 0.68);
   font-size: 10px;
   font-weight: 650;
   line-height: 1.35;
+}
+
+.route-leg-list {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.route-leg-list li {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  color: rgba(23, 32, 42, 0.66);
+  font-size: 10px;
+  line-height: 1.25;
+}
+
+.route-leg-list strong {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(23, 32, 42, 0.82);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .result-empty-message {
@@ -608,6 +722,7 @@ button:focus-visible {
   margin: 12px 0 0;
   padding: 0;
   overflow: auto;
+  scrollbar-gutter: stable;
   list-style: none;
 }
 
@@ -668,6 +783,7 @@ button:focus-visible {
 
 .map-panel {
   position: relative;
+  min-block-size: 0;
   min-height: 0;
   overflow: hidden;
   border: 0;
@@ -857,14 +973,13 @@ button:focus-visible {
   }
 
   .panel-section {
-    display: block;
     min-height: 0;
-    overflow: visible;
+    overflow: hidden;
   }
 
   .result-card {
     min-height: 0;
-    overflow: hidden;
+    overflow: auto;
   }
 
   .section-heading {
@@ -876,21 +991,21 @@ button:focus-visible {
   }
 
   .group-team-grid {
-    gap: 6px;
-    padding: 0 10px 8px;
+    gap: 4px;
+    padding: 0 8px 4px;
   }
 
   .group-team-card {
-    min-height: 126px;
+    min-height: 0;
   }
 
   .group-team-header-button {
-    min-height: 22px;
-    padding: 6px 9px 4px;
+    min-height: var(--group-team-target-size);
+    padding: 0 3px;
   }
 
   .group-team-row-button {
-    min-height: 22px;
+    min-height: var(--group-team-target-size);
   }
 
   .date-months {
@@ -911,7 +1026,7 @@ button:focus-visible {
   }
 
   .date-chip {
-    min-height: 36px;
+    min-height: 44px;
     padding: 4px 3px;
     font-size: 8px;
   }
@@ -969,11 +1084,11 @@ button:focus-visible {
   }
 
   .group-team-card {
-    min-height: 126px;
+    min-height: 0;
   }
 
   .date-chip {
-    min-height: 24px;
+    min-height: 44px;
   }
 
   .match-card {
@@ -983,12 +1098,14 @@ button:focus-visible {
 
 @media (max-width: 1180px) {
   html,
-  body {
+  body,
+  #app {
+    min-width: 0;
     overflow: auto;
   }
 
   .atlas-body {
-    grid-template-columns: 360px 760px;
+    grid-template-columns: minmax(320px, 1fr);
   }
 }
 
@@ -1079,11 +1196,22 @@ button:focus-visible {
 @media (max-width: 1180px) {
   .atlas-body {
     grid-template-columns: minmax(320px, 1fr);
-    grid-template-rows: auto auto;
+    grid-template-rows: auto auto auto;
+    grid-template-areas:
+      "controls"
+      "groups"
+      "output";
   }
 
   .explorer-output {
-    grid-template-rows: minmax(220px, auto) minmax(420px, 58vh);
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+  }
+
+  .map-panel {
+    flex: 0 0 420px;
+    min-block-size: min(420px, 80vh);
   }
 }
 
@@ -1100,7 +1228,7 @@ button:focus-visible {
 
   .explore-panel {
     height: auto;
-    grid-template-rows: auto auto auto;
+    grid-template-rows: auto;
     overflow: visible;
   }
 
@@ -1110,50 +1238,101 @@ button:focus-visible {
 
   .explorer-output {
     gap: 12px;
-    grid-template-rows: minmax(220px, auto) minmax(360px, 52vh);
+  }
+
+  .map-panel {
+    flex-basis: 52vh;
+    min-block-size: 360px;
+  }
+
+  .atlas-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .clear-button,
+  .group-team-header-button,
+  .group-team-row-button,
+  .date-chip {
+    min-height: 44px;
+  }
+
+  .detail-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .route-leg-list li {
+    grid-template-columns: 1fr;
   }
 }
 /* Readability pass: calendar dates, larger teams, focused result facts, centered map pins. */
 .groups-section .group-team-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 4px;
 }
 
 .group-team-card {
-  padding: 8px;
+  padding: 0;
 }
 
 .group-team-header-button {
-  font-size: 0.78rem;
+  font-size: 0.68rem;
   letter-spacing: 0.04em;
 }
 
 .group-team-row-button {
-  min-height: 0;
+  min-height: var(--group-team-target-size);
   align-items: center;
-  gap: 7px;
-  padding: 2px 5px;
+  justify-content: center;
+  gap: 2px;
+  padding: 0;
 }
 
 .group-team-flag {
-  font-size: 1.12rem;
+  font-size: var(--group-team-flag-font-size);
   line-height: 1;
-}
-
-.group-team-copy {
-  flex: 1 1 auto;
-  min-inline-size: 0;
 }
 
 .group-team-name {
   display: block;
-  overflow: hidden;
   color: rgba(20, 30, 44, 0.92);
-  font-size: 0.88rem;
+  font-size: 0.62rem;
   font-weight: 900;
   line-height: 1.1;
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+@media (pointer: coarse), (max-width: 720px) {
+  .groups-section .group-team-grid {
+    --group-team-label-size: 44px;
+    --group-team-target-size: 44px;
+    --group-team-flag-size: 24px;
+    --group-team-flag-font-size: 18px;
+
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .group-team-row-button {
+    gap: 4px;
+  }
+
+  .group-team-name {
+    font-size: 0.72rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .groups-section .group-team-grid {
+    --group-team-target-size: 44px;
+
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .group-team-copy {
+    display: none;
+  }
 }
 
 .group-team-meta {
@@ -1173,7 +1352,7 @@ button:focus-visible {
 }
 
 .date-calendar__weekday {
-  color: rgba(20, 30, 44, 0.48);
+  color: rgba(20, 30, 44, 0.68);
   font-size: 0.62rem;
   font-weight: 900;
   letter-spacing: 0.04em;
@@ -1182,7 +1361,7 @@ button:focus-visible {
 }
 
 .date-calendar__blank {
-  min-block-size: 42px;
+  min-block-size: 44px;
 }
 
 .date-chip-grid {
@@ -1190,7 +1369,7 @@ button:focus-visible {
 }
 
 .date-chip {
-  min-block-size: 42px;
+  min-block-size: 44px;
   flex-direction: column;
   justify-content: center;
   gap: 2px;
@@ -1199,7 +1378,7 @@ button:focus-visible {
 }
 
 .date-chip__weekday {
-  color: rgba(20, 30, 44, 0.42);
+  color: rgba(20, 30, 44, 0.68);
   font-size: 0.58rem;
   font-weight: 900;
   letter-spacing: 0.04em;
@@ -1283,17 +1462,6 @@ button:focus-visible {
   color: rgba(20, 30, 44, 0.58);
   font-size: 0.8rem;
   font-weight: 750;
-}
-
-.group-team-card.is-related,
-.group-team-card.is-selected {
-  min-height: 132px;
-  overflow: hidden;
-}
-
-.group-team-card.is-related .group-team-row-button,
-.group-team-card.is-selected .group-team-row-button {
-  min-height: 0;
 }
 
 .match-card {
@@ -1446,4 +1614,18 @@ button:focus-visible {
 
 .venue-marker.is-dimmed .venue-marker__map-label {
   opacity: 0.96;
+}
+
+@media (max-width: 720px) {
+  .date-chip {
+    min-block-size: 44px;
+  }
+
+  .group-team-header-button {
+    min-height: var(--group-team-target-size);
+  }
+
+  .group-team-row-button {
+    min-height: var(--group-team-target-size);
+  }
 }

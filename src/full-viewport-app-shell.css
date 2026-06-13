@@ -29,7 +29,7 @@ body {
   height: 100%;
   min-height: 0;
   overflow: hidden;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto;
 }
 
 .groups-section {
@@ -40,32 +40,35 @@ body {
 }
 
 .date-section {
+  display: flex;
+  flex-direction: column;
   min-height: 0;
-  max-height: 220px;
+  max-height: 340px;
   overflow: hidden;
 }
 
 .date-months,
 .group-team-grid {
+  min-height: 0;
   overflow: auto;
   scrollbar-gutter: stable;
+}
+
+.date-months {
+  flex: 1 1 auto;
+  max-height: 100%;
 }
 
 .explorer-output {
   height: 100%;
   min-height: 0;
   overflow: hidden;
-  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
 }
 
 .panel-section,
 .result-card,
 .map-panel {
   min-height: 0;
-}
-
-.map-panel {
-  height: 100%;
 }
 
 .map-canvas {
@@ -82,6 +85,8 @@ body {
   html,
   body,
   #app {
+    height: auto;
+    min-height: 100%;
     overflow: auto;
   }
 
@@ -98,6 +103,10 @@ body {
   .explore-panel,
   .explorer-output {
     height: auto;
+    overflow: visible;
+  }
+
+  .groups-section {
     overflow: visible;
   }
 }

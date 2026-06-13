@@ -46,6 +46,13 @@ Stable development rules, validation commands, delivery rules, and report format
 - Selection changes should update all dependent UI surfaces consistently: cards, chips, result panel, map highlight, and route display.
 - Prefer accessible native controls or explicit button semantics for clickable UI.
 
+## Design Review Decisions
+
+- Do not add a search form to the explorer. Country discovery should happen through Groups & Teams, and venue discovery should happen through map pins and result context.
+- Do not show raw URL state such as `/?venue=guadalajara` in the header, and do not show a header-level Clear button.
+- In Groups & Teams, every country flag must remain visible. It is acceptable for users to identify countries by flag alone. When the available space is tight, prioritize flag visibility over country names, metadata, and other text; collapse, truncate, or hide secondary text before hiding flags.
+- In Groups & Teams, group labels inside the table should use only the group letter, such as `A`, because the section label already provides the group context.
+
 ## UI Change Scope
 
 - For visual polish tasks, prefer CSS-only changes unless the requested behavior requires ViewModel or component changes.

@@ -17,11 +17,10 @@ type ExplorerViewState = {
 Initial state resolution follows this order:
 
 1. If the URL contains any explorer query parameter, parse and normalize the URL.
-2. If the URL has no explorer parameters, select the country assigned to slot `A1`.
-3. If `A1` has no country assignment, fall back to `Group A`.
+2. If the URL has no explorer parameters, select the default tournament date for the
+   current local date.
 
-This keeps the default experience tournament-oriented while still making shared URLs fully
-reproducible.
+This keeps the default experience date-oriented while still making shared URLs fully reproducible.
 
 ## URL parameters
 

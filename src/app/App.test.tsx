@@ -208,20 +208,67 @@ describe("App", () => {
     expect(window.location.search).toBe("?date=2026-06-14");
   });
 
-  it("renders readable country names in the groups table", () => {
+  it("restores the previous explicit selection from browser history", async () => {
+    render(<App />);
+
+    selectJapan();
+    fireEvent.click(screen.getByRole("button", { name: /Select Sun Jun 14/ }));
+    window.history.back();
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Japan" })).toBeInTheDocument();
+    });
+    expect(window.location.search).toBe("?country=jpn");
+  });
+
+  it("does not show raw URL state or clear actions in the header", () => {
+    render(<App />);
+
+    selectJapan();
+
+    expect(window.location.search).toBe("?country=jpn");
+    expect(screen.queryByText("/?country=jpn")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Clear" })).not.toBeInTheDocument();
+  });
+
+  it("does not render an explorer search form", () => {
+    render(<App />);
+
+    expect(screen.queryByRole("search")).not.toBeInTheDocument();
+    expect(screen.queryByRole("combobox", { name: "Search team or city" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Search" })).not.toBeInTheDocument();
+  });
+
+  it("keeps countries selectable from the groups table", () => {
     render(<App />);
 
     const groupsSection = screen.getByRole("region", { name: "Groups & Teams" });
 
-    expect(within(groupsSection).getByText("South Africa")).toBeInTheDocument();
-    expect(within(groupsSection).getByText("Korea Republic")).toBeInTheDocument();
-    expect(within(groupsSection).getByText("Czechia")).toBeInTheDocument();
-    expect(within(groupsSection).getByText("Canada")).toBeInTheDocument();
-    expect(within(groupsSection).getByText("Bosnia and Herzegovina")).toBeInTheDocument();
-    expect(within(groupsSection).getByText("Qatar")).toBeInTheDocument();
-    expect(within(groupsSection).getByText("Switzerland")).toBeInTheDocument();
-    expect(within(groupsSection).getByText("Japan")).toBeInTheDocument();
-    expect(within(groupsSection).queryByText("JPN")).not.toBeInTheDocument();
+    expect(within(groupsSection).getByRole("button", { name: "Select Group A" })).toHaveTextContent(
+      "A",
+    );
+    expect(within(groupsSection).queryByText("Group A")).not.toBeInTheDocument();
+    expect(
+      within(groupsSection).getByRole("button", { name: "Select South Africa" }),
+    ).toBeInTheDocument();
+    expect(
+      within(groupsSection).getByRole("button", { name: "Select Korea Republic" }),
+    ).toBeInTheDocument();
+    expect(
+      within(groupsSection).getByRole("button", { name: "Select Czechia" }),
+    ).toBeInTheDocument();
+    expect(
+      within(groupsSection).getByRole("button", { name: "Select Canada" }),
+    ).toBeInTheDocument();
+    expect(
+      within(groupsSection).getByRole("button", { name: "Select Bosnia and Herzegovina" }),
+    ).toBeInTheDocument();
+    expect(within(groupsSection).getByRole("button", { name: "Select Qatar" })).toBeInTheDocument();
+    expect(
+      within(groupsSection).getByRole("button", { name: "Select Switzerland" }),
+    ).toBeInTheDocument();
+    expect(within(groupsSection).getByRole("button", { name: "Select Japan" })).toBeInTheDocument();
+    expect(within(groupsSection).getByText("JPN")).toBeInTheDocument();
     expect(within(groupsSection).queryByText("JPN · AFC")).not.toBeInTheDocument();
   });
 
@@ -238,6 +285,7 @@ describe("App", () => {
     render(<App />);
 
     const dateButton = screen.getByRole("button", { name: /Select Sun Jun 14/ });
+    const restDateButton = screen.getByRole("button", { name: /Select Wed Jul 08.*Rest day/ });
     fireEvent.click(dateButton);
 
     expect(dateButton).toHaveAttribute("aria-pressed", "true");
@@ -245,6 +293,7 @@ describe("App", () => {
     expect(dateButton).not.toHaveTextContent("Sun");
     expect(dateButton).not.toHaveTextContent("Jun");
     expect(dateButton).not.toHaveTextContent(/matches/);
+    expect(restDateButton).toHaveTextContent("Rest");
   });
 
   it("renders match cards as compact date matchup venue rows", () => {
@@ -254,7 +303,7 @@ describe("App", () => {
     const matchScope = within(matchCard);
 
     expect(matchScope.getByText("Thu Jun 11 13:00 CT")).toBeInTheDocument();
-    expect(matchScope.getByText("🇲🇽 vs 🇿🇦")).toBeInTheDocument();
+    expect(matchScope.getByText("🇲🇽 MEX vs 🇿🇦 RSA")).toBeInTheDocument();
     expect(matchScope.getByText("🇲🇽 Mexico vs 🇿🇦 South Africa")).toHaveClass("visually-hidden");
     expect(matchScope.getByText("Scheduled")).toBeInTheDocument();
     expect(matchScope.queryByText(/Estadio Azteca · Mexico City, Mexico/)).not.toBeInTheDocument();
@@ -279,6 +328,15 @@ describe("App", () => {
       "data-venue-id",
       "mexico-city",
     );
+  });
+
+  it("selects a match venue when a match card is clicked", () => {
+    render(<App />);
+
+    fireEvent.click(getFirstMatchCard());
+
+    expect(screen.getByRole("heading", { name: "Mexico City" })).toBeInTheDocument();
+    expect(window.location.search).toBe("?venue=mexico-city");
   });
 
   it("keeps map marker labels compact with visible venue names only", () => {
@@ -397,5 +455,16 @@ describe("App", () => {
 
     expect(screen.getByRole("heading", { name: "Dallas" })).toBeInTheDocument();
     expect(getFirstMatchCard()).not.toHaveTextContent("Arlington, USA");
+    expect(getVenueControl("dallas")).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("renders country route legs in fixture order", () => {
+    render(<App />);
+
+    selectJapan();
+
+    expect(screen.getByRole("list", { name: "Route legs by fixture date" })).toBeInTheDocument();
+    expect(screen.getByText("Dallas → Monterrey")).toBeInTheDocument();
+    expect(screen.getByText("Monterrey → Dallas")).toBeInTheDocument();
   });
 });

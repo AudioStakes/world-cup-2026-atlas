@@ -1,10 +1,9 @@
 # Team button accessible names
 
-Team rows render production metadata visually:
+Team rows render compact production metadata visually:
 
 ```txt
-Japan
-JPN · AFC
+🇯🇵 JPN
 ```
 
 The button accessible name remains intentionally stable and short:
@@ -17,5 +16,5 @@ Rationale:
 
 - existing tests and e2e selectors remain stable
 - screen-reader button names stay concise
-- production metadata is still visible in the row text
-- metadata remains available through the button `title`
+- FIFA codes remain visible in the row text
+- full country names remain available through the button `title`
