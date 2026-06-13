@@ -72,11 +72,32 @@ export function createResultViewModel(
     details: createDetails(data, indexes, viewState, matchingMatches, resultType),
     emptyMessage:
       matchingMatches.length === 0 ? "No matches found for the current selection." : null,
-    matches: matchingMatches.map((match) => createMatchListItem(indexes, viewState, match)),
+    matches: createResultMatches(data, indexes, viewState, matchingMatches, resultType),
     routeSummary: shouldShowCountryRouteSummary(resultType, viewState)
       ? createCountryRouteSummary(data, indexes, viewState.selectedCountryId)
       : null,
   };
+}
+
+function createResultMatches(
+  data: AppData,
+  indexes: Indexes,
+  viewState: NormalizedExplorerViewState,
+  matchingMatches: readonly Match[],
+  resultType: ExplorerResultType,
+): readonly MatchListItemViewModel[] {
+  const matches =
+    resultType === "date" && viewState.selectedDate
+      ? sortMatchesChronologically(data.matches)
+      : matchingMatches;
+  const initialScrollTargetMatchId =
+    resultType === "date" && viewState.selectedDate
+      ? (matches.find((match) => match.date === viewState.selectedDate)?.id ?? null)
+      : null;
+
+  return matches.map((match) =>
+    createMatchListItem(indexes, viewState, match, match.id === initialScrollTargetMatchId),
+  );
 }
 
 function shouldShowCountryRouteSummary(
@@ -280,6 +301,7 @@ function createMatchListItem(
   indexes: Indexes,
   viewState: NormalizedExplorerViewState,
   match: Match,
+  isInitialScrollTarget = false,
 ): MatchListItemViewModel {
   const venue = getRequiredVenue(indexes, match.venueId);
 
@@ -289,6 +311,7 @@ function createMatchListItem(
     stageLabel: formatStageLabel(match),
     dateLabel: formatWeekdayDateLabel(match.date),
     dateHeadingLabel: formatFullDateHeadingLabel(match.date),
+    isInitialScrollTarget,
     primaryText: createMatchPrimaryText(indexes, viewState, match),
     homeTeam: createMatchTeam(indexes, match.homeParticipant),
     awayTeam: createMatchTeam(indexes, match.awayParticipant),
@@ -306,6 +329,17 @@ function createMatchListItem(
     venueLabel: venue.name,
     venueDetailLabel: createVenueDetailLabel(venue),
   };
+}
+
+function sortMatchesChronologically(matches: readonly Match[]): readonly Match[] {
+  return matches
+    .slice()
+    .sort(
+      (left, right) =>
+        left.date.localeCompare(right.date) ||
+        left.kickoffLocal.localeCompare(right.kickoffLocal) ||
+        left.matchNumber - right.matchNumber,
+    );
 }
 
 function createDetails(
@@ -332,17 +366,7 @@ function createDetails(
   }
 
   if (resultType === "date" && viewState.selectedDate) {
-    return {
-      type: "date",
-      metrics: [
-        { label: "Matches", value: formatCount(matchingMatches.length, "match") },
-        { label: "Kickoff window", value: createKickoffRangeLabel(matchingMatches) ?? "Rest day" },
-        {
-          label: "Time zones",
-          value: createTimeZoneSummaryLabel(indexes, matchingMatches) ?? "None",
-        },
-      ],
-    };
+    return null;
   }
 
   if (resultType === "venue" && viewState.selectedVenueId) {

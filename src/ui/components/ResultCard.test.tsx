@@ -1,8 +1,44 @@
 import { fireEvent, render, screen, within } from "@testing-library/preact";
 import { describe, expect, it, vi } from "vitest";
 import { countryId, groupCode, matchId, venueId } from "../../domain/ids";
-import type { ExplorerResultViewModel } from "../../features/explorer/types";
+import type {
+  ExplorerResultViewModel,
+  MatchListItemViewModel,
+} from "../../features/explorer/types";
 import { ResultCard } from "./ResultCard";
+
+const completedMatch: MatchListItemViewModel = {
+  matchId: matchId("match-1"),
+  matchNumberLabel: "Match 1",
+  stageLabel: "Group D",
+  dateLabel: "Sat Jun 13",
+  dateHeadingLabel: "Saturday 13 June 2026",
+  isInitialScrollTarget: false,
+  primaryText: "United States vs Paraguay",
+  homeTeam: {
+    flagEmoji: "🇺🇸",
+    displayName: "United States",
+    code: "USA",
+  },
+  awayTeam: {
+    flagEmoji: "🇵🇾",
+    displayName: "Paraguay",
+    code: "PAR",
+  },
+  matchupText: "🇺🇸 USA vs 🇵🇾 PAR",
+  matchupAriaLabel: "🇺🇸 United States vs 🇵🇾 Paraguay",
+  kickoffLabel: "12:00",
+  homeScoreLabel: "2",
+  awayScoreLabel: "1",
+  winningSide: "home",
+  scoreLineLabel: "2-1",
+  statusLabel: "Full time",
+  secondaryText: "12:00 PT",
+  fixtureMetaLabel: "First Stage · Group D · Los Angeles Stadium (Los Angeles)",
+  venueId: venueId("los-angeles"),
+  venueLabel: "Los Angeles",
+  venueDetailLabel: "Los Angeles Stadium · Los Angeles, USA · PT",
+};
 
 const completedResult: ExplorerResultViewModel = {
   type: "group",
@@ -13,42 +49,66 @@ const completedResult: ExplorerResultViewModel = {
   details: null,
   emptyMessage: null,
   routeSummary: null,
-  matches: [
-    {
-      matchId: matchId("match-1"),
-      matchNumberLabel: "Match 1",
-      stageLabel: "Group D",
-      dateLabel: "Sat Jun 13",
-      dateHeadingLabel: "Saturday 13 June 2026",
-      primaryText: "United States vs Paraguay",
-      homeTeam: {
-        flagEmoji: "🇺🇸",
-        displayName: "United States",
-        code: "USA",
-      },
-      awayTeam: {
-        flagEmoji: "🇵🇾",
-        displayName: "Paraguay",
-        code: "PAR",
-      },
-      matchupText: "🇺🇸 USA vs 🇵🇾 PAR",
-      matchupAriaLabel: "🇺🇸 United States vs 🇵🇾 Paraguay",
-      kickoffLabel: "12:00",
-      homeScoreLabel: "2",
-      awayScoreLabel: "1",
-      winningSide: "home",
-      scoreLineLabel: "2-1",
-      statusLabel: "Full time",
-      secondaryText: "12:00 PT",
-      fixtureMetaLabel: "First Stage · Group D · Los Angeles Stadium (Los Angeles)",
-      venueId: venueId("los-angeles"),
-      venueLabel: "Los Angeles",
-      venueDetailLabel: "Los Angeles Stadium · Los Angeles, USA · PT",
-    },
-  ],
+  matches: [completedMatch],
 };
 
 describe("ResultCard", () => {
+  it("renders date selections as a scrollable all-fixtures timeline", () => {
+    render(
+      <ResultCard
+        result={{
+          ...completedResult,
+          type: "date",
+          icon: "📅",
+          title: "Jun 13",
+          subtitle: "4 matches · 12:00–21:00 · PT/ET",
+          details: {
+            type: "date",
+            metrics: [{ label: "Matches", value: "4 matches" }],
+          },
+          matches: [
+            {
+              ...completedMatch,
+              matchId: matchId("match-previous"),
+              dateLabel: "Fri Jun 12",
+              dateHeadingLabel: "Friday 12 June 2026",
+              isInitialScrollTarget: false,
+            },
+            {
+              ...completedMatch,
+              matchId: matchId("match-selected"),
+              dateLabel: "Sat Jun 13",
+              dateHeadingLabel: "Saturday 13 June 2026",
+              isInitialScrollTarget: true,
+            },
+            {
+              ...completedMatch,
+              matchId: matchId("match-next"),
+              dateLabel: "Sun Jun 14",
+              dateHeadingLabel: "Sunday 14 June 2026",
+              isInitialScrollTarget: false,
+            },
+          ],
+        }}
+        onAction={() => {}}
+        onMatchVenueFocusChange={() => {}}
+      />,
+    );
+
+    expect(document.querySelector(".result-card--date-timeline")).toBeInTheDocument();
+    expect(document.querySelector(".result-card__header")).not.toBeInTheDocument();
+    expect(document.querySelector(".detail-metrics")).not.toBeInTheDocument();
+    expect(screen.getByRole("list", { name: "Tournament fixtures by date" })).toHaveClass(
+      "match-list--date-timeline",
+    );
+    expect(screen.getByText("Friday 12 June 2026")).toBeInTheDocument();
+    expect(screen.getByText("Saturday 13 June 2026")).toBeInTheDocument();
+    expect(screen.getByText("Sunday 14 June 2026")).toBeInTheDocument();
+    expect(document.querySelector("[data-initial-scroll-target]")).toHaveClass(
+      "is-initial-scroll-target",
+    );
+  });
+
   it("renders a country group subtitle as an actionable route", () => {
     const onAction = vi.fn();
 

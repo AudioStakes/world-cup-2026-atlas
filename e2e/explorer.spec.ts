@@ -170,7 +170,7 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     expect(targetSize.flagWidth).toBeGreaterThanOrEqual(24);
   });
 
-  test("@smoke selects a date and shows that day's fixture details", async ({ page }) => {
+  test("@smoke selects a date and starts the fixture timeline on that date", async ({ page }) => {
     await page.goto("/");
 
     await page.getByRole("button", { name: /Select Tue Jun 16/ }).click();
@@ -180,10 +180,34 @@ test.describe("World Cup 2026 Atlas explorer", () => {
       "aria-pressed",
       "true",
     );
-    await expect(page.getByRole("heading", { name: "Jun 16" })).toBeVisible();
-    await expect(
-      page.locator(".detail-metrics").getByText("4 matches", { exact: true }),
-    ).toBeVisible();
+    await expect(page.locator("#selection-results")).toHaveClass(/result-card--date-timeline/);
+    await expect(page.locator(".result-card__header")).toHaveCount(0);
+    await expect(page.locator(".detail-metrics")).toHaveCount(0);
+
+    const timelineState = await page.evaluate(() => {
+      const list = document.querySelector<HTMLElement>(".match-list");
+      const scrollTarget = document.querySelector<HTMLElement>("[data-initial-scroll-target]");
+      const listRect = list?.getBoundingClientRect();
+      const targetRect = scrollTarget?.getBoundingClientRect();
+
+      return {
+        canScrollDown: list ? list.scrollTop + list.clientHeight < list.scrollHeight : false,
+        canScrollUp: list ? list.scrollTop > 0 : false,
+        matchCount: document.querySelectorAll(".match-card").length,
+        targetHeading:
+          scrollTarget?.querySelector(".match-list__date-row h3")?.textContent?.trim() ?? null,
+        targetOffsetFromListTop:
+          listRect && targetRect ? Math.round(targetRect.top - listRect.top) : null,
+      };
+    });
+
+    expect(timelineState.matchCount).toBe(104);
+    expect(timelineState.targetHeading).toBe("Tuesday 16 June 2026");
+    expect(
+      Math.abs(timelineState.targetOffsetFromListTop ?? Number.POSITIVE_INFINITY),
+    ).toBeLessThanOrEqual(1);
+    expect(timelineState.canScrollUp).toBe(true);
+    expect(timelineState.canScrollDown).toBe(true);
   });
 
   test("@smoke selects a venue from the map", async ({ page }) => {

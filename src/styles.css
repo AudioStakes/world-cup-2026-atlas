@@ -553,6 +553,11 @@ input:focus-visible,
   box-shadow: var(--shadow-card);
 }
 
+.result-card--date-timeline {
+  grid-template-rows: minmax(0, 1fr);
+  padding: 0;
+}
+
 .result-card__header {
   display: flex;
   align-items: flex-start;
@@ -863,6 +868,15 @@ input:focus-visible,
   background: rgba(23, 32, 42, 0.045);
   scrollbar-gutter: stable;
   list-style: none;
+}
+
+.match-list--date-timeline {
+  gap: 14px;
+  min-height: 100%;
+  margin: 0;
+  padding: 12px;
+  border-radius: 0;
+  background: transparent;
 }
 
 .match-list__item {

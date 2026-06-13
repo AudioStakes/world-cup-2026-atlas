@@ -193,6 +193,7 @@ export type MatchListItemViewModel = {
   readonly stageLabel: string;
   readonly dateLabel: string;
   readonly dateHeadingLabel: string;
+  readonly isInitialScrollTarget: boolean;
   readonly primaryText: string;
   readonly homeTeam: MatchTeamViewModel;
   readonly awayTeam: MatchTeamViewModel;

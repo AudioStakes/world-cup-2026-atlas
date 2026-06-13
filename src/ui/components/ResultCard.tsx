@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from "preact/hooks";
 import type { VenueId } from "../../domain/ids";
 import type {
   DetailMetricViewModel,
@@ -19,26 +20,56 @@ type ResultCardProps = {
 };
 
 export function ResultCard({ result, onAction, onMatchVenueFocusChange }: ResultCardProps) {
+  const isDateTimeline = result.type === "date";
+  const matchListRef = useRef<HTMLOListElement>(null);
+  const initialScrollTargetMatchId =
+    result.matches.find((match) => match.isInitialScrollTarget)?.matchId ?? null;
+
+  useLayoutEffect(() => {
+    if (!isDateTimeline) {
+      return;
+    }
+
+    const matchList = matchListRef.current;
+    const scrollTarget = matchList?.querySelector<HTMLElement>("[data-initial-scroll-target]");
+
+    if (!matchList || !scrollTarget) {
+      return;
+    }
+
+    matchList.scrollTop = scrollTarget.offsetTop - matchList.offsetTop;
+  }, [isDateTimeline, initialScrollTargetMatchId]);
+
   return (
-    <section id="selection-results" class="result-card" aria-labelledby="result-card-title">
+    <section
+      id="selection-results"
+      class={classNames("result-card", isDateTimeline && "result-card--date-timeline")}
+      aria-labelledby="result-card-title"
+    >
       <p class="visually-hidden" aria-live="polite">
         {createResultStatusLabel(result)}
       </p>
-      <header class="result-card__header">
-        <span class="result-card__icon" aria-hidden="true">
-          {result.icon}
-        </span>
-        <div>
-          <h2 id="result-card-title">{result.title}</h2>
-          <ResultSubtitle
-            groupNavigation={result.groupNavigation}
-            subtitle={result.subtitle}
-            onAction={onAction}
-          />
-        </div>
-      </header>
+      {isDateTimeline ? (
+        <h2 id="result-card-title" class="visually-hidden">
+          {result.title}
+        </h2>
+      ) : (
+        <header class="result-card__header">
+          <span class="result-card__icon" aria-hidden="true">
+            {result.icon}
+          </span>
+          <div>
+            <h2 id="result-card-title">{result.title}</h2>
+            <ResultSubtitle
+              groupNavigation={result.groupNavigation}
+              subtitle={result.subtitle}
+              onAction={onAction}
+            />
+          </div>
+        </header>
+      )}
 
-      {result.routeSummary ? (
+      {!isDateTimeline && result.routeSummary ? (
         <div class="route-summary">
           <div class="route-summary__headline">
             <span>{result.routeSummary.itineraryLabel}</span>
@@ -66,12 +97,23 @@ export function ResultCard({ result, onAction, onMatchVenueFocusChange }: Result
         </div>
       ) : null}
 
-      <ResultDetails details={result.details} />
+      {!isDateTimeline ? <ResultDetails details={result.details} /> : null}
 
       {result.matches.length > 0 ? (
-        <ol class="match-list">
+        <ol
+          ref={matchListRef}
+          class={classNames("match-list", isDateTimeline && "match-list--date-timeline")}
+          aria-label={isDateTimeline ? "Tournament fixtures by date" : undefined}
+        >
           {result.matches.map((match, index) => (
-            <li class="match-list__item" key={match.matchId}>
+            <li
+              class={classNames(
+                "match-list__item",
+                match.isInitialScrollTarget && "is-initial-scroll-target",
+              )}
+              data-initial-scroll-target={match.isInitialScrollTarget ? "true" : undefined}
+              key={match.matchId}
+            >
               {shouldShowMatchDateHeading(result.matches, index) ? (
                 <div class="match-list__date-row">
                   <h3>{match.dateHeadingLabel}</h3>

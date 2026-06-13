@@ -214,17 +214,15 @@ describe("createResultViewModel production metadata", () => {
 
   it("adds kickoff range and time-zone summary to multi-match date result subtitles", () => {
     const result = createResultForDate("2026-06-14");
+    const scrollTargetIndex = result.matches.findIndex((match) => match.isInitialScrollTarget);
 
     expect(result.title).toBe("Jun 14");
     expect(result.subtitle).toBe("4 matches · 12:00–20:00 · CT/ET");
-    expect(result.details).toMatchObject({
-      type: "date",
-      metrics: expect.arrayContaining([
-        { label: "Matches", value: "4 matches" },
-        { label: "Kickoff window", value: "12:00–20:00" },
-        { label: "Time zones", value: "CT/ET" },
-      ]),
-    });
+    expect(result.details).toBeNull();
+    expect(result.matches.length).toBeGreaterThan(4);
+    expect(result.matches[0]?.dateHeadingLabel).toBe("Thursday 11 June 2026");
+    expect(scrollTargetIndex).toBeGreaterThan(0);
+    expect(result.matches[scrollTargetIndex]?.dateHeadingLabel).toBe("Sunday 14 June 2026");
   });
 
   it("adds singular kickoff metadata to one-match date result subtitles", () => {
@@ -269,7 +267,7 @@ describe("createResultViewModel production metadata", () => {
 
   it("adds final stage labels and venue details for knockout matches", () => {
     const result = createResultForDate("2026-07-19");
-    const final = result.matches[0];
+    const final = result.matches.find((match) => match.matchNumberLabel === "Match 104");
 
     expect(final?.matchNumberLabel).toBe("Match 104");
     expect(final?.stageLabel).toBe("Final");
