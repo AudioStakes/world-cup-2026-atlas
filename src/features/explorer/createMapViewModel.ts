@@ -1,12 +1,13 @@
 import { calculateDistanceKm } from "../../calculations/calculateDistanceKm";
-import { northAmericaMapBounds } from "../../data/northAmericaMapData";
+import { northAmericaMapBounds, northAmericaMapFeatures } from "../../data/northAmericaMapData";
 import type { CountryId, VenueId } from "../../domain/ids";
 import type { AppData, HostCountryCode, Match, Venue } from "../../domain/types";
 import type { Indexes } from "../../indexes/createIndexes";
 import { queryMatchesByViewState } from "../../queries/queryMatchesByViewState";
 import { formatDistanceLabel } from "./formatExplorerLabels";
-import { projectGeoPointToExplorerMap } from "./projectGeoPoint";
+import { createSvgPathsFromGeoGeometry, projectGeoPointToExplorerMap } from "./projectGeoPoint";
 import type {
+  ExplorerMapBackgroundFeatureViewModel,
   ExplorerMapViewModel,
   MapRouteViewModel,
   NormalizedExplorerViewState,
@@ -27,6 +28,7 @@ export function createMapViewModel(
       : new Set<VenueId>();
 
   return {
+    backgroundFeatures: createMapBackgroundFeatures(),
     venueMarkers: data.venues.map((venue) => ({
       venueId: venue.id,
       venueName: venue.name,
@@ -43,6 +45,30 @@ export function createMapViewModel(
       ? createCountryRoutes(data, indexes, viewState.selectedCountryId)
       : [],
   };
+}
+
+function createMapBackgroundFeatures(): readonly ExplorerMapBackgroundFeatureViewModel[] {
+  return northAmericaMapFeatures.flatMap((feature) =>
+    createSvgPathsFromGeoGeometry(feature.geometry, northAmericaMapBounds).map(
+      (pathData, pathIndex) => ({
+        id: `${feature.id}-${pathIndex}`,
+        className: createMapBackgroundFeatureClassName(feature),
+        pathData,
+      }),
+    ),
+  );
+}
+
+function createMapBackgroundFeatureClassName(feature: (typeof northAmericaMapFeatures)[number]) {
+  return [
+    feature.kind === "land" ? "country-shape" : null,
+    feature.id === "natural-earth-can" ? "canada-shape" : null,
+    feature.id === "natural-earth-usa" ? "usa-shape" : null,
+    feature.id === "natural-earth-mex" ? "mexico-shape" : null,
+    feature.kind === "water" ? "map-lake" : null,
+  ]
+    .filter((className): className is string => Boolean(className))
+    .join(" ");
 }
 
 function hasActiveSelection(viewState: NormalizedExplorerViewState): boolean {

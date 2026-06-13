@@ -7,6 +7,7 @@
 - Install: `pnpm install`
 - Dev: `pnpm dev`
 - Fix: `pnpm fix`
+- Policy checks: `pnpm check` and `pnpm check:policy`
 - Typecheck: `pnpm typecheck`
 - Test: `pnpm test`
 - E2E: `pnpm e2e`

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { appData } from "../../data/appData";
-import { northAmericaMapBounds } from "../../data/northAmericaMapData";
+import { northAmericaMapBounds, northAmericaMapFeatures } from "../../data/northAmericaMapData";
 import { countryId, venueId } from "../../domain/ids";
 import { createIndexes } from "../../indexes/createIndexes";
 import { createMapViewModel } from "./createMapViewModel";
@@ -39,6 +39,22 @@ describe("createMapViewModel venue marker metadata", () => {
     const map = createMapViewModel(appData, indexes, emptyExplorerViewState, appData.matches);
 
     expect(map.venueMarkers.every((marker) => marker.state === "normal")).toBe(true);
+  });
+
+  it("exposes projected map background features to the UI", () => {
+    const map = createMap();
+    const firstFeature = map.backgroundFeatures[0];
+
+    if (!firstFeature) {
+      throw new Error("Expected map background features");
+    }
+
+    expect(map.backgroundFeatures.length).toBeGreaterThanOrEqual(northAmericaMapFeatures.length);
+    expect(firstFeature).toMatchObject({
+      className: expect.any(String),
+      id: expect.stringMatching(/^natural-earth-/),
+      pathData: expect.stringMatching(/^M/),
+    });
   });
 
   it("adds production venue metadata to map markers", () => {

@@ -55,3 +55,19 @@ Use Playwright only for critical browser flows:
 - team selection from Groups & Teams
 - venue selection from the map
 - URL state synchronization
+
+## Test layers
+
+- Unit tests live beside source as `*.test.ts` or `*.test.tsx`; they verify pure domain,
+  calculation, state transition, query, and ViewModel behavior without browser, HTTP, DB, or
+  filesystem dependencies.
+- Integration tests use `*.integration.test.ts` or `*.integration.test.tsx` when multiple local
+  modules must be verified together under Vitest.
+- Contract tests use `*.contract.test.ts` or `*.contract.test.tsx` for stable data shape or adapter
+  expectations.
+- Smoke E2E tests live in `e2e/` and must include `@smoke` in the Playwright test title.
+- Full E2E tests live in `e2e/` and must include `@full` in the Playwright test title.
+
+Biome enforces focused-test bans, `setTimeout` bans in tests, unit-test dependency restrictions, and
+architecture import rules through `pnpm check`. `pnpm check:policy` enforces E2E tags and
+Playwright `waitForTimeout` bans. `pnpm verify` runs both in CI.
