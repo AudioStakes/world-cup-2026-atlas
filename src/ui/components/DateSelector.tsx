@@ -18,18 +18,11 @@ type DateChipProps = {
 const weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 
 export function DateSelector({ dateSelector, onAction }: DateSelectorProps) {
-  const hasOutsideCurrentFilterDates = dateSelector.months.some((month) =>
-    month.dates.some((dateOption) => dateOption.availability === "outsideCurrentFilter"),
-  );
-
   return (
     <section class="panel-section date-section" aria-labelledby="date-selector-title">
       <h2 id="date-selector-title" class="visually-hidden">
         {dateSelector.title}
       </h2>
-      {hasOutsideCurrentFilterDates ? (
-        <p class="filter-hint">Dimmed dates do not include the current selection.</p>
-      ) : null}
 
       <div class="date-months">
         {dateSelector.months.map((month) => (

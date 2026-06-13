@@ -12,20 +12,11 @@ type GroupsAndTeamsTableProps = {
 };
 
 export function GroupsAndTeamsTable({ groupsAndTeams, onAction }: GroupsAndTeamsTableProps) {
-  const hasOutsideCurrentFilterTeams = groupsAndTeams.groups.some(
-    (group) =>
-      group.availability === "outsideCurrentFilter" ||
-      group.teams.some((team) => team.availability === "outsideCurrentFilter"),
-  );
-
   return (
     <section class="panel-section groups-section" aria-labelledby="groups-and-teams-title">
       <div class="section-heading">
         <h2 id="groups-and-teams-title">{groupsAndTeams.title}</h2>
       </div>
-      {hasOutsideCurrentFilterTeams ? (
-        <p class="filter-hint">Dimmed teams do not include the current selection.</p>
-      ) : null}
       <div class="group-team-grid">
         {groupsAndTeams.groups.map((group) => (
           <GroupTeamCard key={group.groupCode} group={group} onAction={onAction} />

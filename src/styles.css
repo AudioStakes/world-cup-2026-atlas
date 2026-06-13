@@ -417,14 +417,6 @@ input:focus-visible,
   white-space: nowrap;
 }
 
-.filter-hint {
-  margin: 0 10px 8px;
-  color: rgba(23, 32, 42, 0.68);
-  font-size: 10px;
-  font-weight: 750;
-  line-height: 1.3;
-}
-
 .group-team-code {
   overflow: hidden;
   text-overflow: ellipsis;
