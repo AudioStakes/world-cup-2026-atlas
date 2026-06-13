@@ -170,6 +170,48 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     expect(targetSize.flagWidth).toBeGreaterThanOrEqual(24);
   });
 
+  test("@smoke keeps Groups & Teams compact when panels stack", async ({ page }) => {
+    await page.setViewportSize({ width: 596, height: 1451 });
+    await page.goto("/?date=2026-06-20");
+
+    const compactLayout = await page.evaluate(() => {
+      const section = document.querySelector<HTMLElement>(".groups-section");
+      const grid = section?.querySelector<HTMLElement>(".group-team-grid");
+      const firstCopy = grid?.querySelector<HTMLElement>(".group-team-copy");
+      const firstName = grid?.querySelector<HTMLElement>(".group-team-name");
+      const cards = Array.from(grid?.querySelectorAll<HTMLElement>(".group-team-card") ?? []);
+      const flags = Array.from(grid?.querySelectorAll<HTMLElement>(".group-team-flag") ?? []);
+      const gridStyles = grid ? getComputedStyle(grid) : null;
+      const sectionRect = section?.getBoundingClientRect();
+      const rowTops = new Set(cards.map((card) => Math.round(card.getBoundingClientRect().top)));
+      const firstNameRect = firstName?.getBoundingClientRect();
+
+      return {
+        columns:
+          gridStyles?.gridTemplateColumns.split(" ").filter((column) => column.trim().length > 0)
+            .length ?? 0,
+        copyDisplay: firstCopy ? getComputedStyle(firstCopy).display : "",
+        flagCount: flags.length,
+        hiddenFlags: flags.filter((flag) => {
+          const rect = flag.getBoundingClientRect();
+
+          return rect.width === 0 || rect.height === 0;
+        }).length,
+        nameWidth: firstNameRect?.width ?? 0,
+        rowCount: rowTops.size,
+        sectionHeight: sectionRect?.height ?? 0,
+      };
+    });
+
+    expect(compactLayout.columns).toBe(4);
+    expect(compactLayout.rowCount).toBeLessThanOrEqual(3);
+    expect(compactLayout.copyDisplay).toBe("none");
+    expect(compactLayout.nameWidth).toBe(0);
+    expect(compactLayout.sectionHeight).toBeLessThanOrEqual(220);
+    expect(compactLayout.flagCount).toBe(48);
+    expect(compactLayout.hiddenFlags).toBe(0);
+  });
+
   test("@smoke selects a date and starts the fixture timeline on that date", async ({ page }) => {
     await page.goto("/");
 

@@ -17,6 +17,8 @@ Reason: the helper text appears only for some selections, which shifts the Date 
 
 The Groups & Teams panel should use the available panel area instead of compressing all teams into tiny inline text. On tall desktop layouts, group rows can be larger and more legible. Shorter desktop and mobile layouts may stay compact when that is needed to keep all 48 flags visible.
 
+When narrow viewports stack the controls and result panels vertically, the Groups & Teams panel should minimize height so fixture cards stay close to the top of the screen. Hide country codes in that mode, keep every flag visible, and arrange groups across two to four columns depending on available width.
+
 The selected or related group/team state should be communicated through stable red border treatments and restrained backgrounds, not extra explanatory text that changes panel height.
 
 ## Date selector affordances
