@@ -1,6 +1,8 @@
 # Deployment
 
-World Cup 2026 Atlas is a static Vite SPA that can be deployed to GitHub Pages.
+World Cup 2026 Atlas is a static Vite SPA. The static-only build can be deployed to GitHub Pages.
+Live match result updates require the Cloudflare Worker described in
+[Live Result Updates](live-result-updates.md).
 
 ## GitHub Pages workflow
 
@@ -55,3 +57,16 @@ pnpm preview
 ```
 
 The local preview uses `/` as the base path unless `GITHUB_PAGES=true` is set.
+
+## Cloudflare Worker for live results
+
+`wrangler.toml` configures a Worker that serves `/api/results` and static assets. Before deploying:
+
+1. create a KV namespace for `RESULTS_KV`
+2. replace the placeholder namespace ids in `wrangler.toml`
+3. set the `API_FOOTBALL_KEY` Worker secret
+4. confirm `ALLOWED_ORIGINS` for the production hostname
+5. populate API-FOOTBALL fixture mappings after provider fixture ids are confirmed
+
+The Worker cron is configured to run every five minutes. Provider calls are still guarded in code by
+the 20-minute interval, match polling window, and daily request budget.

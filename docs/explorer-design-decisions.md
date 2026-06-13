@@ -47,6 +47,10 @@ Do not make the entire match card clickable or give the full card a clickable ho
 
 On narrow cards, keep the score row to one line. If there is not enough inline space for team names, hide the names visually before allowing the row to stack; the flags and kickoff/full-time value must remain visible.
 
+Runtime match results should appear through the same match-card layout. Show the provider short
+status label, such as `FT` or `1H`, only after `queryExplorer()` has normalized it into the
+ViewModel. UI components should not know API-FOOTBALL response shapes or fetch provider data.
+
 ## Group detail panel
 
 A selected Group should show standings first, then date-ordered match cards.

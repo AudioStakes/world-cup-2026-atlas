@@ -1,9 +1,11 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/preact";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { countryId, matchId } from "../domain/ids";
 import {
   EXPLORER_MAP_DISPLAY_VIEWBOX,
   EXPLORER_MAP_VIEWBOX,
 } from "../features/explorer/mapViewport";
+import type { MatchResultsSnapshot } from "../matchResults/types";
 import { App } from "./App";
 
 const originalDateTimeFormatResolvedOptions = Intl.DateTimeFormat.prototype.resolvedOptions;
@@ -29,6 +31,21 @@ function getFirstMatchCard() {
   }
 
   return matchCard as HTMLElement;
+}
+
+function mockResultsSnapshotFetch(snapshot: MatchResultsSnapshot) {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => jsonResponse(snapshot)),
+  );
+}
+
+function jsonResponse(data: unknown, init?: ResponseInit): Response {
+  return new Response(JSON.stringify(data), {
+    headers: { "Content-Type": "application/json" },
+    status: 200,
+    ...init,
+  });
 }
 
 function getFirstMatchVenueButton() {
@@ -159,10 +176,15 @@ describe("App", () => {
     window.history.replaceState(null, "", "/");
     vi.spyOn(Date, "now").mockReturnValue(new Date(2026, 5, 11, 9).getTime());
     mockBrowserTimeZone(null);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => jsonResponse({}, { status: 404 })),
+    );
   });
 
   afterEach(() => {
     MockResizeObserver.reset();
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
 
     if (originalResizeObserver) {
@@ -359,6 +381,39 @@ describe("App", () => {
     );
     expect(matchScope.getByText("🇲🇽 Mexico vs 🇿🇦 South Africa")).toHaveClass("visually-hidden");
     expect(matchScope.queryByText(/Estadio Azteca · Mexico City, Mexico/)).not.toBeInTheDocument();
+  });
+
+  it("renders runtime match results from the Worker snapshot when available", async () => {
+    mockResultsSnapshotFetch({
+      schemaVersion: 1,
+      provider: "api-football",
+      fetchedAt: "2026-06-11T21:00:00.000Z",
+      matches: [
+        {
+          matchId: matchId("match-001"),
+          provider: "api-football",
+          providerFixtureId: 1001,
+          status: "finished",
+          shortStatus: "FT",
+          elapsed: 90,
+          homeTeamId: countryId("mex"),
+          awayTeamId: countryId("rsa"),
+          homeScore: 2,
+          awayScore: 0,
+          kickoffAt: "2026-06-11T19:00:00.000Z",
+          updatedAt: "2026-06-11T21:00:00.000Z",
+        },
+      ],
+    });
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(within(getFirstMatchCard()).getByText("FT")).toBeInTheDocument();
+    });
+    expect(within(getFirstMatchCard()).getByText("2")).toBeInTheDocument();
+    expect(within(getFirstMatchCard()).getByText("0")).toBeInTheDocument();
+    expect(within(getFirstMatchCard()).queryByText("13:00")).not.toBeInTheDocument();
   });
 
   it("changes match card times when a header country time zone is selected", () => {

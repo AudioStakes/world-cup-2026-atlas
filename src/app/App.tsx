@@ -12,6 +12,8 @@ import { serializeExplorerSearchParams } from "../features/explorer/serializeExp
 import type { ExplorerAction, NormalizedExplorerViewState } from "../features/explorer/types";
 import { updateExplorerViewState } from "../features/explorer/updateExplorerViewState";
 import { createIndexes } from "../indexes/createIndexes";
+import { parseMatchResultsSnapshot } from "../matchResults/parseMatchResultsSnapshot";
+import type { MatchResultsSnapshot } from "../matchResults/types";
 import { ExplorerPage } from "../ui/components/ExplorerPage";
 
 const indexes = createIndexes(appData);
@@ -25,6 +27,9 @@ export function App() {
   const [displayTimeZoneId, setDisplayTimeZoneId] = useState<string>(() =>
     browserLocalTimeZone ? browserLocalDisplayTimeZoneId : venueLocalDisplayTimeZoneId,
   );
+  const [matchResultsSnapshot, setMatchResultsSnapshot] = useState<MatchResultsSnapshot | null>(
+    null,
+  );
 
   const viewModel = useMemo(
     () =>
@@ -35,8 +40,9 @@ export function App() {
         focusedVenueId,
         displayTimeZoneId,
         browserLocalTimeZone,
+        matchResultsSnapshot,
       ),
-    [browserLocalTimeZone, displayTimeZoneId, focusedVenueId, viewState],
+    [browserLocalTimeZone, displayTimeZoneId, focusedVenueId, matchResultsSnapshot, viewState],
   );
 
   useEffect(() => {
@@ -50,6 +56,22 @@ export function App() {
     window.addEventListener("popstate", handlePopState);
 
     return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  useEffect(() => {
+    if (typeof fetch !== "function") {
+      return;
+    }
+
+    const abortController = new AbortController();
+
+    void fetchMatchResultsSnapshot(abortController.signal).then((snapshot) => {
+      if (!abortController.signal.aborted) {
+        setMatchResultsSnapshot(snapshot);
+      }
+    });
+
+    return () => abortController.abort();
   }, []);
 
   function dispatchExplorerAction(action: ExplorerAction): void {
@@ -72,6 +94,29 @@ export function App() {
       onTimeZoneChange={setDisplayTimeZoneId}
     />
   );
+}
+
+async function fetchMatchResultsSnapshot(
+  signal: AbortSignal,
+): Promise<MatchResultsSnapshot | null> {
+  try {
+    const requestInit: RequestInit & { readonly priority?: "low" } = {
+      headers: { Accept: "application/json" },
+      priority: "low",
+      signal,
+    };
+    const response = await fetch("/api/results", {
+      ...requestInit,
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return parseMatchResultsSnapshot(await response.json());
+  } catch {
+    return null;
+  }
 }
 
 function isSameExplorerViewState(

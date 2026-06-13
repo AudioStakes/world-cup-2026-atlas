@@ -125,10 +125,48 @@ export type Match = {
   readonly sourceNote?: string;
 };
 
+export type MatchStatus =
+  | "scheduled"
+  | "live"
+  | "finished"
+  | "postponed"
+  | "cancelled"
+  | "suspended"
+  | "abandoned"
+  | "unknown";
+
+export type ApiFootballShortStatus =
+  | "TBD"
+  | "NS"
+  | "1H"
+  | "HT"
+  | "2H"
+  | "ET"
+  | "BT"
+  | "P"
+  | "LIVE"
+  | "FT"
+  | "AET"
+  | "PEN"
+  | "PST"
+  | "CANC"
+  | "SUSP"
+  | "INT"
+  | "ABD"
+  | "AWD"
+  | "WO"
+  | string;
+
 export type MatchResult = {
-  readonly status: "fullTime";
-  readonly homeGoals: number;
-  readonly awayGoals: number;
+  readonly provider?: "api-football" | "manual";
+  readonly providerFixtureId?: number;
+  readonly status: MatchStatus;
+  readonly shortStatus?: ApiFootballShortStatus | null;
+  readonly elapsed?: number | null;
+  readonly homeGoals: number | null;
+  readonly awayGoals: number | null;
+  readonly kickoffAt?: string;
+  readonly updatedAt?: string;
 };
 
 export type AppData = {

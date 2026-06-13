@@ -1,6 +1,8 @@
 import type { VenueId } from "../../domain/ids";
 import type { AppData } from "../../domain/types";
 import type { Indexes } from "../../indexes/createIndexes";
+import { mergeMatchResultsSnapshot } from "../../matchResults/mergeMatchResultsSnapshot";
+import type { MatchResultsSnapshot } from "../../matchResults/types";
 import { queryMatchesByViewState } from "../../queries/queryMatchesByViewState";
 import { createExplorePanelViewModel } from "./createExplorePanelViewModel";
 import { createHeaderViewModel } from "./createHeaderViewModel";
@@ -17,23 +19,31 @@ export function queryExplorer(
   focusedVenueId: VenueId | null = null,
   displayTimeZoneId = venueLocalDisplayTimeZoneId,
   browserLocalTimeZone: string | null = null,
+  matchResultsSnapshot: MatchResultsSnapshot | null = null,
 ): ExplorerViewModel {
+  const effectiveData = mergeMatchResultsSnapshot(data, matchResultsSnapshot);
   const normalizedViewState = ensureExplorerSelection(
     normalizeExplorerViewState(viewState, indexes),
   );
-  const matchingMatches = queryMatchesByViewState(data, normalizedViewState);
+  const matchingMatches = queryMatchesByViewState(effectiveData, normalizedViewState);
 
   return {
     viewState: normalizedViewState,
-    header: createHeaderViewModel(data.countries, displayTimeZoneId, browserLocalTimeZone),
+    header: createHeaderViewModel(effectiveData.countries, displayTimeZoneId, browserLocalTimeZone),
     explorePanel: createExplorePanelViewModel(
-      data,
+      effectiveData,
       indexes,
       normalizedViewState,
       matchingMatches,
       displayTimeZoneId,
       browserLocalTimeZone,
     ),
-    map: createMapViewModel(data, indexes, normalizedViewState, matchingMatches, focusedVenueId),
+    map: createMapViewModel(
+      effectiveData,
+      indexes,
+      normalizedViewState,
+      matchingMatches,
+      focusedVenueId,
+    ),
   };
 }

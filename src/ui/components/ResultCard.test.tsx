@@ -34,6 +34,8 @@ const completedMatch: MatchListItemViewModel = {
   awayScoreLabel: "1",
   winningSide: "home",
   scoreLineLabel: "2-1",
+  normalizedStatus: "finished",
+  shortStatusLabel: "FT",
   statusLabel: "Full time",
   secondaryText: "12:00 PT",
   stageMetaLabel: "First Stage",
@@ -245,5 +247,32 @@ describe("ResultCard", () => {
       groupCode: groupCode("D"),
     });
     expect(onAction).toHaveBeenCalledWith({ type: "selectVenue", venueId: venueId("los-angeles") });
+  });
+
+  it("renders the ViewModel short status instead of hardcoding full time", () => {
+    render(
+      <ResultCard
+        result={{
+          ...completedResult,
+          matches: [
+            {
+              ...completedMatch,
+              normalizedStatus: "live",
+              shortStatusLabel: "1H",
+              statusLabel: "Live",
+              homeScoreLabel: "1",
+              awayScoreLabel: "0",
+              scoreLineLabel: "1-0",
+              winningSide: null,
+            },
+          ],
+        }}
+        onAction={() => {}}
+        onMatchVenueFocusChange={() => {}}
+      />,
+    );
+
+    expect(screen.getByText("1H")).toBeInTheDocument();
+    expect(screen.queryByText("FT")).not.toBeInTheDocument();
   });
 });

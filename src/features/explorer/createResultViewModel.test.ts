@@ -79,7 +79,9 @@ function withFinishedMatch(matchNumber: number, homeGoals: number, awayGoals: nu
         ? {
             ...match,
             result: {
-              status: "fullTime",
+              provider: "manual",
+              status: "finished",
+              shortStatus: "FT",
               homeGoals,
               awayGoals,
             },
@@ -176,6 +178,8 @@ describe("createResultViewModel production metadata", () => {
       awayScoreLabel: "1",
       winningSide: "home",
       scoreLineLabel: "2-1",
+      normalizedStatus: "finished",
+      shortStatusLabel: "FT",
       statusLabel: "Full time",
     });
     expect(standings).toEqual(
@@ -214,6 +218,63 @@ describe("createResultViewModel production metadata", () => {
               label: "Loss 1-2",
             }),
           ]),
+        }),
+      ]),
+    );
+  });
+
+  it("renders live provider scores without folding them into group standings", () => {
+    const data = {
+      ...appData,
+      matches: appData.matches.map((match) =>
+        match.matchNumber === 11
+          ? {
+              ...match,
+              result: {
+                provider: "api-football" as const,
+                providerFixtureId: 1001,
+                status: "live" as const,
+                shortStatus: "1H",
+                elapsed: 38,
+                homeGoals: 1,
+                awayGoals: 0,
+                kickoffAt: "2026-06-14T20:00:00.000Z",
+                updatedAt: "2026-06-14T20:38:00.000Z",
+              },
+            }
+          : match,
+      ),
+    };
+    const liveIndexes = createIndexes(data);
+    const selectedGroupCode = groupCode("F");
+    const matches = data.matches.filter(
+      (match) =>
+        match.stage === "group" && "groupCode" in match && match.groupCode === selectedGroupCode,
+    );
+    const result = createResultViewModel(
+      data,
+      liveIndexes,
+      { ...emptyExplorerViewState, selectedGroupCode },
+      matches,
+    );
+    const liveMatch = result.matches.find((match) => match.matchNumberLabel === "Match 11");
+    const standings = result.details?.type === "group" ? result.details.standings : [];
+
+    expect(liveMatch).toMatchObject({
+      homeScoreLabel: "1",
+      awayScoreLabel: "0",
+      winningSide: null,
+      scoreLineLabel: "1-0",
+      normalizedStatus: "live",
+      shortStatusLabel: "1H",
+      statusLabel: "Live",
+    });
+    expect(standings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          teamLabel: "🇳🇱 Netherlands",
+          played: 0,
+          points: 0,
         }),
       ]),
     );

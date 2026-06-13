@@ -11,6 +11,7 @@ import type {
   Country,
   HostCountryCode,
   Match,
+  MatchResult,
   SlotEntry,
   TournamentStage,
   Venue,
@@ -350,6 +351,8 @@ function createMatchListItem(
 ): MatchListItemViewModel {
   const venue = getRequiredVenue(indexes, match.venueId);
   const displayDateTime = createMatchDisplayDateTime(match, venue, displayTimeZone);
+  const score = createScoreLabels(match.result);
+  const statusLabel = createMatchStatusLabel(match.result);
 
   return {
     matchId: match.id,
@@ -367,11 +370,13 @@ function createMatchListItem(
     matchupText: createMatchupText(indexes, match),
     matchupAriaLabel: createMatchupAriaLabel(indexes, match),
     kickoffLabel: displayDateTime.timeLabel,
-    homeScoreLabel: match.result ? String(match.result.homeGoals) : null,
-    awayScoreLabel: match.result ? String(match.result.awayGoals) : null,
+    homeScoreLabel: score?.homeScoreLabel ?? null,
+    awayScoreLabel: score?.awayScoreLabel ?? null,
     winningSide: createWinningSide(match),
     scoreLineLabel: createScoreLineLabel(match),
-    statusLabel: match.result ? "Full time" : "Scheduled",
+    normalizedStatus: match.result?.status ?? "scheduled",
+    shortStatusLabel: match.result?.shortStatus ?? null,
+    statusLabel,
     secondaryText: `${displayDateTime.timeLabel} ${displayDateTime.timeZoneLabel}`,
     fixtureMetaLabel: createFixtureMetaLabel(match, venue),
     venueId: venue.id,
@@ -472,11 +477,58 @@ function createFifaRankingLabel(country: Country): string {
 }
 
 function createScoreLineLabel(match: Match): string | null {
-  if (!match.result) {
+  const score = createScoreLabels(match.result);
+
+  if (!score) {
     return null;
   }
 
-  return `${match.result.homeGoals}-${match.result.awayGoals}`;
+  return `${score.homeScoreLabel}-${score.awayScoreLabel}`;
+}
+
+function createScoreLabels(
+  result: MatchResult | undefined,
+): { readonly homeScoreLabel: string; readonly awayScoreLabel: string } | null {
+  if (!result || typeof result.homeGoals !== "number" || typeof result.awayGoals !== "number") {
+    return null;
+  }
+
+  return {
+    homeScoreLabel: String(result.homeGoals),
+    awayScoreLabel: String(result.awayGoals),
+  };
+}
+
+function createMatchStatusLabel(result: MatchResult | undefined): string {
+  switch (result?.status ?? "scheduled") {
+    case "scheduled":
+      return "Scheduled";
+    case "live":
+      return "Live";
+    case "finished":
+      return "Full time";
+    case "postponed":
+      return "Postponed";
+    case "cancelled":
+      return "Cancelled";
+    case "suspended":
+      return "Suspended";
+    case "abandoned":
+      return "Abandoned";
+    case "unknown":
+      return "Status unknown";
+  }
+}
+
+function hasFinishedScore(result: MatchResult | undefined): result is MatchResult & {
+  readonly homeGoals: number;
+  readonly awayGoals: number;
+} {
+  return (
+    result?.status === "finished" &&
+    typeof result.homeGoals === "number" &&
+    typeof result.awayGoals === "number"
+  );
 }
 
 function createGroupStandings(
@@ -517,7 +569,7 @@ function createGroupStandings(
     }
 
     const result = match.result;
-    if (!result) {
+    if (!hasFinishedScore(result)) {
       continue;
     }
 
@@ -613,7 +665,7 @@ function createTeamForm(
 function createTeamFormEntry(match: Match, countryId: CountryId): GroupStandingFormEntryViewModel {
   const result = match.result;
 
-  if (!result) {
+  if (!hasFinishedScore(result)) {
     return {
       result: "pending",
       label: "Fixture pending",
@@ -757,7 +809,7 @@ function createFixtureMetaLabel(match: Match, venue: Venue): string {
 }
 
 function createWinningSide(match: Match): "home" | "away" | null {
-  if (!match.result || match.result.homeGoals === match.result.awayGoals) {
+  if (!hasFinishedScore(match.result) || match.result.homeGoals === match.result.awayGoals) {
     return null;
   }
 

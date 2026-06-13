@@ -19,7 +19,7 @@
     "lint": "biome lint .",
     "check:test-policy": "node scripts/check-test-policy.mjs",
     "check:policy": "pnpm check:test-policy",
-    "typecheck": "tsc -p tsconfig.app.json --noEmit --pretty false --noErrorTruncation && tsc -p tsconfig.node.json --noEmit --pretty false --noErrorTruncation",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit --pretty false --noErrorTruncation && tsc -p tsconfig.node.json --noEmit --pretty false --noErrorTruncation && tsc -p tsconfig.worker.json --noEmit --pretty false --noErrorTruncation",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",

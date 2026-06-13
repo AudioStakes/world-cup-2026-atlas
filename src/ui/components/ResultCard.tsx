@@ -310,7 +310,7 @@ function MatchCenter({ match }: { readonly match: MatchListItemViewModel }) {
         >
           {match.homeScoreLabel}
         </span>
-        <span class="match-card__status">FT</span>
+        <span class="match-card__status">{match.shortStatusLabel ?? match.statusLabel}</span>
         <span
           class={classNames(
             "match-card__score",

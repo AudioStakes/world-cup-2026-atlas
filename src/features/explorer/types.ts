@@ -6,7 +6,7 @@ import type {
   SlotId,
   VenueId,
 } from "../../domain/ids";
-import type { MapPoint } from "../../domain/types";
+import type { MapPoint, MatchStatus } from "../../domain/types";
 
 export type ExplorerSelectionType = "country" | "group" | "date" | "venue";
 
@@ -221,6 +221,8 @@ export type MatchListItemViewModel = {
   readonly awayScoreLabel: string | null;
   readonly winningSide: "home" | "away" | null;
   readonly scoreLineLabel: string | null;
+  readonly normalizedStatus: MatchStatus;
+  readonly shortStatusLabel: string | null;
   readonly statusLabel: string;
   readonly secondaryText: string;
   readonly fixtureMetaLabel: string;
