@@ -12,39 +12,17 @@
 - E2E: `pnpm e2e`
 - Verify: `pnpm verify`
 - Full UI verification: `pnpm verify:full`
-- Use concise, direct replies
 
 ## Detailed Instructions
 
-- [Development](docs/agent-instructions/development.md)
-- [Testing](docs/agent-instructions/testing.md)
+- [Development](docs/development.md)
+- [Testing](docs/testing.md)
+- [Docs and Domain](docs/docs-and-domain.md)
 
 ## Quality Gates
 
-Run this before handing work off:
-
-```bash
-pnpm verify
-```
-
-`pnpm verify` runs:
-
-1. `pnpm fix`
-2. `pnpm typecheck`
-3. `pnpm test`
-4. `pnpm build`
-
-For UI-heavy changes, install Playwright browsers once and run the full gate:
-
-```bash
-pnpm exec playwright install chromium
-pnpm verify:full
-```
-
-`pnpm verify:full` runs:
-
-1. `pnpm verify`
-2. `pnpm e2e`
+Use `pnpm verify` for the normal quality gate. Use `pnpm verify:full` when coverage thresholds and
+Playwright smoke tests are needed.
 
 ## Scripts
 
@@ -53,9 +31,10 @@ pnpm fix         # write Biome safe fixes, formatting, and import organization
 pnpm typecheck   # run TypeScript strict checks for app and node configs
 pnpm test        # run unit tests once
 pnpm e2e         # run Playwright smoke tests
+pnpm test:coverage # run Vitest with coverage thresholds
 pnpm build       # build production assets
 pnpm verify      # quality gate
-pnpm verify:full # run verify and e2e
+pnpm verify:full # run verify, coverage, and e2e
 pnpm ready       # write safe fixes, then run verify
 ```
 

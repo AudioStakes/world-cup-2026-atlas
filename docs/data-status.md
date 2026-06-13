@@ -18,9 +18,9 @@ Competition data means:
 
 The data has been aligned with currently available group and fixture references, but has not yet been imported from a captured official structured FIFA source in this repository.
 
-## Venue exception
+## Venue status
 
-The current venue seed data already uses:
+The current venue seed data uses:
 
 ```txt
 official
@@ -28,12 +28,8 @@ official
 
 for all 16 venues.
 
-This is temporarily allowed because the venue records were created earlier than the stricter source-note policy. The next data-status cleanup should either:
-
-1. add `sourceNote` to every official venue record, or
-2. downgrade venue `dataStatus` to `provisional` until source capture is complete.
-
-Do not extend this exception to countries, slot entries, or matches.
+Each official venue record must keep a `sourceNote` linked to a known data source id.
+Do not extend official status to countries, slot entries, or matches until source capture is complete.
 
 ## Guardrails
 
@@ -43,6 +39,8 @@ Do not extend this exception to countries, slot entries, or matches.
 - no `placeholder` record in visible app data
 - current competition dataset remains entirely `provisional`
 - current venue seed dataset remains consistently `official`
+- every visible production record has `sourceNote`
+- every `sourceNote` points to a known data source id
 
 ## When to use official
 

@@ -1,16 +1,15 @@
 # Venue marker label placement
 
-Venue markers are anchored by `Venue.mapPoint`, but labels are positioned through CSS.
+Venue markers are anchored by projected venue `geoPoint` positions. Labels are positioned separately
+for readability.
 
-- Data coordinates place the venue dot.
-- CSS offsets handle label readability.
+- Projected coordinates place the venue dot.
+- Label layout offsets handle readability.
 
 ## Rules
 
 1. Do not change venue coordinates just to move a label.
-2. Use `data-venue-id` selectors for local label offsets.
-3. Prefer moving labels away from dense areas rather than hiding labels.
-4. Keep the dot clickable even when the label is offset.
-5. Run `pnpm verify` and `pnpm e2e` after changing label placement.
+2. Prefer moving labels away from dense areas rather than hiding labels.
+3. Keep the dot clickable even when the label is offset.
 
 East Coast labels intentionally extend left and use vertical offsets because Boston, New York / New Jersey, and Philadelphia are close together.

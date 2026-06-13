@@ -16,7 +16,6 @@ A later migration should replace the shared note with more precise source notes,
 
 - FIFA venue page for venue / host city / stadium label
 - stadium or trusted geocoding source for latitude / longitude
-- generated map projection source for `mapPoint`
 
 ## Current status
 
