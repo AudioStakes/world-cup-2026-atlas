@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/preact";
 import { describe, expect, it, vi } from "vitest";
-import { matchId, venueId } from "../../domain/ids";
+import { countryId, matchId, venueId } from "../../domain/ids";
 import type { ExplorerResultViewModel } from "../../features/explorer/types";
 import { ResultCard } from "./ResultCard";
 
@@ -48,6 +48,52 @@ const completedResult: ExplorerResultViewModel = {
 };
 
 describe("ResultCard", () => {
+  it("renders group standings with ranks and form without a Matches column", () => {
+    render(
+      <ResultCard
+        result={{
+          ...completedResult,
+          details: {
+            type: "group",
+            groupLabel: "Group D",
+            standings: [
+              {
+                countryId: countryId("usa"),
+                position: 1,
+                teamLabel: "🇺🇸 United States",
+                teamCodeLabel: "USA",
+                teamFlagEmoji: "🇺🇸",
+                played: 1,
+                won: 1,
+                drawn: 0,
+                lost: 0,
+                goalsFor: 2,
+                goalsAgainst: 1,
+                goalDifferenceLabel: "+1",
+                points: 3,
+                form: [
+                  { result: "win", label: "Win 2-1" },
+                  { result: "pending", label: "Fixture pending" },
+                ],
+              },
+            ],
+          },
+        }}
+        onAction={() => {}}
+        onMatchVenueFocusChange={() => {}}
+      />,
+    );
+
+    expect(screen.getByRole("columnheader", { name: "Group D" })).toBeInTheDocument();
+    expect(screen.getByText("USA")).toBeInTheDocument();
+    expect(screen.getByText("1. 🇺🇸 United States")).toHaveClass("visually-hidden");
+    expect(screen.queryByRole("columnheader", { name: "Matches" })).not.toBeInTheDocument();
+    expect(document.querySelector(".group-standings__form-entry.is-win")).toHaveAttribute(
+      "title",
+      "Win 2-1",
+    );
+  });
+
   it("renders completed fixtures with a FIFA-style scoreline", () => {
     const onAction = vi.fn();
 

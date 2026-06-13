@@ -28,6 +28,7 @@ import type {
   ExplorerDetailViewModel,
   ExplorerResultType,
   ExplorerResultViewModel,
+  GroupStandingFormEntryViewModel,
   GroupStandingRowViewModel,
   MatchListItemViewModel,
   MatchTeamViewModel,
@@ -35,6 +36,7 @@ import type {
 } from "./types";
 
 const timeZoneDisplayOrder = ["PT", "MT", "CT", "ET"] as const;
+const groupStandingFormSlotCount = 5;
 
 export function createResultViewModel(
   data: AppData,
@@ -372,6 +374,8 @@ function createGroupStandings(
     return {
       countryId: country?.id ?? null,
       teamLabel: country ? `${country.flagEmoji} ${country.name}` : slotEntry.slotId,
+      teamCodeLabel: country?.fifaCode ?? slotEntry.slotId,
+      teamFlagEmoji: country?.flagEmoji ?? null,
       played: 0,
       won: 0,
       drawn: 0,
@@ -379,7 +383,7 @@ function createGroupStandings(
       goalsFor: 0,
       goalsAgainst: 0,
       points: 0,
-      matchSummary: createTeamFixtureSummary(data, indexes, groupCode, country?.id ?? null),
+      form: createTeamForm(data, groupCode, country?.id ?? null),
     };
   });
   const rowsByCountryId = new Map(
@@ -414,18 +418,26 @@ function createGroupStandings(
   }
 
   return rows
-    .map((row) => ({
-      ...row,
-      goalDifferenceLabel: formatGoalDifference(row.goalsFor - row.goalsAgainst),
-    }))
+    .map((row) => {
+      const goalDifference = row.goalsFor - row.goalsAgainst;
+
+      return {
+        ...row,
+        goalDifference,
+        goalDifferenceLabel: formatGoalDifference(goalDifference),
+      };
+    })
     .sort(
       (left, right) =>
         right.points - left.points ||
-        Number.parseInt(right.goalDifferenceLabel, 10) -
-          Number.parseInt(left.goalDifferenceLabel, 10) ||
+        right.goalDifference - left.goalDifference ||
         right.goalsFor - left.goalsFor ||
         left.teamLabel.localeCompare(right.teamLabel),
-    );
+    )
+    .map(({ goalDifference: _goalDifference, ...row }, index) => ({
+      ...row,
+      position: index + 1,
+    }));
 }
 
 function applyGroupResult(
@@ -456,17 +468,16 @@ function applyGroupResult(
   }
 }
 
-function createTeamFixtureSummary(
+function createTeamForm(
   data: AppData,
-  indexes: Indexes,
   groupCode: GroupCode,
   countryId: CountryId | null,
-): string {
+): readonly GroupStandingFormEntryViewModel[] {
   if (!countryId) {
-    return "TBD";
+    return createPendingForm();
   }
 
-  const summaries = data.matches
+  const entries = data.matches
     .filter(
       (match) =>
         match.stage === "group" &&
@@ -477,15 +488,64 @@ function createTeamFixtureSummary(
     .sort(
       (left, right) => left.date.localeCompare(right.date) || left.matchNumber - right.matchNumber,
     )
-    .map((match) => {
-      const opponentId = getOpponentCountryId(match, countryId);
-      const opponent = opponentId ? indexes.countriesById.get(opponentId) : null;
-      const resultLabel = createScoreLineLabel(match) ?? "scheduled";
+    .map((match): GroupStandingFormEntryViewModel => createTeamFormEntry(match, countryId));
 
-      return opponent ? `${opponent.fifaCode} ${resultLabel}` : resultLabel;
-    });
+  return padFormEntries(entries.slice(0, groupStandingFormSlotCount));
+}
 
-  return summaries.length > 0 ? summaries.join(" · ") : "No fixtures";
+function createTeamFormEntry(match: Match, countryId: CountryId): GroupStandingFormEntryViewModel {
+  const result = match.result;
+
+  if (!result) {
+    return {
+      result: "pending",
+      label: "Fixture pending",
+    };
+  }
+
+  const homeCountryId = getParticipantCountryId(match.homeParticipant);
+  const isHome = homeCountryId === countryId;
+  const goalsFor = isHome ? result.homeGoals : result.awayGoals;
+  const goalsAgainst = isHome ? result.awayGoals : result.homeGoals;
+  const scoreLabel = `${goalsFor}-${goalsAgainst}`;
+
+  if (goalsFor > goalsAgainst) {
+    return {
+      result: "win",
+      label: `Win ${scoreLabel}`,
+    };
+  }
+
+  if (goalsFor < goalsAgainst) {
+    return {
+      result: "loss",
+      label: `Loss ${scoreLabel}`,
+    };
+  }
+
+  return {
+    result: "draw",
+    label: `Draw ${scoreLabel}`,
+  };
+}
+
+function padFormEntries(
+  entries: readonly GroupStandingFormEntryViewModel[],
+): readonly GroupStandingFormEntryViewModel[] {
+  if (entries.length >= groupStandingFormSlotCount) {
+    return entries;
+  }
+
+  return [...entries, ...createPendingForm(groupStandingFormSlotCount - entries.length)];
+}
+
+function createPendingForm(
+  count = groupStandingFormSlotCount,
+): readonly GroupStandingFormEntryViewModel[] {
+  return Array.from({ length: count }, () => ({
+    result: "pending",
+    label: "Fixture pending",
+  }));
 }
 
 function formatGoalDifference(goalDifference: number): string {

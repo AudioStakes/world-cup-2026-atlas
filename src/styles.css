@@ -608,44 +608,128 @@ input:focus-visible,
 
 .group-standings {
   min-height: 0;
-  margin: 10px 0 0;
+  margin: 12px 0 0;
   overflow: auto;
   scrollbar-gutter: stable;
 }
 
 .group-standings caption {
-  padding: 0 0 8px;
-  color: rgba(23, 32, 42, 0.58);
-  font-size: 11px;
-  font-weight: 850;
-  text-align: left;
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .group-standings table {
   width: 100%;
-  min-width: 820px;
+  min-width: 620px;
   border-collapse: collapse;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .group-standings th,
 .group-standings td {
-  padding: 7px 8px;
+  padding: 11px 10px;
   border-top: 1px solid rgba(23, 32, 42, 0.08);
   color: rgba(23, 32, 42, 0.72);
-  text-align: left;
+  text-align: center;
   white-space: nowrap;
 }
 
 .group-standings thead th {
   border-top: 0;
-  color: rgba(23, 32, 42, 0.5);
+  color: rgba(54, 67, 91, 0.68);
   font-weight: 900;
 }
 
+.group-standings .group-standings__team-heading,
 .group-standings tbody th {
   color: var(--color-ink);
-  font-weight: 900;
+  text-align: left;
+}
+
+.group-standings .group-standings__team-heading {
+  font-size: 15px;
+  font-weight: 760;
+}
+
+.group-standings tbody th {
+  font-weight: 850;
+}
+
+.group-standings tbody tr {
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.group-standings__team {
+  display: inline-grid;
+  grid-template-columns: 22px auto auto;
+  align-items: center;
+  gap: 7px;
+}
+
+.group-standings__rank {
+  color: rgba(23, 32, 42, 0.76);
+  font-variant-numeric: tabular-nums;
+}
+
+.group-standings__flag {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.group-standings__code {
+  color: rgba(23, 32, 42, 0.9);
+  font-weight: 850;
+  letter-spacing: 0.02em;
+}
+
+.group-standings__form {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.group-standings__form-entry {
+  display: inline-grid;
+  inline-size: 8px;
+  block-size: 8px;
+  place-items: center;
+  border-radius: 999px;
+}
+
+.group-standings__form-entry::before {
+  display: block;
+  content: "";
+}
+
+.group-standings__form-entry.is-win {
+  background: #24a65a;
+}
+
+.group-standings__form-entry.is-draw {
+  background: rgba(54, 67, 91, 0.48);
+}
+
+.group-standings__form-entry.is-loss {
+  background: #ff3d4f;
+}
+
+.group-standings__form-entry.is-pending {
+  inline-size: auto;
+  color: rgba(23, 32, 42, 0.62);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.group-standings__form-entry.is-pending::before {
+  content: "-";
 }
 
 .route-summary {

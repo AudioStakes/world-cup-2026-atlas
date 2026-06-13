@@ -157,7 +157,10 @@ export type GroupDetailViewModel = {
 
 export type GroupStandingRowViewModel = {
   readonly countryId: CountryId | null;
+  readonly position: number;
   readonly teamLabel: string;
+  readonly teamCodeLabel: string;
+  readonly teamFlagEmoji: string | null;
   readonly played: number;
   readonly won: number;
   readonly drawn: number;
@@ -166,7 +169,12 @@ export type GroupStandingRowViewModel = {
   readonly goalsAgainst: number;
   readonly goalDifferenceLabel: string;
   readonly points: number;
-  readonly matchSummary: string;
+  readonly form: readonly GroupStandingFormEntryViewModel[];
+};
+
+export type GroupStandingFormEntryViewModel = {
+  readonly result: "win" | "draw" | "loss" | "pending";
+  readonly label: string;
 };
 
 export type MatchListItemViewModel = {

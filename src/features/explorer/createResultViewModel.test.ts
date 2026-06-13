@@ -125,9 +125,15 @@ describe("createResultViewModel production metadata", () => {
       standings: expect.arrayContaining([
         expect.objectContaining({
           teamLabel: "🇯🇵 Japan",
+          teamCodeLabel: "JPN",
           played: 0,
           points: 0,
-          matchSummary: "NED scheduled · TUN scheduled · SWE scheduled",
+          form: expect.arrayContaining([
+            expect.objectContaining({
+              result: "pending",
+              label: "Fixture pending",
+            }),
+          ]),
         }),
       ]),
     });
@@ -169,7 +175,13 @@ describe("createResultViewModel production metadata", () => {
           goalsAgainst: 1,
           goalDifferenceLabel: "+1",
           points: 3,
-          matchSummary: "JPN 2-1 · SWE scheduled · TUN scheduled",
+          position: 1,
+          form: expect.arrayContaining([
+            expect.objectContaining({
+              result: "win",
+              label: "Win 2-1",
+            }),
+          ]),
         }),
         expect.objectContaining({
           teamLabel: "🇯🇵 Japan",
@@ -181,7 +193,12 @@ describe("createResultViewModel production metadata", () => {
           goalsAgainst: 2,
           goalDifferenceLabel: "-1",
           points: 0,
-          matchSummary: "NED 2-1 · TUN scheduled · SWE scheduled",
+          form: expect.arrayContaining([
+            expect.objectContaining({
+              result: "loss",
+              label: "Loss 1-2",
+            }),
+          ]),
         }),
       ]),
     );

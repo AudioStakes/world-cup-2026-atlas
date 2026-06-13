@@ -5,6 +5,7 @@ import type {
   ExplorerDetailViewModel,
   ExplorerResultViewModel,
   GroupDetailViewModel,
+  GroupStandingFormEntryViewModel,
   MatchListItemViewModel,
   MatchTeamViewModel,
 } from "../../features/explorer/types";
@@ -225,10 +226,12 @@ function GroupStandings({ details }: { readonly details: GroupDetailViewModel })
       onKeyDown={handleGroupStandingsKeyDown}
     >
       <table>
-        <caption>{details.groupLabel} standings and fixture summary</caption>
+        <caption>{details.groupLabel} standings</caption>
         <thead>
           <tr>
-            <th scope="col">Team</th>
+            <th class="group-standings__team-heading" scope="col">
+              {details.groupLabel}
+            </th>
             <th scope="col">P</th>
             <th scope="col">W</th>
             <th scope="col">D</th>
@@ -237,13 +240,30 @@ function GroupStandings({ details }: { readonly details: GroupDetailViewModel })
             <th scope="col">GA</th>
             <th scope="col">GD</th>
             <th scope="col">Pts</th>
-            <th scope="col">Matches</th>
+            <th scope="col">Form</th>
           </tr>
         </thead>
         <tbody>
           {details.standings.map((row) => (
             <tr key={row.countryId ?? row.teamLabel}>
-              <th scope="row">{row.teamLabel}</th>
+              <th scope="row">
+                <span class="group-standings__team">
+                  <span class="group-standings__rank" aria-hidden="true">
+                    {row.position}
+                  </span>
+                  {row.teamFlagEmoji ? (
+                    <span class="group-standings__flag" aria-hidden="true">
+                      {row.teamFlagEmoji}
+                    </span>
+                  ) : null}
+                  <span class="group-standings__code" aria-hidden="true">
+                    {row.teamCodeLabel}
+                  </span>
+                  <span class="visually-hidden">
+                    {row.position}. {row.teamLabel}
+                  </span>
+                </span>
+              </th>
               <td>{row.played}</td>
               <td>{row.won}</td>
               <td>{row.drawn}</td>
@@ -252,13 +272,39 @@ function GroupStandings({ details }: { readonly details: GroupDetailViewModel })
               <td>{row.goalsAgainst}</td>
               <td>{row.goalDifferenceLabel}</td>
               <td>{row.points}</td>
-              <td>{row.matchSummary}</td>
+              <td>
+                <span class="group-standings__form">
+                  <span class="visually-hidden">{row.teamLabel} form:</span>
+                  {row.form.map((entry, index) => (
+                    <GroupStandingFormEntry entry={entry} index={index} key={index} />
+                  ))}
+                </span>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
     </section>
     // biome-ignore-end lint/a11y/noNoninteractiveTabindex: Wide standings tables need a keyboard-focusable scroll container.
+  );
+}
+
+function GroupStandingFormEntry({
+  entry,
+  index,
+}: {
+  readonly entry: GroupStandingFormEntryViewModel;
+  readonly index: number;
+}) {
+  return (
+    <span
+      class={classNames("group-standings__form-entry", `is-${entry.result}`)}
+      title={entry.label}
+    >
+      <span class="visually-hidden">
+        {index + 1}: {entry.label}
+      </span>
+    </span>
   );
 }
 
