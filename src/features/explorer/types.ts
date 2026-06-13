@@ -189,6 +189,7 @@ export type CountryRouteSummaryViewModel = {
   readonly matchCount: number;
   readonly visitedVenueCount: number;
   readonly itineraryLabel: string;
+  readonly distanceMethodLabel: string;
   readonly venueCountExplanationLabel: string | null;
   readonly totalDistanceKm: number;
   readonly totalDistanceLabel: string;

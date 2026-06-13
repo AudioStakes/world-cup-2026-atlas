@@ -22,7 +22,9 @@ export function createMapViewModel(
 ): ExplorerMapViewModel {
   const highlightedVenueIds = focusedVenueId
     ? new Set([focusedVenueId])
-    : new Set(matchingMatches.map((match) => match.venueId));
+    : hasActiveSelection(viewState)
+      ? new Set(matchingMatches.map((match) => match.venueId))
+      : new Set<VenueId>();
 
   return {
     venueMarkers: data.venues.map((venue) => ({
@@ -41,6 +43,15 @@ export function createMapViewModel(
       ? createCountryRoutes(data, indexes, viewState.selectedCountryId)
       : [],
   };
+}
+
+function hasActiveSelection(viewState: NormalizedExplorerViewState): boolean {
+  return Boolean(
+    viewState.selectedCountryId ||
+      viewState.selectedGroupCode ||
+      viewState.selectedDate ||
+      viewState.selectedVenueId,
+  );
 }
 
 function projectVenueToMapPoint(venue: Venue) {

@@ -15,12 +15,10 @@ type ResultCardProps = {
 
 export function ResultCard({ result, onAction, onMatchVenueFocusChange }: ResultCardProps) {
   return (
-    <section
-      id="selection-results"
-      class="result-card"
-      aria-labelledby="result-card-title"
-      aria-live="polite"
-    >
+    <section id="selection-results" class="result-card" aria-labelledby="result-card-title">
+      <p class="visually-hidden" aria-live="polite">
+        {createResultStatusLabel(result)}
+      </p>
       <header class="result-card__header">
         <span class="result-card__icon" aria-hidden="true">
           {result.icon}
@@ -37,6 +35,7 @@ export function ResultCard({ result, onAction, onMatchVenueFocusChange }: Result
             <span>{result.routeSummary.itineraryLabel}</span>
             <strong>{result.routeSummary.totalDistanceLabel}</strong>
           </div>
+          <p class="route-summary__note">{result.routeSummary.distanceMethodLabel}</p>
           {result.routeSummary.venueCountExplanationLabel ? (
             <p class="route-summary__note">{result.routeSummary.venueCountExplanationLabel}</p>
           ) : null}
@@ -97,6 +96,14 @@ export function ResultCard({ result, onAction, onMatchVenueFocusChange }: Result
       )}
     </section>
   );
+}
+
+function createResultStatusLabel(result: ExplorerResultViewModel): string {
+  if (result.type === "empty") {
+    return result.title;
+  }
+
+  return `${result.title}, ${result.matches.length} ${result.matches.length === 1 ? "match" : "matches"}`;
 }
 
 function ResultDetails({ details }: { readonly details: ExplorerDetailViewModel | null }) {

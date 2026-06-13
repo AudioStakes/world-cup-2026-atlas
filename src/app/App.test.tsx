@@ -268,7 +268,7 @@ describe("App", () => {
       within(groupsSection).getByRole("button", { name: "Select Switzerland" }),
     ).toBeInTheDocument();
     expect(within(groupsSection).getByRole("button", { name: "Select Japan" })).toBeInTheDocument();
-    expect(within(groupsSection).queryByText("JPN")).not.toBeInTheDocument();
+    expect(within(groupsSection).getByText("JPN")).toBeInTheDocument();
     expect(within(groupsSection).queryByText("JPN · AFC")).not.toBeInTheDocument();
   });
 
@@ -285,6 +285,7 @@ describe("App", () => {
     render(<App />);
 
     const dateButton = screen.getByRole("button", { name: /Select Sun Jun 14/ });
+    const restDateButton = screen.getByRole("button", { name: /Select Wed Jul 08.*Rest day/ });
     fireEvent.click(dateButton);
 
     expect(dateButton).toHaveAttribute("aria-pressed", "true");
@@ -292,6 +293,7 @@ describe("App", () => {
     expect(dateButton).not.toHaveTextContent("Sun");
     expect(dateButton).not.toHaveTextContent("Jun");
     expect(dateButton).not.toHaveTextContent(/matches/);
+    expect(restDateButton).toHaveTextContent("Rest");
   });
 
   it("renders match cards as compact date matchup venue rows", () => {
@@ -301,7 +303,7 @@ describe("App", () => {
     const matchScope = within(matchCard);
 
     expect(matchScope.getByText("Thu Jun 11 13:00 CT")).toBeInTheDocument();
-    expect(matchScope.getByText("🇲🇽 vs 🇿🇦")).toBeInTheDocument();
+    expect(matchScope.getByText("🇲🇽 MEX vs 🇿🇦 RSA")).toBeInTheDocument();
     expect(matchScope.getByText("🇲🇽 Mexico vs 🇿🇦 South Africa")).toHaveClass("visually-hidden");
     expect(matchScope.getByText("Scheduled")).toBeInTheDocument();
     expect(matchScope.queryByText(/Estadio Azteca · Mexico City, Mexico/)).not.toBeInTheDocument();

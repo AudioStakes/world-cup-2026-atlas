@@ -105,9 +105,19 @@ input:focus-visible,
 
 .atlas-header__subtitle {
   margin: 4px 0 0;
-  color: var(--color-muted);
+  color: rgba(23, 32, 42, 0.68);
   font-size: 12px;
   font-weight: 650;
+}
+
+.atlas-header__data-status {
+  max-width: 260px;
+  margin: 0;
+  color: rgba(23, 32, 42, 0.68);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.25;
+  text-align: right;
 }
 
 .clear-button {
@@ -219,7 +229,7 @@ input:focus-visible,
 
 .panel-section {
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto auto minmax(0, 1fr);
   overflow: hidden;
 }
 
@@ -246,7 +256,7 @@ input:focus-visible,
   --group-team-label-size: 24px;
   --group-team-row-gap: 1px;
   --group-team-row-padding: 2px;
-  --group-team-target-size: 22px;
+  --group-team-target-size: 24px;
   --group-team-flag-size: 20px;
   --group-team-flag-font-size: 15px;
 
@@ -258,6 +268,11 @@ input:focus-visible,
   padding: 0 8px 4px;
   overflow: auto;
   overscroll-behavior: contain;
+}
+
+.date-months,
+.group-team-grid {
+  grid-row: 3;
 }
 
 .group-team-card {
@@ -387,7 +402,27 @@ input:focus-visible,
 }
 
 .group-team-copy {
-  display: none;
+  display: block;
+  min-width: 0;
+}
+
+.group-team-name {
+  display: block;
+  overflow: hidden;
+  color: rgba(20, 30, 44, 0.86);
+  font-size: 9px;
+  font-weight: 950;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.filter-hint {
+  margin: 0 10px 8px;
+  color: rgba(23, 32, 42, 0.68);
+  font-size: 10px;
+  font-weight: 750;
+  line-height: 1.3;
 }
 
 .group-team-code {
@@ -447,7 +482,7 @@ input:focus-visible,
 }
 
 .date-chip__meta {
-  color: rgba(23, 32, 42, 0.56);
+  color: rgba(23, 32, 42, 0.68);
   font-size: 9px;
   font-weight: 750;
 }
@@ -468,24 +503,40 @@ input:focus-visible,
 }
 
 .date-chip.is-outside-current-filter {
-  opacity: 0.58;
+  border-color: rgba(23, 32, 42, 0.14);
+  color: rgba(23, 32, 42, 0.7);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.date-chip.is-outside-current-filter .date-chip__meta {
+  color: rgba(23, 32, 42, 0.68);
 }
 
 .date-chip.has-no-fixture {
-  color: rgba(23, 32, 42, 0.28);
+  color: rgba(23, 32, 42, 0.62);
   background: rgba(255, 255, 255, 0.42);
 }
 
 .date-chip.has-no-fixture .date-chip__meta {
-  color: rgba(23, 32, 42, 0.26);
+  color: rgba(23, 32, 42, 0.68);
+}
+
+.date-chip.has-no-fixture.is-selected {
+  border-color: var(--color-red);
+  color: #fff;
+  background: var(--color-red);
+}
+
+.date-chip.has-no-fixture.is-selected .date-chip__meta {
+  color: rgba(255, 255, 255, 0.82);
 }
 
 .result-card {
   display: grid;
-  grid-template-rows: auto auto auto auto;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
   align-self: stretch;
   padding: 12px;
-  overflow: auto;
+  overflow: hidden;
   background: var(--color-panel-strong);
   box-shadow: var(--shadow-card);
 }
@@ -625,7 +676,7 @@ input:focus-visible,
 
 .route-summary__note {
   margin: 0;
-  color: rgba(23, 32, 42, 0.58);
+  color: rgba(23, 32, 42, 0.68);
   font-size: 10px;
   font-weight: 650;
   line-height: 1.35;
@@ -670,6 +721,8 @@ input:focus-visible,
   min-height: 0;
   margin: 12px 0 0;
   padding: 0;
+  overflow: auto;
+  scrollbar-gutter: stable;
   list-style: none;
 }
 
@@ -920,7 +973,6 @@ input:focus-visible,
   }
 
   .panel-section {
-    display: block;
     min-height: 0;
     overflow: hidden;
   }
@@ -1147,8 +1199,8 @@ input:focus-visible,
     grid-template-rows: auto auto auto;
     grid-template-areas:
       "controls"
-      "output"
-      "groups";
+      "groups"
+      "output";
   }
 
   .explorer-output {
@@ -1232,7 +1284,7 @@ input:focus-visible,
   min-height: var(--group-team-target-size);
   align-items: center;
   justify-content: center;
-  gap: 0;
+  gap: 2px;
   padding: 0;
 }
 
@@ -1241,19 +1293,34 @@ input:focus-visible,
   line-height: 1;
 }
 
-.group-team-copy {
-  display: none;
-}
-
 .group-team-name {
   display: block;
   color: rgba(20, 30, 44, 0.92);
-  font-size: 0.88rem;
+  font-size: 0.62rem;
   font-weight: 900;
   line-height: 1.1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+@media (pointer: coarse), (max-width: 720px) {
+  .groups-section .group-team-grid {
+    --group-team-label-size: 44px;
+    --group-team-target-size: 44px;
+    --group-team-flag-size: 24px;
+    --group-team-flag-font-size: 18px;
+
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .group-team-row-button {
+    gap: 4px;
+  }
+
+  .group-team-name {
+    font-size: 0.72rem;
+  }
 }
 
 .group-team-meta {
@@ -1273,7 +1340,7 @@ input:focus-visible,
 }
 
 .date-calendar__weekday {
-  color: rgba(20, 30, 44, 0.48);
+  color: rgba(20, 30, 44, 0.68);
   font-size: 0.62rem;
   font-weight: 900;
   letter-spacing: 0.04em;
@@ -1299,7 +1366,7 @@ input:focus-visible,
 }
 
 .date-chip__weekday {
-  color: rgba(20, 30, 44, 0.42);
+  color: rgba(20, 30, 44, 0.68);
   font-size: 0.58rem;
   font-weight: 900;
   letter-spacing: 0.04em;
@@ -1383,17 +1450,6 @@ input:focus-visible,
   color: rgba(20, 30, 44, 0.58);
   font-size: 0.8rem;
   font-weight: 750;
-}
-
-.group-team-card.is-related,
-.group-team-card.is-selected {
-  min-height: 132px;
-  overflow: hidden;
-}
-
-.group-team-card.is-related .group-team-row-button,
-.group-team-card.is-selected .group-team-row-button {
-  min-height: 0;
 }
 
 .match-card {

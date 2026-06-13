@@ -66,11 +66,23 @@ export function createResultViewModel(
     emptyMessage:
       matchingMatches.length === 0 ? "No matches found for the current selection." : null,
     matches: matchingMatches.map((match) => createMatchListItem(indexes, viewState, match)),
-    routeSummary:
-      resultType === "country" && viewState.selectedCountryId
-        ? createCountryRouteSummary(data, indexes, viewState.selectedCountryId)
-        : null,
+    routeSummary: shouldShowCountryRouteSummary(resultType, viewState)
+      ? createCountryRouteSummary(data, indexes, viewState.selectedCountryId)
+      : null,
   };
+}
+
+function shouldShowCountryRouteSummary(
+  resultType: ExplorerResultType,
+  viewState: NormalizedExplorerViewState,
+): viewState is NormalizedExplorerViewState & { readonly selectedCountryId: CountryId } {
+  return Boolean(
+    resultType === "country" &&
+      viewState.selectedCountryId &&
+      !viewState.selectedGroupCode &&
+      !viewState.selectedDate &&
+      !viewState.selectedVenueId,
+  );
 }
 
 function deriveResultType(viewState: NormalizedExplorerViewState): ExplorerResultType {
@@ -498,7 +510,7 @@ function formatTournamentStageLabel(stage: TournamentStage): string {
 }
 
 function createMatchupText(indexes: Indexes, match: Match): string {
-  return `${formatParticipantFlag(indexes, match.homeParticipant)} vs ${formatParticipantFlag(
+  return `${formatParticipantCompact(indexes, match.homeParticipant)} vs ${formatParticipantCompact(
     indexes,
     match.awayParticipant,
   )}`;
@@ -511,11 +523,11 @@ function createMatchupAriaLabel(indexes: Indexes, match: Match): string {
   )}`;
 }
 
-function formatParticipantFlag(indexes: Indexes, participant: Match["homeParticipant"]): string {
+function formatParticipantCompact(indexes: Indexes, participant: Match["homeParticipant"]): string {
   const countryId = getParticipantCountryId(participant);
   const country = getMatchCountry(indexes, countryId ?? undefined);
 
-  if (country) return country.flagEmoji;
+  if (country) return `${country.flagEmoji} ${country.fifaCode}`;
 
   return formatParticipantLabel(participant);
 }
@@ -589,6 +601,7 @@ function createCountryRouteSummary(
       visitedVenueCount,
       "venue",
     )}`,
+    distanceMethodLabel: "Approx. direct distance, not travel distance.",
     venueCountExplanationLabel,
     totalDistanceKm,
     totalDistanceLabel: formatDistanceLabel(totalDistanceKm),

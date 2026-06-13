@@ -16,8 +16,8 @@ export function ExplorerPage({ viewModel, onAction, onMatchVenueFocusChange }: E
   return (
     <main class="atlas-shell" aria-label="World Cup 2026 Atlas explorer">
       <Header header={viewModel.header} />
-      <section class="atlas-body" aria-label="Explorer workspace">
-        <section class="explore-panel" aria-label="Explore controls">
+      <section class="atlas-body">
+        <section class="explore-panel">
           <DateSelector dateSelector={viewModel.explorePanel.dateSelector} onAction={onAction} />
         </section>
         <GroupsAndTeamsTable

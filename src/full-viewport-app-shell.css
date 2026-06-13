@@ -40,6 +40,8 @@ body {
 }
 
 .date-section {
+  display: flex;
+  flex-direction: column;
   min-height: 0;
   max-height: 340px;
   overflow: hidden;
@@ -47,8 +49,14 @@ body {
 
 .date-months,
 .group-team-grid {
+  min-height: 0;
   overflow: auto;
   scrollbar-gutter: stable;
+}
+
+.date-months {
+  flex: 1 1 auto;
+  max-height: 100%;
 }
 
 .explorer-output {

@@ -89,7 +89,7 @@ export function MapView({ map, onAction }: MapViewProps) {
   }, []);
 
   return (
-    <section class="map-panel" aria-label="North America venue map">
+    <section class="map-panel">
       <div ref={mapCanvasRef} class="map-canvas">
         <svg
           ref={mapSvgRef}

@@ -1,21 +1,18 @@
 # Date selector time-zone summary
 
-Date chips now include a time-zone summary in addition to match count and kickoff range.
+Date chips expose a time-zone summary in addition to match count and kickoff range.
 
-Example:
+The visible chip remains compact:
 
 ```txt
-Jun 14
-4 matches
-12:00–20:00 · CT/ET
+14
+4
 ```
 
-For one-match dates:
+The accessible name includes the fuller time-zone metadata:
 
 ```txt
-Jul 19
-1 match
-15:00 · ET
+Select Sun Jun 14, 4 matches, kickoffs 12:00–20:00, time zones CT/ET
 ```
 
 Rest dates continue to show no match metadata.
