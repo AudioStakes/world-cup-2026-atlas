@@ -311,6 +311,55 @@ describe("refreshResultsSnapshot", () => {
     expect(kv.values.get(pollStatusKey)).not.toContain("test-api-football-key");
   });
 
+  it("stores safe provider error details without the full provider response body", async () => {
+    const kv = createFakeKv();
+    const fetchFixturesByDate = vi.fn(async () => ({
+      errors: {
+        requests: "League unavailable test-api-football-key",
+        account: {
+          plan: "free",
+          token: "provider-token-should-not-be-stored",
+        },
+      },
+      response: [{ fullProviderBody: "full-body-should-not-be-stored" }],
+    }));
+
+    await refreshResultsSnapshot({
+      env: createFakeEnv(kv),
+      now: new Date("2026-06-11T19:00:00.000Z"),
+      fetchFixturesByDate,
+      fixtureIdToMatchId: new Map([[1001, matchId("match-001")]]),
+    });
+
+    const providerErrorText = kv.values.get(providerErrorKey) ?? "{}";
+    const pollStatusText = kv.values.get(pollStatusKey) ?? "{}";
+    const providerError = JSON.parse(providerErrorText);
+    const pollStatus = JSON.parse(pollStatusText);
+
+    expect(providerError).toMatchObject({
+      at: "2026-06-11T19:00:00.000Z",
+      message: "API-FOOTBALL returned errors",
+      details: {
+        kind: "provider-errors",
+        errorType: "object",
+        errorKeys: ["requests", "account"],
+        errorMessages: ["requests: League unavailable [redacted]", "account.plan: free"],
+        responseCount: 1,
+      },
+    });
+    expect(pollStatus).toMatchObject({
+      result: "provider-error",
+      errorMessage: "API-FOOTBALL returned errors",
+      errorDetails: providerError.details,
+    });
+    expect(providerErrorText).not.toContain("test-api-football-key");
+    expect(providerErrorText).not.toContain("provider-token-should-not-be-stored");
+    expect(providerErrorText).not.toContain("full-body-should-not-be-stored");
+    expect(pollStatusText).not.toContain("test-api-football-key");
+    expect(pollStatusText).not.toContain("provider-token-should-not-be-stored");
+    expect(pollStatusText).not.toContain("full-body-should-not-be-stored");
+  });
+
   it("updates poll status on interval skips without replacing the latest snapshot", async () => {
     const existingSnapshot = {
       schemaVersion: 1,

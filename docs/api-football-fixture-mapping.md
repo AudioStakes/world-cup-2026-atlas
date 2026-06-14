@@ -24,6 +24,12 @@ Use these inputs together:
 - Internal match ids in the `match-001` through `match-104` format.
 - Schedule evidence for date, kickoff, venue, home participant, and away participant.
 
+The live-results Worker currently requests `/fixtures` with `league=1`, `season=2026`,
+`date=<UTC date>`, and `timezone=UTC`. That assumes API-FOOTBALL league `1` and season `2026`
+represent FIFA World Cup 2026. If provider polling returns errors, review provider-error details in
+the diagnostics workflow before mapping fixtures. Do not proceed with fixture mapping until provider
+fixture ids are published and a provider poll can return usable fixture rows.
+
 Do not store API keys, Cloudflare tokens, or provider credential material in docs, fixture mapping
 files, issue comments, PR bodies, or logs.
 

@@ -41,6 +41,24 @@ The scheduled Worker runs often enough to notice active matches, but provider ca
 The Worker computes active match windows from static schedule data and venue time zones. Date-level
 API-FOOTBALL calls use UTC dates because the request sends `timezone=UTC`.
 
+The provider request is:
+
+```txt
+GET https://v3.football.api-sports.io/fixtures
+league=1
+season=2026
+date=<UTC date>
+timezone=UTC
+```
+
+The implementation assumes `league=1` is the API-FOOTBALL FIFA World Cup league and `season=2026`
+is the provider season for the 2026 tournament. Confirm those values through production diagnostics
+before relying on live results. If API-FOOTBALL returns `errors`, inspect provider-error details
+first; they summarize the error type, keys, sanitized messages, response count, HTTP status, and
+request query parameters without storing headers, API keys, or the full provider response body.
+Never commit the full API-FOOTBALL response body. If provider fixtures are not published yet, leave
+fixture mapping unchanged until provider fixture ids can be confirmed.
+
 Failed provider calls still update `last-fetched-at` and the daily request count for each attempted
 date-level request. This prevents a provider outage from bypassing the 20-minute interval guard or
 the daily request budget.
@@ -100,9 +118,10 @@ When `/api/results` remains on the bundled fallback, check production in this or
 5. `match-results/provider-error/latest.json`
 
 When provider polling fails, the Worker writes `match-results/provider-error/latest.json` with the
-failure timestamp and message. Failed provider calls after at least one attempted request also update
-`match-results/last-fetched-at` and increment `match-results/request-count/YYYY-MM-DD` for the
-attempted date-level requests, so outages do not bypass the polling interval or request budget.
+failure timestamp, message, and safe provider error details when available. Failed provider calls
+after at least one attempted request also update `match-results/last-fetched-at` and increment
+`match-results/request-count/YYYY-MM-DD` for the attempted date-level requests, so outages do not
+bypass the polling interval or request budget.
 
 `match-results/poll-status/latest.json` explains the latest scheduled or manual poll without
 storing secrets, request headers, authorization headers, or provider response bodies. Read these
@@ -117,6 +136,7 @@ fields first:
 - `requestCountBefore`: daily request count before the invocation
 - `latestSnapshotProvider` and `latestSnapshotFetchedAt`: snapshot visible after the invocation
 - `errorMessage`: sanitized provider error message, or `null`
+- `errorDetails`: sanitized provider error details, or `null`
 
 Inspect the latest provider error through the Cloudflare dashboard, or with Wrangler:
 
@@ -168,10 +188,23 @@ keys, and summarizes `/api/results` with only:
 - `isFallback`
 - poll status `checkedAt`, `result`, `decision.shouldPoll`, `decision.reason`, `activeDates`,
   `attemptedProviderRequests`, `writtenMatches`, `requestCountBefore`, `latestSnapshotProvider`,
-  `latestSnapshotFetchedAt`, and `errorMessage`
-- provider error `at` and `message`
+  `latestSnapshotFetchedAt`, `errorMessage`, and provider error details when present
+- provider error `at`, `message`, and provider error details when present
 
 It does not display secret values or full provider responses.
+
+After merging a provider diagnostics fix, run the live-results workflows in this order:
+
+1. `Deploy Cloudflare Worker` on `main`.
+2. `Diagnose Live Results` with `run_provider_poll=false`.
+3. `Diagnose Live Results` with `run_provider_poll=true` exactly once when consuming request count
+   is intentional.
+4. Review the Summary provider-error details: kind, error keys, sanitized messages, response count,
+   HTTP status, and request query parameters.
+5. If provider config is wrong, fix `league`, `season`, or request construction before polling
+   again.
+6. Move to fixture mapping only after provider polling succeeds and `/api/results` can reflect a
+   `provider: "api-football"` snapshot.
 
 The workflow input `run_provider_poll` defaults to `false`. Set it to `true` only when you intend to
 consume API-FOOTBALL request count and write remote `RESULTS_KV`. The optional `now` input accepts an

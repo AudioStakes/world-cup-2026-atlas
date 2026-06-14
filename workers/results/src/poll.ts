@@ -5,6 +5,8 @@ import type { PollingDecision } from "../../../src/matchResults/pollingPolicy";
 import { createPollingDecision } from "../../../src/matchResults/pollingPolicy";
 import type { MatchResultsSnapshot, SnapshotMatchResult } from "../../../src/matchResults/types";
 import {
+  ApiFootballProviderError,
+  type ApiFootballProviderErrorDetails,
   fetchApiFootballFixturesByDate,
   normalizeApiFootballFixturesResponse,
 } from "./apiFootball";
@@ -31,6 +33,7 @@ type PollStatus = {
   readonly latestSnapshotProvider: MatchResultsSnapshot["provider"] | null;
   readonly latestSnapshotFetchedAt: string | null;
   readonly errorMessage: string | null;
+  readonly errorDetails: ApiFootballProviderErrorDetails | null;
 };
 
 export async function refreshResultsSnapshot(input: {
@@ -67,6 +70,7 @@ export async function refreshResultsSnapshot(input: {
       writtenMatches: 0,
       latestSnapshot,
       errorMessage: null,
+      errorDetails: null,
     });
     return;
   }
@@ -115,10 +119,12 @@ export async function refreshResultsSnapshot(input: {
         writtenMatches: nextResults.length,
         latestSnapshot: snapshot,
         errorMessage: null,
+        errorDetails: null,
       }),
     ]);
   } catch (error) {
     const errorMessage = createSafeErrorMessage(error, [input.env.API_FOOTBALL_KEY]);
+    const errorDetails = createSafeProviderErrorDetails(error, [input.env.API_FOOTBALL_KEY]);
     let latestSnapshot: MatchResultsSnapshot | null = null;
     const diagnosticsWriteFailures: string[] = [];
 
@@ -140,6 +146,7 @@ export async function refreshResultsSnapshot(input: {
           JSON.stringify({
             at: nowIso,
             message: errorMessage,
+            ...(errorDetails ? { details: errorDetails } : {}),
           }),
         ),
       },
@@ -155,6 +162,7 @@ export async function refreshResultsSnapshot(input: {
           writtenMatches: 0,
           latestSnapshot,
           errorMessage,
+          errorDetails,
         }),
       },
     ];
@@ -217,6 +225,7 @@ async function writePollStatus(
     readonly writtenMatches: number;
     readonly latestSnapshot: MatchResultsSnapshot | null;
     readonly errorMessage: string | null;
+    readonly errorDetails: ApiFootballProviderErrorDetails | null;
   },
 ): Promise<void> {
   const status: PollStatus = {
@@ -231,6 +240,7 @@ async function writePollStatus(
     latestSnapshotProvider: input.latestSnapshot?.provider ?? null,
     latestSnapshotFetchedAt: input.latestSnapshot?.fetchedAt ?? null,
     errorMessage: input.errorMessage,
+    errorDetails: input.errorDetails,
   };
 
   await env.RESULTS_KV.put(pollStatusKey, JSON.stringify(status));
@@ -250,6 +260,33 @@ function createSafeErrorMessage(error: unknown, secrets: readonly (string | unde
   }
 
   return message.length <= 500 ? message : `${message.slice(0, 500)}...`;
+}
+
+function createSafeProviderErrorDetails(
+  error: unknown,
+  secrets: readonly (string | undefined)[],
+): ApiFootballProviderErrorDetails | null {
+  if (!(error instanceof ApiFootballProviderError)) {
+    return null;
+  }
+
+  return redactProviderErrorDetails(error.details, secrets);
+}
+
+function redactProviderErrorDetails(
+  details: ApiFootballProviderErrorDetails,
+  secrets: readonly (string | undefined)[],
+): ApiFootballProviderErrorDetails {
+  const serialized = JSON.stringify(details);
+  let redacted = serialized;
+
+  for (const secret of secrets) {
+    if (secret && secret.length > 0) {
+      redacted = redacted.replaceAll(secret, "[redacted]");
+    }
+  }
+
+  return JSON.parse(redacted) as ApiFootballProviderErrorDetails;
 }
 
 function mergeSnapshotResults(

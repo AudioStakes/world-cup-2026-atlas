@@ -1,10 +1,16 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { matchId } from "../../../src/domain/ids";
 import {
+  type ApiFootballProviderError,
+  createApiFootballProviderErrorDetails,
   fetchApiFootballFixturesByDate,
   normalizeApiFootballFixturesResponse,
 } from "./apiFootball";
 import { createFakeEnv, createFakeKv } from "./testHelpers";
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe("API-FOOTBALL adapter", () => {
   it("requests fixtures by date with the API key only in Worker headers", async () => {
@@ -23,8 +29,95 @@ describe("API-FOOTBALL adapter", () => {
         },
       },
     );
+  });
 
-    vi.unstubAllGlobals();
+  it("summarizes provider errors across response shapes without secrets", () => {
+    const stringDetails = createApiFootballProviderErrorDetails({
+      errors: "Invalid season test-api-football-key",
+      response: [],
+      secrets: ["test-api-football-key"],
+    });
+    const arrayDetails = createApiFootballProviderErrorDetails({
+      errors: ["Rate limit exceeded", { detail: "Plan does not include endpoint" }],
+      response: [{ fullBody: "must not be stored" }],
+    });
+    const objectDetails = createApiFootballProviderErrorDetails({
+      errors: {
+        requests: "League or season is unavailable",
+        account: { plan: "free", token: "secret-token" },
+        "x-apisports-key": "test-api-football-key",
+      },
+      response: [],
+      request: {
+        league: "1",
+        season: "2026",
+        date: "2026-06-14",
+        timezone: "UTC",
+      },
+      secrets: ["test-api-football-key"],
+      status: 200,
+    });
+
+    expect(stringDetails).toMatchObject({
+      kind: "provider-errors",
+      errorType: "string",
+      errorMessages: ["Invalid season [redacted]"],
+      responseCount: 0,
+    });
+    expect(arrayDetails).toMatchObject({
+      errorType: "array",
+      errorMessages: ["Rate limit exceeded", "detail: Plan does not include endpoint"],
+      responseCount: 1,
+    });
+    expect(objectDetails).toMatchObject({
+      errorType: "object",
+      errorKeys: ["requests", "account", "x-apisports-key"],
+      errorMessages: ["requests: League or season is unavailable", "account.plan: free"],
+      responseCount: 0,
+      httpStatus: 200,
+      request: {
+        league: "1",
+        season: "2026",
+        date: "2026-06-14",
+        timezone: "UTC",
+      },
+    });
+
+    const serialized = JSON.stringify([stringDetails, arrayDetails, objectDetails]);
+
+    expect(serialized).not.toContain("test-api-football-key");
+    expect(serialized).not.toContain("secret-token");
+    expect(serialized).not.toContain("must not be stored");
+  });
+
+  it("throws provider errors with request diagnostics but without headers", async () => {
+    const fetchMock = vi.fn(async () =>
+      Response.json({
+        errors: { requests: "No fixtures for this competition" },
+        response: [],
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      fetchApiFootballFixturesByDate(createFakeEnv(createFakeKv()), "2026-06-14"),
+    ).rejects.toMatchObject({
+      name: "ApiFootballProviderError",
+      message: "API-FOOTBALL returned errors",
+      details: {
+        kind: "provider-errors",
+        errorKeys: ["requests"],
+        errorMessages: ["requests: No fixtures for this competition"],
+        responseCount: 0,
+        httpStatus: 200,
+        request: {
+          league: "1",
+          season: "2026",
+          date: "2026-06-14",
+          timezone: "UTC",
+        },
+      },
+    } satisfies Partial<ApiFootballProviderError>);
   });
 
   it("normalizes mapped fixture rows and preserves short status", () => {
