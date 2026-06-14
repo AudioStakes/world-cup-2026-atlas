@@ -130,9 +130,10 @@ select:focus-visible,
 
 .time-zone-control {
   display: grid;
-  flex: 1 1 230px;
+  flex: 0 1 340px;
   gap: 3px;
   min-width: min(100%, 230px);
+  width: min(100%, 340px);
 }
 
 .time-zone-control__label {
@@ -177,6 +178,7 @@ select:focus-visible,
 
   .time-zone-control {
     min-width: 0;
+    width: 100%;
   }
 
   .time-zone-control__label {
@@ -1796,6 +1798,7 @@ select:focus-visible,
 
   .time-zone-control {
     min-width: 0;
+    width: 100%;
   }
 
   .time-zone-control select {

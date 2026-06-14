@@ -117,12 +117,14 @@ test.describe("World Cup 2026 Atlas explorer", () => {
         firstKickoff: document.querySelector(".match-card__kickoff")?.textContent?.trim() ?? "",
         hasHeaderStatus: Boolean(document.querySelector(".atlas-header__data-status")),
         selectedOptionText: selectedOption?.textContent?.trim() ?? "",
+        selectWidth: select?.getBoundingClientRect().width ?? 0,
         selectValue: select?.value ?? "",
       };
     });
 
     expect(timeZoneState.selectValue).toBe("browser-local");
     expect(timeZoneState.selectedOptionText).toBe("Your local time · JST · Asia/Tokyo");
+    expect(timeZoneState.selectWidth).toBeLessThanOrEqual(360);
     expect(timeZoneState.hasHeaderStatus).toBe(false);
     expect(timeZoneState.firstKickoff).toBe("05:00");
   });
