@@ -23,7 +23,7 @@ Layer ownership:
 - `utilities`: truly shared utility classes such as `.visually-hidden`.
 - `overrides`: temporary documented overrides only.
 
-Component-owned styles belong in `ComponentName.module.css` beside the component. Module class names use lower camel case, with `root` for the component root and `isSelected`-style names for local state classes. Do not add component-specific selectors to global CSS.
+Component-owned styles belong in `ComponentName.module.css` beside the component. Add a matching `ComponentName.module.css.d.ts` with exact readonly class exports when introducing or renaming module classes, because the TypeScript config does not allow property access from generic index signatures. Module class names use lower camel case, with `root` for the component root and `isSelected`-style names for local state classes. Do not add component-specific selectors to global CSS.
 
 MapView is the exception to the module rule. SVG classes, generated map feature classes, route lines, venue marker labels, and marker overlay controls remain in `src/styles/map.css` because the SVG and tests depend on stable global selectors.
 
