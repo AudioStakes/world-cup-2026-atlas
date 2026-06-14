@@ -32,10 +32,6 @@ const header: ExplorerHeaderViewModel = {
       },
     ],
   },
-  statusItems: [
-    { key: "selectedTimeZone", label: "Venue local" },
-    { key: "dataSource", label: "Official/trusted sources · direct distances derived" },
-  ],
 };
 
 describe("Header", () => {

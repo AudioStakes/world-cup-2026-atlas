@@ -117,18 +117,6 @@ select:focus-visible,
   font-weight: 650;
 }
 
-.atlas-header__data-status {
-  flex: 0 1 260px;
-  min-width: 160px;
-  max-width: 260px;
-  margin: 0;
-  color: rgba(23, 32, 42, 0.68);
-  font-size: 11px;
-  font-weight: 800;
-  line-height: 1.25;
-  text-align: right;
-}
-
 .atlas-header__controls {
   display: flex;
   flex: 1 1 430px;
@@ -138,10 +126,6 @@ select:focus-visible,
   gap: 12px;
   min-width: 0;
   margin-inline-start: auto;
-}
-
-.atlas-header__data-status span {
-  display: block;
 }
 
 .time-zone-control {
@@ -189,11 +173,6 @@ select:focus-visible,
     gap: 8px;
     justify-content: stretch;
     margin-inline-start: 0;
-  }
-
-  .atlas-header__data-status {
-    max-width: none;
-    text-align: left;
   }
 
   .time-zone-control {
@@ -1811,7 +1790,6 @@ select:focus-visible,
     margin-inline-start: 0;
   }
 
-  .atlas-header__data-status,
   .time-zone-control__label {
     text-align: left;
   }

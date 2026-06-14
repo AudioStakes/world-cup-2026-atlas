@@ -41,11 +41,6 @@ export function Header({ header, onTimeZoneChange }: HeaderProps) {
             ))}
           </select>
         </label>
-        <p class="atlas-header__data-status" aria-live="polite">
-          {header.statusItems.map((item) => (
-            <span key={item.key}>{item.label}</span>
-          ))}
-        </p>
       </div>
     </header>
   );
