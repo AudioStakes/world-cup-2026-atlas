@@ -8,6 +8,7 @@ import type {
   TournamentRoundViewModel,
 } from "../../features/explorer/types";
 import { classNames } from "./classNames";
+import s from "./GroupsAndTeamsTable.module.css";
 
 type GroupsAndTeamsTableProps = {
   readonly groupsAndTeams: GroupsAndTeamsViewModel;
@@ -20,8 +21,12 @@ export function GroupsAndTeamsTable({ groupsAndTeams, onAction }: GroupsAndTeams
   const [activeTab, setActiveTab] = useState<GroupPanelTab>("group");
 
   return (
-    <section class="panel-section groups-section" aria-label="Group and Tournament">
-      <div class="group-panel-tabs" role="tablist" aria-label="Group and Tournament">
+    <section
+      class={classNames("panel-section", s.root)}
+      aria-label="Group and Tournament"
+      data-testid="groups-section"
+    >
+      <div class={s.groupPanelTabs} role="tablist" aria-label="Group and Tournament">
         <GroupPanelTabButton
           tab="group"
           label="Group"
@@ -38,9 +43,10 @@ export function GroupsAndTeamsTable({ groupsAndTeams, onAction }: GroupsAndTeams
       {activeTab === "group" ? (
         <div
           id="group-panel-group"
-          class="group-team-grid"
+          class={s.groupTeamGrid}
           role="tabpanel"
           aria-labelledby="group-panel-tab-group"
+          data-testid="group-team-grid"
         >
           {groupsAndTeams.groups.map((group) => (
             <GroupTeamCard key={group.groupCode} group={group} onAction={onAction} />
@@ -66,7 +72,7 @@ function GroupPanelTabButton({ tab, label, activeTab, onTabChange }: GroupPanelT
   return (
     <button
       id={`group-panel-tab-${tab}`}
-      class="group-panel-tab"
+      class={s.groupPanelTab}
       type="button"
       role="tab"
       aria-selected={isSelected}
@@ -98,14 +104,15 @@ function GroupTeamCard({ group, onAction }: GroupTeamCardProps) {
   return (
     <article
       class={classNames(
-        "group-team-card",
-        group.isSelected && "is-selected",
-        group.isRelatedToSelectedCountry && "is-related",
-        group.availability === "outsideCurrentFilter" && "is-outside-current-filter",
+        s.groupTeamCard,
+        group.isSelected && s.isSelected,
+        group.isRelatedToSelectedCountry && s.isRelated,
+        group.availability === "outsideCurrentFilter" && s.isOutsideCurrentFilter,
       )}
+      data-testid="group-team-card"
     >
       <button
-        class="group-team-header-button"
+        class={s.groupTeamHeaderButton}
         type="button"
         aria-pressed={group.isSelected}
         aria-label={`Select ${group.groupName}`}
@@ -113,7 +120,7 @@ function GroupTeamCard({ group, onAction }: GroupTeamCardProps) {
       >
         {group.groupCode}
       </button>
-      <div class="group-team-rows">
+      <div class={s.groupTeamRows}>
         {group.teams.map((team) => (
           <GroupTeamRow key={team.slotId} team={team} onAction={onAction} />
         ))}
@@ -132,12 +139,17 @@ function GroupTeamRow({ team, onAction }: GroupTeamRowProps) {
 
   if (!countryId) {
     return (
-      <div class="group-team-row-button is-placeholder">
-        <span class="group-team-flag" aria-hidden="true">
+      <div
+        class={classNames(s.groupTeamRowButton, s.isPlaceholder)}
+        data-testid="group-team-row-button"
+      >
+        <span class={s.groupTeamFlag} aria-hidden="true" data-testid="group-team-flag">
           {team.flagEmoji}
         </span>
-        <span class="group-team-copy">
-          <span class="group-team-name">{team.countryCode}</span>
+        <span class={s.groupTeamCopy} data-testid="group-team-copy">
+          <span class={s.groupTeamName} data-testid="group-team-name">
+            {team.countryCode}
+          </span>
         </span>
       </div>
     );
@@ -146,24 +158,27 @@ function GroupTeamRow({ team, onAction }: GroupTeamRowProps) {
   return (
     <button
       class={classNames(
-        "group-team-row-button",
-        team.isSelected && "is-selected",
-        team.availability === "outsideCurrentFilter" && "is-outside-current-filter",
+        s.groupTeamRowButton,
+        team.isSelected && s.isSelected,
+        team.availability === "outsideCurrentFilter" && s.isOutsideCurrentFilter,
       )}
       type="button"
       title={team.countryName}
       aria-pressed={team.isSelected}
       aria-label={`Select ${team.countryName}`}
+      data-testid="group-team-row-button"
       onClick={(event) => {
         event.stopPropagation();
         onAction({ type: "selectCountry", countryId });
       }}
     >
-      <span class="group-team-flag" aria-hidden="true">
+      <span class={s.groupTeamFlag} aria-hidden="true" data-testid="group-team-flag">
         {team.flagEmoji}
       </span>
-      <span class="group-team-copy">
-        <span class="group-team-name">{team.countryCode}</span>
+      <span class={s.groupTeamCopy} data-testid="group-team-copy">
+        <span class={s.groupTeamName} data-testid="group-team-name">
+          {team.countryCode}
+        </span>
       </span>
     </button>
   );
@@ -177,7 +192,7 @@ function TournamentPanel({ tournamentRounds }: TournamentPanelProps) {
   return (
     <div
       id="group-panel-tournament"
-      class="tournament-rounds"
+      class={s.tournamentRounds}
       role="tabpanel"
       aria-labelledby="group-panel-tab-tournament"
     >
@@ -196,12 +211,12 @@ function TournamentRound({ round }: TournamentRoundProps) {
   const headingId = createTournamentRoundHeadingId(round.stageLabel);
 
   return (
-    <section class="tournament-round" aria-labelledby={headingId}>
-      <div class="tournament-round__header">
+    <section class={s.tournamentRound} aria-labelledby={headingId}>
+      <div class={s.tournamentRoundHeader}>
         <h3 id={headingId}>{round.stageLabel}</h3>
         <span>{round.matchCountLabel}</span>
       </div>
-      <ol class="tournament-match-list">
+      <ol class={s.tournamentMatchList}>
         {round.matches.map((match) => (
           <TournamentMatch key={match.matchId} match={match} />
         ))}
@@ -216,11 +231,11 @@ type TournamentMatchProps = {
 
 function TournamentMatch({ match }: TournamentMatchProps) {
   return (
-    <li class="tournament-match">
-      <span class="tournament-match__number">{match.matchNumberLabel}</span>
-      <span class="tournament-match__date">{match.dateLabel}</span>
-      <span class="tournament-match__matchup">{match.matchupLabel}</span>
-      <span class="tournament-match__venue">{match.venueLabel}</span>
+    <li class={s.tournamentMatch}>
+      <span class={s.tournamentMatchNumber}>{match.matchNumberLabel}</span>
+      <span class={s.tournamentMatchDate}>{match.dateLabel}</span>
+      <span class={s.tournamentMatchMatchup}>{match.matchupLabel}</span>
+      <span class={s.tournamentMatchVenue}>{match.venueLabel}</span>
     </li>
   );
 }

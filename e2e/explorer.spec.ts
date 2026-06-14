@@ -73,7 +73,7 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     await expect(page.getByRole("button", { name: /clear/i })).toHaveCount(0);
 
     const splitHeights = await page.evaluate(() => {
-      const result = document.querySelector(".result-card")?.getBoundingClientRect();
+      const result = document.querySelector('[data-testid="result-card"]')?.getBoundingClientRect();
       const map = document.querySelector(".map-panel")?.getBoundingClientRect();
 
       return {
@@ -107,14 +107,15 @@ test.describe("World Cup 2026 Atlas explorer", () => {
 
     await page.goto("/?group=F");
 
-    await expect(page.locator(".result-card__header")).toHaveCount(0);
+    await expect(page.getByTestId("result-card-header")).toHaveCount(0);
 
     const timeZoneState = await page.evaluate(() => {
       const select = document.querySelector<HTMLSelectElement>("#match-time-zone");
       const selectedOption = select?.selectedOptions[0];
 
       return {
-        firstKickoff: document.querySelector(".match-card__kickoff")?.textContent?.trim() ?? "",
+        firstKickoff:
+          document.querySelector('[data-testid="match-card-kickoff"]')?.textContent?.trim() ?? "",
         hasHeaderStatus: Boolean(document.querySelector(".atlas-header__data-status")),
         selectedOptionText: selectedOption?.textContent?.trim() ?? "",
         selectWidth: select?.getBoundingClientRect().width ?? 0,
@@ -161,13 +162,13 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     await expect(panel.getByText("Runner-up Group A vs Runner-up Group B")).toBeVisible();
 
     const tabVisualState = await page.evaluate(() => {
-      const selectedTab = document.querySelector<HTMLElement>(
-        ".group-panel-tab[aria-selected='true']",
-      );
+      const selectedTab = document.querySelector<HTMLElement>("[role='tab'][aria-selected='true']");
       const inactiveTab = document.querySelector<HTMLElement>(
-        ".group-panel-tab[aria-selected='false']",
+        "[role='tab'][aria-selected='false']",
       );
-      const tabPanel = document.querySelector<HTMLElement>(".groups-section [role='tabpanel']");
+      const tabPanel = document.querySelector<HTMLElement>(
+        "[data-testid='groups-section'] [role='tabpanel']",
+      );
       const selectedRect = selectedTab?.getBoundingClientRect();
       const panelRect = tabPanel?.getBoundingClientRect();
       const selectedStyles = selectedTab ? getComputedStyle(selectedTab) : null;
@@ -231,7 +232,7 @@ test.describe("World Cup 2026 Atlas explorer", () => {
           right: window.innerWidth,
           top: 0,
         };
-        const flags = Array.from(document.querySelectorAll(".group-team-flag"));
+        const flags = Array.from(document.querySelectorAll('[data-testid="group-team-flag"]'));
 
         return {
           hiddenFlags: flags.filter((flag) => {
@@ -261,8 +262,8 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     await page.getByRole("region", { name: "Group and Tournament" }).scrollIntoViewIfNeeded();
 
     const targetSize = await page.evaluate(() => {
-      const button = document.querySelector(".group-team-row-button:not(.is-placeholder)");
-      const flag = document.querySelector(".group-team-flag");
+      const button = document.querySelector('button[data-testid="group-team-row-button"]');
+      const flag = document.querySelector('[data-testid="group-team-flag"]');
       const buttonRect = button?.getBoundingClientRect();
       const flagRect = flag?.getBoundingClientRect();
 
@@ -281,15 +282,19 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     await page.goto("/?date=2026-06-20");
 
     const stackedLayout = await page.evaluate(() => {
-      const section = document.querySelector<HTMLElement>(".groups-section");
-      const grid = section?.querySelector<HTMLElement>(".group-team-grid");
-      const firstCopy = grid?.querySelector<HTMLElement>(".group-team-copy");
-      const firstName = grid?.querySelector<HTMLElement>(".group-team-name");
+      const section = document.querySelector<HTMLElement>('[data-testid="groups-section"]');
+      const grid = section?.querySelector<HTMLElement>('[data-testid="group-team-grid"]');
+      const firstCopy = grid?.querySelector<HTMLElement>('[data-testid="group-team-copy"]');
+      const firstName = grid?.querySelector<HTMLElement>('[data-testid="group-team-name"]');
       const firstButton = grid?.querySelector<HTMLElement>(
-        ".group-team-row-button:not(.is-placeholder)",
+        'button[data-testid="group-team-row-button"]',
       );
-      const cards = Array.from(grid?.querySelectorAll<HTMLElement>(".group-team-card") ?? []);
-      const flags = Array.from(grid?.querySelectorAll<HTMLElement>(".group-team-flag") ?? []);
+      const cards = Array.from(
+        grid?.querySelectorAll<HTMLElement>('[data-testid="group-team-card"]') ?? [],
+      );
+      const flags = Array.from(
+        grid?.querySelectorAll<HTMLElement>('[data-testid="group-team-flag"]') ?? [],
+      );
       const gridStyles = grid ? getComputedStyle(grid) : null;
       const firstButtonRect = firstButton?.getBoundingClientRect();
       const sectionRect = section?.getBoundingClientRect();
@@ -352,11 +357,11 @@ test.describe("World Cup 2026 Atlas explorer", () => {
         };
         const viewportBottom = window.innerHeight;
         const regions = {
-          dates: rectFor(".date-section"),
-          groups: rectFor(".groups-section"),
+          dates: rectFor('[data-testid="date-section"]'),
+          groups: rectFor('[data-testid="groups-section"]'),
           header: rectFor(".atlas-header"),
           map: rectFor(".map-panel"),
-          results: rectFor(".result-card"),
+          results: rectFor('[data-testid="result-card"]'),
         };
         const insideViewport = Object.values(regions).every(
           (rect) => rect && rect.height > 0 && rect.top >= 0 && rect.bottom <= viewportBottom,
@@ -396,12 +401,12 @@ test.describe("World Cup 2026 Atlas explorer", () => {
       "aria-pressed",
       "true",
     );
-    await expect(page.locator("#selection-results")).toHaveClass(/result-card--date-timeline/);
-    await expect(page.locator(".result-card__header")).toHaveCount(0);
-    await expect(page.locator(".detail-metrics")).toHaveCount(0);
+    await expect(page.locator("#selection-results")).toHaveCount(1);
+    await expect(page.getByTestId("result-card-header")).toHaveCount(0);
+    await expect(page.getByTestId("detail-metrics")).toHaveCount(0);
 
     const timelineState = await page.evaluate(() => {
-      const list = document.querySelector<HTMLElement>(".match-list");
+      const list = document.querySelector<HTMLElement>('[data-testid="match-list"]');
       const scrollTarget = document.querySelector<HTMLElement>("[data-initial-scroll-target]");
       const listRect = list?.getBoundingClientRect();
       const targetRect = scrollTarget?.getBoundingClientRect();
@@ -409,9 +414,8 @@ test.describe("World Cup 2026 Atlas explorer", () => {
       return {
         canScrollDown: list ? list.scrollTop + list.clientHeight < list.scrollHeight : false,
         canScrollUp: list ? list.scrollTop > 0 : false,
-        matchCount: document.querySelectorAll(".match-card").length,
-        targetHeading:
-          scrollTarget?.querySelector(".match-list__date-row h3")?.textContent?.trim() ?? null,
+        matchCount: document.querySelectorAll('[data-testid="match-card"]').length,
+        targetHeading: scrollTarget?.querySelector("h3")?.textContent?.trim() ?? null,
         targetOffsetFromListTop:
           listRect && targetRect ? Math.round(targetRect.top - listRect.top) : null,
       };
@@ -434,17 +438,20 @@ test.describe("World Cup 2026 Atlas explorer", () => {
 
     const matchCardLayout = await page.evaluate(() => {
       const card =
-        document.querySelector<HTMLElement>("[data-initial-scroll-target] .match-card") ??
-        document.querySelector<HTMLElement>(".match-card");
-      const scoreRow = card?.querySelector<HTMLElement>(".match-card__score-row");
+        document.querySelector<HTMLElement>(
+          '[data-initial-scroll-target] [data-testid="match-card"]',
+        ) ?? document.querySelector<HTMLElement>('[data-testid="match-card"]');
+      const scoreRow = card?.querySelector<HTMLElement>('[data-testid="match-card-score-row"]');
       const homeFlag = card?.querySelector<HTMLElement>(
-        ".match-card__team--home .match-card__flag",
+        '[data-team-side="home"] [data-testid="match-card-flag"]',
       );
       const awayFlag = card?.querySelector<HTMLElement>(
-        ".match-card__team--away .match-card__flag",
+        '[data-team-side="away"] [data-testid="match-card-flag"]',
       );
-      const kickoff = card?.querySelector<HTMLElement>(".match-card__kickoff, .match-card__score");
-      const teamName = card?.querySelector<HTMLElement>(".match-card__team-name");
+      const kickoff = card?.querySelector<HTMLElement>(
+        '[data-testid="match-card-kickoff"], [data-testid="match-card-score"]',
+      );
+      const teamName = card?.querySelector<HTMLElement>('[data-testid="match-card-team-name"]');
       const homeFlagRect = homeFlag?.getBoundingClientRect();
       const awayFlagRect = awayFlag?.getBoundingClientRect();
       const kickoffRect = kickoff?.getBoundingClientRect();
@@ -494,7 +501,7 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     await expect(page).toHaveURL(/venue=dallas/);
     await expect(page.getByRole("heading", { name: "Dallas" })).toBeVisible();
     await expect(
-      page.locator(".detail-metrics").getByText("Arlington, USA", { exact: true }),
+      page.getByTestId("detail-metrics").getByText("Arlington, USA", { exact: true }),
     ).toBeVisible();
   });
 

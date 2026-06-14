@@ -1,0 +1,608 @@
+@layer components {
+  .root {
+    grid-area: groups;
+    container: groups-section / inline-size;
+    grid-template-rows: auto minmax(0, 1fr);
+    min-height: 0;
+    overflow: hidden;
+    scrollbar-gutter: stable;
+    overscroll-behavior: contain;
+  }
+
+  .groupTeamGrid {
+    --group-team-card-gap: 4px;
+    --group-team-label-size: 24px;
+    --group-team-row-gap: 1px;
+    --group-team-row-padding: 2px;
+    --group-team-target-size: 24px;
+    --group-team-flag-size: 20px;
+    --group-team-flag-font-size: 15px;
+
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--group-team-card-gap);
+    align-content: start;
+    padding: 0 8px 4px;
+    grid-row: 3;
+    min-height: 0;
+    overflow: auto;
+    scrollbar-gutter: stable;
+    overscroll-behavior: contain;
+  }
+
+  .root .groupTeamGrid {
+    grid-row: 2;
+    border-top: 1px solid rgb(23 32 42 / 8%);
+    background: rgb(255 255 255 / 70%);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .groupTeamCard {
+    display: grid;
+    grid-template-columns: var(--group-team-label-size) minmax(0, 1fr);
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    border: 1px solid rgb(23 32 42 / 8%);
+    border-radius: 8px;
+    background: rgb(255 255 255 / 70%);
+    box-shadow: 0 6px 16px rgb(23 32 42 / 4.5%);
+    transition:
+      border-color 140ms ease,
+      box-shadow 140ms ease,
+      opacity 140ms ease,
+      transform 140ms ease;
+    padding: 0;
+  }
+
+  .groupTeamHeaderButton {
+    display: flex;
+    width: var(--group-team-label-size);
+    min-height: var(--group-team-target-size);
+    align-items: center;
+    justify-content: center;
+    padding: 0 3px;
+    border: 0;
+    border-right: 1px solid rgb(23 32 42 / 7%);
+    color: rgb(23 32 42 / 66%);
+    background: rgb(255 255 255 / 42%);
+    font-weight: 950;
+    cursor: pointer;
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+  }
+
+  .groupTeamRows {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--group-team-row-gap);
+    min-height: 0;
+    padding: var(--group-team-row-padding);
+  }
+
+  .groupTeamRowButton {
+    display: flex;
+    min-width: 0;
+    width: 100%;
+    overflow: hidden;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    color: rgb(23 32 42 / 82%);
+    background: transparent;
+    font-size: 11px;
+    font-weight: 900;
+    line-height: 1.15;
+    cursor: pointer;
+    min-height: var(--group-team-target-size);
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 0;
+  }
+
+  .groupTeamFlag {
+    display: inline-flex;
+    min-width: var(--group-team-flag-size);
+    inline-size: var(--group-team-flag-size);
+    justify-content: center;
+    flex: 0 0 var(--group-team-flag-size);
+    font-size: var(--group-team-flag-font-size);
+    line-height: 1;
+  }
+
+  .groupTeamCopy {
+    display: block;
+    min-width: 0;
+  }
+
+  .groupTeamName {
+    display: block;
+    color: rgb(20 30 44 / 92%);
+    font-size: 0.62rem;
+    font-weight: 900;
+    line-height: 1.1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .groupPanelTabs {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: end;
+    gap: 6px;
+    padding: 8px 8px 0;
+  }
+
+  .groupPanelTab {
+    position: relative;
+    z-index: 1;
+    min-width: 0;
+    min-height: 32px;
+    padding: 8px 10px;
+    border: 1px solid rgb(23 32 42 / 8%);
+    border-radius: 10px 10px 0 0;
+    color: rgb(23 32 42 / 70%);
+    background: rgb(232 239 246 / 76%);
+    font-size: 12px;
+    font-weight: 950;
+    line-height: 1;
+    box-shadow: inset 0 -1px 0 rgb(23 32 42 / 6%);
+    cursor: pointer;
+  }
+
+  .groupPanelTab::before {
+    position: absolute;
+    inset: -1px 10px auto;
+    height: 4px;
+    border-radius: 10px 10px 0 0;
+    background: transparent;
+    content: "";
+  }
+
+  .groupPanelTab:hover {
+    color: #2f6fdd;
+    background: rgb(239 245 252 / 92%);
+  }
+
+  .groupPanelTab[aria-selected="true"] {
+    z-index: 2;
+    margin-bottom: -1px;
+    border-color: rgb(23 32 42 / 8%);
+    border-bottom-color: transparent;
+    color: #2f6fdd;
+    background: rgb(255 255 255 / 98%);
+    box-shadow: 0 -4px 14px rgb(47 111 221 / 10%);
+  }
+
+  .groupPanelTab[aria-selected="true"]::before {
+    inset-inline: -1px;
+    background: #2f7df0;
+  }
+
+  .groupTeamCard.isOutsideCurrentFilter {
+    opacity: 0.82;
+  }
+
+  .groupTeamCard.isRelated {
+    border-color: var(--color-red-line);
+    background: rgb(255 255 255 / 88%);
+  }
+
+  .groupTeamCard.isSelected {
+    border-color: var(--color-red-line);
+    background: rgb(255 255 255 / 88%);
+  }
+
+  .groupTeamCard:hover {
+    border-color: rgb(181 31 31 / 22%);
+    box-shadow: 0 10px 22px rgb(23 32 42 / 8%);
+    transform: translateY(-1px);
+  }
+
+  .groupTeamHeaderButton:hover {
+    color: var(--color-red);
+    background: var(--color-red-soft);
+  }
+
+  .groupTeamHeaderButton[aria-pressed="true"] {
+    color: var(--color-red);
+    background: var(--color-red-soft);
+  }
+
+  .groupTeamRowButton:hover {
+    border-color: rgb(181 31 31 / 22%);
+    color: var(--color-red);
+    background: rgb(181 31 31 / 7%);
+  }
+
+  .groupTeamRowButton.isSelected {
+    border-color: var(--color-red-line);
+    color: var(--color-red);
+    background: rgb(255 255 255 / 94%);
+    box-shadow: 0 4px 12px rgb(181 31 31 / 16%);
+  }
+
+  .groupTeamRowButton.isOutsideCurrentFilter {
+    opacity: 0.8;
+  }
+
+  .groupTeamRowButton.isPlaceholder {
+    cursor: default;
+  }
+
+  @container groups-section (min-width: 420px) {
+    @media (height >= 680px) {
+      .groupTeamGrid {
+        --group-team-label-size: 28px;
+        --group-team-target-size: 28px;
+        --group-team-flag-size: 24px;
+        --group-team-flag-font-size: 18px;
+      }
+    }
+  }
+
+  .groupTeamCode {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .tournamentRounds {
+    grid-row: 2;
+    border-top: 1px solid rgb(23 32 42 / 8%);
+    background: rgb(255 255 255 / 70%);
+    display: grid;
+    gap: 8px;
+    align-content: start;
+    min-height: 0;
+    padding: 0 8px 8px;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  .tournamentRound {
+    overflow: hidden;
+    border: 1px solid rgb(23 32 42 / 8%);
+    border-radius: 10px;
+    background: rgb(255 255 255 / 70%);
+  }
+
+  .tournamentRoundHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 10px;
+    border-bottom: 1px solid rgb(23 32 42 / 6%);
+  }
+
+  .tournamentRoundHeader h3 {
+    margin: 0;
+    color: rgb(20 30 44 / 92%);
+    font-size: 12px;
+    font-weight: 950;
+    line-height: 1;
+  }
+
+  .tournamentRoundHeader span {
+    color: rgb(23 32 42 / 58%);
+    font-size: 10px;
+    font-weight: 850;
+    white-space: nowrap;
+  }
+
+  .tournamentMatchList {
+    display: grid;
+    gap: 1px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .tournamentMatch {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr);
+    gap: 4px 7px;
+    padding: 8px 10px;
+    background: rgb(255 255 255 / 45%);
+  }
+
+  .tournamentMatchNumber {
+    color: rgb(23 32 42 / 58%);
+    font-size: 10px;
+    font-weight: 850;
+    line-height: 1.15;
+  }
+
+  .tournamentMatchDate {
+    color: rgb(23 32 42 / 58%);
+    font-size: 10px;
+    font-weight: 850;
+    line-height: 1.15;
+  }
+
+  .tournamentMatchMatchup {
+    min-width: 0;
+    overflow: hidden;
+    color: rgb(20 30 44 / 90%);
+    font-size: 11px;
+    font-weight: 900;
+    line-height: 1.15;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .tournamentMatchVenue {
+    color: rgb(23 32 42 / 58%);
+    font-size: 10px;
+    font-weight: 850;
+    line-height: 1.15;
+    grid-column: 3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  @media (height <= 820px) and (width >= 1181px) {
+    .groupTeamGrid {
+      gap: 4px;
+      padding: 0 8px 4px;
+    }
+
+    .groupTeamCard {
+      min-height: 0;
+    }
+
+    .groupTeamHeaderButton {
+      min-height: var(--group-team-target-size);
+      padding: 0 3px;
+    }
+
+    .groupTeamRowButton {
+      min-height: var(--group-team-target-size);
+    }
+  }
+
+  @media (height <= 760px) and (width >= 1181px) {
+    .groupTeamCard {
+      min-height: 0;
+    }
+  }
+
+  @media (width >= 1181px) and (height >= 900px) {
+    .root .groupTeamGrid {
+      --group-team-card-gap: clamp(5px, 1.3cqi, 7px);
+      --group-team-label-size: clamp(38px, 9cqi, 44px);
+      --group-team-row-gap: clamp(2px, 0.75cqi, 4px);
+      --group-team-row-padding: clamp(3px, 0.9cqi, 5px);
+      --group-team-target-size: clamp(48px, 13cqi, 64px);
+      --group-team-flag-size: clamp(24px, 6.5cqi, 32px);
+      --group-team-flag-font-size: clamp(20px, 6cqi, 28px);
+
+      grid-template-columns: minmax(0, 1fr);
+      grid-auto-rows: minmax(var(--group-team-target-size), 1fr);
+      align-content: stretch;
+      gap: var(--group-team-card-gap);
+      padding: 0 10px 8px;
+    }
+
+    .root .groupTeamCard {
+      border-radius: 10px;
+    }
+
+    .root .groupTeamHeaderButton {
+      font-size: clamp(0.78rem, 3cqi, 1rem);
+    }
+
+    .root .groupTeamRowButton {
+      flex-direction: column;
+      gap: clamp(2px, 0.8cqi, 5px);
+    }
+
+    .root .groupTeamName {
+      font-size: clamp(0.72rem, 3cqi, 0.92rem);
+    }
+  }
+
+  @media (width <= 1180px) {
+    .root .groupTeamGrid {
+      --group-team-card-gap: 4px;
+      --group-team-label-size: 24px;
+      --group-team-row-gap: 1px;
+      --group-team-row-padding: 1px;
+      --group-team-target-size: 44px;
+      --group-team-flag-size: 24px;
+      --group-team-flag-font-size: 19px;
+
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--group-team-card-gap);
+      padding: 0 8px 6px;
+    }
+
+    .root .groupTeamCard {
+      border-radius: 8px;
+      box-shadow: none;
+    }
+
+    .root .groupTeamHeaderButton {
+      min-height: var(--group-team-target-size);
+      font-size: 0.66rem;
+    }
+
+    .root .groupTeamRowButton {
+      min-height: var(--group-team-target-size);
+      gap: 0;
+    }
+
+    .root .groupTeamCopy {
+      display: block;
+    }
+
+    .root .groupTeamName {
+      font-size: 0.58rem;
+    }
+  }
+
+  @media (width >= 721px) and (width <= 900px) {
+    .root .groupTeamGrid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (width <= 720px) {
+    .root .groupTeamHeaderButton {
+      font-size: 0.7rem;
+    }
+
+    .root .groupTeamName {
+      font-size: 0.62rem;
+    }
+  }
+
+  @media (width <= 480px) {
+    .root .groupTeamGrid {
+      --group-team-label-size: 30px;
+      --group-team-flag-size: 24px;
+      --group-team-flag-font-size: 19px;
+
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .root .groupTeamRows {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  @media (width <= 360px) {
+    .root .groupPanelTabs {
+      padding: 4px 8px;
+    }
+
+    .root .groupTeamGrid {
+      --group-team-card-gap: 0;
+      --group-team-label-size: 28px;
+      --group-team-row-gap: 0;
+      --group-team-row-padding: 0;
+      --group-team-flag-size: 23px;
+      --group-team-flag-font-size: 18px;
+
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      padding-block-end: 0;
+    }
+
+    .root .groupTeamRows {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .groupTeamMeta {
+    display: block;
+    margin-block-start: 3px;
+    color: rgb(20 30 44 / 45%);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  @media (width <= 720px) {
+    .groupPanelTabs {
+      gap: 4px;
+      padding: 5px 6px 0;
+    }
+
+    .groupPanelTab {
+      min-height: 25px;
+      padding: 5px 8px;
+      font-size: 0.7rem;
+    }
+
+    .root .groupTeamGrid {
+      --group-team-card-gap: 3px;
+      --group-team-label-size: 12px;
+      --group-team-row-gap: 0;
+      --group-team-row-padding: 1px;
+      --group-team-target-size: 21px;
+      --group-team-flag-size: 15px;
+      --group-team-flag-font-size: 12px;
+
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--group-team-card-gap);
+      padding: 0 6px 5px;
+      overflow: hidden;
+    }
+
+    .groupTeamHeaderButton {
+      min-height: var(--group-team-target-size);
+      font-size: 0.56rem;
+    }
+
+    .groupTeamRowButton {
+      min-height: var(--group-team-target-size);
+    }
+
+    .groupTeamName {
+      font-size: 0.5rem;
+    }
+  }
+
+  @media (width <= 720px) and (height <= 700px) {
+    .groupPanelTabs {
+      gap: 3px;
+      padding: 4px 5px 0;
+    }
+
+    .groupPanelTab {
+      min-height: 22px;
+      padding: 4px 7px;
+      font-size: 0.64rem;
+    }
+
+    .root .groupTeamGrid {
+      --group-team-card-gap: 2px;
+      --group-team-label-size: 15px;
+      --group-team-target-size: 18px;
+      --group-team-flag-size: 13px;
+      --group-team-flag-font-size: 11px;
+
+      padding: 0 5px 4px;
+    }
+
+    .groupTeamHeaderButton {
+      font-size: 0.5rem;
+    }
+
+    .groupTeamName {
+      font-size: 0.46rem;
+    }
+  }
+
+  @media (width <= 1180px) {
+    .root {
+      overflow: visible;
+    }
+  }
+
+  @media (height <= 820px) and (width >= 1181px) {
+    .root {
+      flex: 1 1 auto;
+    }
+  }
+
+  @media (width <= 720px) {
+    .root {
+      border-radius: 16px;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .groupTeamGrid {
+      min-height: 0;
+      overscroll-behavior: contain;
+    }
+  }
+}

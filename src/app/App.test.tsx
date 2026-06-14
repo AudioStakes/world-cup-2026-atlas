@@ -24,7 +24,7 @@ function mockBrowserTimeZone(timeZone: string | null) {
 }
 
 function getFirstMatchCard() {
-  const matchCard = document.querySelector(".match-card");
+  const matchCard = document.querySelector('[data-testid="match-card"]');
 
   if (!matchCard) {
     throw new Error("Expected match card to render");
@@ -405,12 +405,12 @@ describe("App", () => {
     expect(matchScope.getByText("Mexico")).toBeInTheDocument();
     expect(matchScope.getByText("13:00")).toBeInTheDocument();
     expect(matchScope.getByText("South Africa")).toBeInTheDocument();
-    expect(matchCard.querySelector(".match-card__meta-line")).toHaveTextContent(
+    expect(matchCard.querySelector('[data-testid="match-card-meta-line"]')).toHaveTextContent(
       "Group A·First Stage·Estadio Azteca (Mexico City)",
     );
-    expect(within(matchCard).getByRole("button", { name: "Select group Group A" })).toHaveClass(
-      "match-card__group-button",
-    );
+    expect(
+      within(matchCard).getByRole("button", { name: "Select group Group A" }),
+    ).toHaveTextContent("Group A");
     expect(matchScope.getByText("Mexico vs South Africa")).toHaveClass("visually-hidden");
     expect(matchScope.queryByText(/Estadio Azteca · Mexico City, Mexico/)).not.toBeInTheDocument();
   });

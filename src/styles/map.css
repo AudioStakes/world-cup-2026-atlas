@@ -1,0 +1,396 @@
+.usa-label {
+  font-size: 30px;
+}
+
+.mexico-label {
+  font-size: 28px;
+}
+
+.map-svg {
+  position: absolute;
+  inset: 3% 2%;
+  width: 96%;
+  height: 94%;
+  filter: saturate(0.96) contrast(1.06);
+}
+
+.country-shape {
+  stroke-linejoin: round;
+  fill: var(--map-land-color);
+  stroke: var(--map-line-color);
+  stroke-width: 1.2;
+}
+
+.canada-shape {
+  fill: var(--map-land-color);
+}
+
+.usa-shape {
+  fill: var(--map-land-highlight-color);
+}
+
+.mexico-shape {
+  fill: var(--map-land-color);
+}
+
+.coastline-detail {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke: var(--map-line-color);
+  stroke-width: 1.1;
+  opacity: 0.92;
+}
+
+.map-border-line {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 5 8;
+  stroke: var(--map-line-color);
+  opacity: 0.92;
+  stroke-width: 1.4;
+}
+
+.map-lake {
+  fill: var(--map-water-color);
+  stroke: rgb(74 99 121 / 14%);
+  stroke-width: 1;
+}
+
+.country-label {
+  font-size: 32px;
+  font-weight: 950;
+  letter-spacing: 0.18em;
+  fill: rgb(23 32 42 / 46%);
+  stroke: rgb(255 255 255 / 66%);
+  stroke-width: 3;
+  paint-order: stroke fill;
+}
+
+.map-frame {
+  fill: transparent;
+  stroke: none;
+}
+
+.explorer-output .map-svg {
+  inset: 0;
+}
+
+@media (width <= 1180px) {
+  .map-panel {
+    flex: 0 0 420px;
+    min-block-size: min(420px, 80vh);
+  }
+}
+
+.venue-marker__label-bg {
+  fill: transparent;
+  stroke: transparent;
+  stroke-width: 1.5;
+}
+
+.venue-marker__label-text {
+  fill: rgb(20 30 44 / 88%);
+  paint-order: stroke fill;
+  stroke: rgb(255 255 255 / 88%);
+  stroke-width: 2.2;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.map-route-line {
+  stroke: rgb(23 32 42 / 66%);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 4.2;
+  filter: drop-shadow(0 1px 1px rgb(255 255 255 / 58%));
+}
+
+.map-route-line.is-knockout {
+  stroke: rgb(181 31 31 / 72%);
+  stroke-dasharray: 7 7;
+}
+
+.map-route-arrow {
+  fill: rgb(23 32 42 / 68%);
+  stroke: rgb(255 255 255 / 88%);
+  stroke-width: 1;
+  paint-order: stroke fill;
+  filter: drop-shadow(0 1px 1px rgb(255 255 255 / 60%));
+}
+
+.map-route-arrow.is-knockout {
+  fill: rgb(181 31 31 / 72%);
+}
+
+.map-route-label-bg {
+  fill: transparent;
+  stroke: transparent;
+  stroke-width: 1.2;
+}
+
+.map-route-label {
+  font-size: 15px;
+  font-weight: 950;
+  letter-spacing: -0.02em;
+  fill: rgb(23 32 42 / 86%);
+  stroke: rgb(255 255 255 / 82%);
+  stroke-width: 2.2;
+  paint-order: stroke fill;
+}
+
+.map-route-label-group {
+  filter: none;
+}
+
+.map-panel {
+  position: relative;
+  min-block-size: 0;
+  overflow: hidden;
+
+  --map-land-color: rgb(255 255 255 / 88%);
+  --map-land-highlight-color: rgb(255 255 255 / 94%);
+  --map-line-color: rgb(74 99 121 / 18%);
+  --map-water-color: #dceefa;
+  --map-water-soft-color: #edf8ff;
+
+  background:
+    radial-gradient(circle at 18% 16%, var(--map-water-soft-color), transparent 34%),
+    linear-gradient(135deg, var(--map-water-soft-color), var(--map-water-color));
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  min-height: 0;
+}
+
+.map-canvas {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--map-water-color);
+  height: 100%;
+}
+
+@media (width <= 720px) {
+  .map-panel {
+    flex: none;
+    min-block-size: 0;
+    border-radius: 16px;
+    min-height: 0;
+    overflow: hidden;
+  }
+}
+
+.venue-marker-layer {
+  position: absolute;
+  inset: 3% 2%;
+  overflow: visible;
+  pointer-events: auto;
+}
+
+.venue-marker-object {
+  overflow: visible;
+  pointer-events: auto;
+}
+
+.map-background {
+  pointer-events: none;
+}
+
+.map-background * {
+  pointer-events: none;
+}
+
+.map-route-group {
+  pointer-events: none;
+}
+
+.map-route-group * {
+  pointer-events: none;
+}
+
+.venue-marker-control-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.venue-marker-control {
+  position: absolute;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  pointer-events: auto;
+  transform: translate(-50%, -50%);
+}
+
+.venue-marker-control__dot {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border: 2px solid rgb(255 255 255 / 96%);
+  border-radius: 999px;
+  background: rgb(181 31 31 / 82%);
+  box-shadow: 0 0 0 1px rgb(23 32 42 / 10%);
+  pointer-events: none;
+}
+
+.venue-marker-control:hover .venue-marker-control__dot {
+  width: 14px;
+  height: 14px;
+  border: 4px solid rgb(181 31 31 / 28%);
+  background: rgb(181 31 31 / 96%);
+}
+
+.venue-marker-control:focus-visible .venue-marker-control__dot {
+  width: 14px;
+  height: 14px;
+  border: 4px solid rgb(181 31 31 / 28%);
+  background: rgb(181 31 31 / 96%);
+}
+
+.venue-marker-control.is-highlighted .venue-marker-control__dot {
+  width: 14px;
+  height: 14px;
+  border: 4px solid rgb(181 31 31 / 28%);
+  background: rgb(181 31 31 / 96%);
+}
+
+.venue-marker-control.is-selected .venue-marker-control__dot {
+  width: 14px;
+  height: 14px;
+  border: 4px solid rgb(181 31 31 / 28%);
+  background: rgb(181 31 31 / 96%);
+}
+
+.venue-marker-control:focus-visible {
+  outline: 3px solid #8f1414;
+  outline-offset: 2px;
+}
+
+.venue-marker-control.is-dimmed {
+  opacity: 0.62;
+}
+
+@media (pointer: coarse), (width <= 720px) {
+  .venue-marker-control {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+.venue-marker__map-label {
+  overflow: hidden;
+  color: currentcolor;
+  font-size: 13px;
+  font-weight: 900;
+  pointer-events: none;
+  text-overflow: ellipsis;
+  text-shadow:
+    0 1px 0 rgb(255 255 255 / 92%),
+    1px 0 0 rgb(255 255 255 / 92%),
+    0 -1px 0 rgb(255 255 255 / 92%),
+    -1px 0 0 rgb(255 255 255 / 92%);
+  white-space: nowrap;
+}
+
+.venue-marker {
+  position: absolute;
+  outline: none;
+  transform: none;
+  width: 30px;
+  height: 30px;
+  overflow: visible;
+  display: inline-flex;
+  gap: 7px;
+  max-width: 150px;
+  min-height: 28px;
+  margin: 0;
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+  appearance: none;
+  align-items: center;
+  padding: 5px 10px 5px 6px;
+  border: 1px solid rgb(23 32 42 / 12%);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 82%);
+  box-shadow:
+    0 8px 18px rgb(23 32 42 / 12%),
+    inset 0 0 0 1px rgb(255 255 255 / 50%);
+  color: rgb(23 32 42 / 78%);
+  transition:
+    opacity 140ms ease,
+    box-shadow 140ms ease,
+    background-color 140ms ease,
+    border-color 140ms ease,
+    filter 140ms ease;
+}
+
+.venue-marker__anchor {
+  fill: rgb(0 0 0 / 0.1%);
+  pointer-events: none;
+}
+
+.venue-marker:hover {
+  background: transparent;
+  transform: translate(-50%, -50%);
+  color: var(--color-red);
+  outline: none;
+  border-color: rgb(181 31 31 / 22%);
+  box-shadow:
+    0 12px 26px rgb(23 32 42 / 16%),
+    0 0 0 1px rgb(181 31 31 / 10%) inset;
+}
+
+.venue-marker:focus-visible {
+  transform: none;
+  color: var(--color-red);
+  outline: none;
+  border-color: rgb(181 31 31 / 22%);
+  box-shadow:
+    0 12px 26px rgb(23 32 42 / 16%),
+    0 0 0 1px rgb(181 31 31 / 10%) inset;
+}
+
+.venue-marker.is-normal {
+  opacity: 0.96;
+}
+
+.venue-marker.is-highlighted {
+  color: var(--color-red);
+  opacity: 0.98;
+  background: rgb(255 255 255 / 90%);
+  border-color: rgb(181 31 31 / 28%);
+  box-shadow:
+    0 12px 26px rgb(23 32 42 / 14%),
+    0 0 0 1px rgb(181 31 31 / 8%) inset;
+}
+
+.venue-marker.is-selected {
+  color: var(--color-red);
+  opacity: 1;
+  background: linear-gradient(180deg, rgb(255 255 255 / 96%), rgb(248 250 252 / 92%));
+  border-color: rgb(181 31 31 / 42%);
+  box-shadow:
+    0 16px 32px rgb(23 32 42 / 18%),
+    0 0 0 2px rgb(181 31 31 / 16%),
+    0 0 0 6px rgb(181 31 31 / 8%);
+  z-index: 2;
+}
+
+.venue-marker.is-dimmed {
+  opacity: 0.64;
+  filter: saturate(0.92);
+}
+
+.venue-marker.is-dimmed .venue-marker__map-label {
+  opacity: 0.96;
+  color: rgb(23 32 42 / 90%);
+}

@@ -1,0 +1,791 @@
+@layer components {
+  .clearButton {
+    min-height: 32px;
+    padding: 0 14px;
+    border: 1px solid rgb(181 31 31 / 20%);
+    border-radius: 999px;
+    color: var(--color-red);
+    background: rgb(255 255 255 / 76%);
+    font-size: 12px;
+    font-weight: 850;
+    cursor: pointer;
+  }
+
+  .clearButton:disabled {
+    opacity: 0.42;
+    cursor: default;
+  }
+
+  .clearButton:not(:disabled):hover {
+    background: var(--color-red-soft);
+  }
+
+  .dateTimeline {
+    grid-template-rows: minmax(0, 1fr);
+    padding: 0;
+  }
+
+  .root h2 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 950;
+    line-height: 1.05;
+    letter-spacing: -0.04em;
+  }
+
+  .header p {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    margin: 5px 0 0;
+    color: var(--color-muted);
+    font-size: 12px;
+    font-weight: 750;
+  }
+
+  .groupLink {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-block-size: 26px;
+    padding: 3px 9px;
+    border: 1px solid var(--color-red-line);
+    border-radius: 999px;
+    background: var(--color-red-soft);
+    color: #8f1414;
+    font-weight: 950;
+    line-height: 1;
+    text-decoration: none;
+  }
+
+  .groupLink::after {
+    content: "→";
+    font-size: 0.92em;
+    line-height: 1;
+  }
+
+  .groupLink:hover {
+    border-color: rgb(181 31 31 / 54%);
+    background: rgb(181 31 31 / 14%);
+  }
+
+  .groupLink:focus-visible {
+    outline: 3px solid #8f1414;
+    outline-offset: 2px;
+  }
+
+  .subtitleSeparator {
+    color: rgb(23 32 42 / 38%);
+  }
+
+  .detailMetrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 8px;
+    margin: 10px 0 0;
+  }
+
+  .detailMetric {
+    min-width: 0;
+    padding: 8px 9px;
+    border: 1px solid rgb(23 32 42 / 8%);
+    border-radius: 12px;
+    background: rgb(255 255 255 / 58%);
+  }
+
+  .detailMetric dt {
+    margin: 0;
+    color: rgb(23 32 42 / 52%);
+    font-size: 10px;
+    font-weight: 850;
+    line-height: 1.2;
+  }
+
+  .detailMetric dd {
+    margin: 3px 0 0;
+    color: var(--color-ink);
+    font-size: 12px;
+    font-weight: 900;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  .groupStandings {
+    min-height: 0;
+    margin: 12px 0 0;
+    overflow: auto;
+    scrollbar-gutter: stable;
+  }
+
+  .groupStandings:focus-visible {
+    outline: 3px solid #8f1414;
+    outline-offset: 2px;
+  }
+
+  .groupStandings caption {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .groupStandings table {
+    width: 100%;
+    min-width: 620px;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .groupStandings th {
+    padding: 11px 10px;
+    border-top: 1px solid rgb(23 32 42 / 8%);
+    color: rgb(23 32 42 / 72%);
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .groupStandings td {
+    padding: 11px 10px;
+    border-top: 1px solid rgb(23 32 42 / 8%);
+    color: rgb(23 32 42 / 72%);
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .groupStandings thead th {
+    border-top: 0;
+    color: rgb(54 67 91 / 68%);
+    font-weight: 900;
+  }
+
+  .groupStandings .groupStandingsTeamHeading {
+    color: var(--color-ink);
+    text-align: left;
+    font-size: 15px;
+    font-weight: 760;
+  }
+
+  .groupStandings tbody th {
+    color: var(--color-ink);
+    text-align: left;
+    font-weight: 850;
+  }
+
+  .groupStandings tbody tr {
+    background: rgb(255 255 255 / 72%);
+  }
+
+  .groupStandingsTeam {
+    display: inline-grid;
+    grid-template-columns: 22px auto auto;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .groupStandingsRank {
+    color: rgb(23 32 42 / 76%);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .groupStandingsFlag {
+    font-size: 1.1rem;
+    line-height: 1;
+  }
+
+  .groupStandingsCode {
+    color: rgb(23 32 42 / 90%);
+    font-weight: 850;
+    letter-spacing: 0.02em;
+  }
+
+  .groupStandingsForm {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .groupStandingsFormEntry {
+    display: inline-grid;
+    inline-size: 8px;
+    block-size: 8px;
+    place-items: center;
+    border-radius: 999px;
+  }
+
+  .groupStandingsFormEntry::before {
+    display: block;
+    content: "";
+  }
+
+  .groupStandingsFormEntry.isWin {
+    background: #24a65a;
+  }
+
+  .groupStandingsFormEntry.isDraw {
+    background: rgb(54 67 91 / 48%);
+  }
+
+  .groupStandingsFormEntry.isLoss {
+    background: #ff3d4f;
+  }
+
+  .groupStandingsFormEntry.isPending {
+    inline-size: auto;
+    color: rgb(23 32 42 / 62%);
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .groupStandingsFormEntry.isPending::before {
+    content: "-";
+  }
+
+  .routeSummary {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    margin: 10px 0 0;
+    padding: 8px 10px;
+    border: 1px solid rgb(181 31 31 / 14%);
+    border-radius: 12px;
+    color: rgb(23 32 42 / 66%);
+    background: var(--color-red-soft);
+    font-size: 11px;
+    font-weight: 850;
+  }
+
+  .routeSummaryHeadline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .routeSummary strong {
+    color: var(--color-red);
+  }
+
+  .routeSummaryNote {
+    margin: 0;
+    color: rgb(23 32 42 / 68%);
+    font-size: 10px;
+    font-weight: 650;
+    line-height: 1.35;
+  }
+
+  .routeLegList {
+    display: grid;
+    gap: 4px;
+    width: 100%;
+    margin: 2px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .routeLegList li {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+    color: rgb(23 32 42 / 66%);
+    font-size: 10px;
+    line-height: 1.25;
+  }
+
+  .routeLegList strong {
+    min-width: 0;
+    overflow: hidden;
+    color: rgb(23 32 42 / 82%);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .empty {
+    margin: 12px 0 0;
+    color: var(--color-muted);
+    font-size: 12px;
+    font-weight: 650;
+    line-height: 1.45;
+  }
+
+  .matchListDateTimeline {
+    gap: 14px;
+    min-height: 100%;
+    margin: 0;
+    padding: 12px;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .matchListItem {
+    container: match-card / inline-size;
+    min-width: 0;
+  }
+
+  .matchListDateRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 0 8px;
+  }
+
+  .matchListDateRow h3 {
+    margin: 0;
+    color: var(--color-ink);
+    font-size: clamp(1rem, 2.5cqi, 1.22rem);
+    font-weight: 850;
+    line-height: 1.1;
+    letter-spacing: 0;
+  }
+
+  .matchCard {
+    display: grid;
+    gap: 7px;
+    width: 100%;
+    min-width: 0;
+    padding: 14px 14px 13px;
+    border: 0;
+    border-radius: 0;
+    background: rgb(255 255 255 / 96%);
+    color: inherit;
+    text-align: center;
+    cursor: default;
+  }
+
+  .matchCardAction {
+    min-block-size: 24px;
+    min-inline-size: 24px;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    appearance: none;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+  }
+
+  .matchCardAction:hover {
+    color: var(--color-red);
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
+  }
+
+  .matchCardAction:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--color-red) 58%, transparent);
+    outline-offset: 3px;
+  }
+
+  .matchCardScoreRow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: clamp(8px, 2cqi, 18px);
+    min-width: 0;
+    white-space: nowrap;
+  }
+
+  .matchCardTeam {
+    display: inline-flex;
+    min-width: 0;
+    align-items: center;
+    gap: 8px;
+    color: #111820;
+    font-size: clamp(0.95rem, 2.8cqi, 1.32rem);
+    font-weight: 760;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+
+  .matchCardTeamHome {
+    justify-content: end;
+    text-align: right;
+  }
+
+  .matchCardTeamAway {
+    justify-content: start;
+    text-align: left;
+  }
+
+  .matchCardTeamName {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .matchCardTeamButton {
+    display: inline-flex;
+    min-width: 0;
+    max-width: 100%;
+    align-items: center;
+    gap: 8px;
+    justify-content: inherit;
+    text-align: inherit;
+  }
+
+  .matchCardTeamCopy {
+    display: inline-flex;
+    min-width: 0;
+    max-width: 100%;
+    align-items: center;
+    gap: 8px;
+    justify-content: inherit;
+    text-align: inherit;
+  }
+
+  .matchCardFlag {
+    display: inline-grid;
+    min-inline-size: clamp(24px, 4cqi, 34px);
+    place-items: center;
+    flex: 0 0 auto;
+    font-size: clamp(1.2rem, 3.4cqi, 1.65rem);
+    line-height: 1;
+  }
+
+  .matchCardCenter {
+    display: inline-grid;
+    grid-auto-flow: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(8px, 1.8cqi, 14px);
+    min-inline-size: clamp(86px, 16cqi, 128px);
+    color: #05080c;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .matchCardKickoff {
+    position: relative;
+    color: #05080c;
+    font-size: clamp(1.85rem, 5.2cqi, 2.7rem);
+    font-weight: 720;
+    letter-spacing: 0;
+  }
+
+  .matchCardScore {
+    position: relative;
+    color: #05080c;
+    font-size: clamp(1.85rem, 5.2cqi, 2.7rem);
+    font-weight: 720;
+    letter-spacing: 0;
+  }
+
+  .matchCardScore.isMuted {
+    color: rgb(85 99 121 / 58%);
+  }
+
+  .matchCardScore.isWinner::after {
+    position: absolute;
+    inset-inline: 3px;
+    inset-block-end: -6px;
+    block-size: 5px;
+    background: #1f9d55;
+    content: "";
+  }
+
+  .matchCardStatus {
+    color: rgb(68 82 104 / 90%);
+    font-size: clamp(0.8rem, 1.8cqi, 1rem);
+    font-weight: 780;
+    letter-spacing: 0.04em;
+  }
+
+  .matchCardStatusScoreless {
+    font-size: clamp(1rem, 3.2cqi, 1.35rem);
+    letter-spacing: 0.02em;
+  }
+
+  .matchCardMetaLine {
+    display: flex;
+    min-width: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 2px 0.45em;
+    overflow: visible;
+    color: rgb(54 67 91 / 82%);
+    font-size: clamp(0.78rem, 1.7cqi, 0.94rem);
+    font-weight: 680;
+    line-height: 1.3;
+    white-space: normal;
+  }
+
+  .matchCardMetaButton {
+    min-width: 0;
+    max-width: min(44ch, 100%);
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
+  .matchCardGroupButton {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 22px;
+    padding: 2px 7px;
+    border: 1px solid rgb(47 111 221 / 28%);
+    border-radius: 6px;
+    color: #2f6fdd;
+    background: rgb(47 125 240 / 8%);
+    font-weight: 900;
+    line-height: 1;
+    text-decoration: none;
+  }
+
+  .matchCardGroupButton:hover {
+    border-color: rgb(47 111 221 / 52%);
+    color: #2157b8;
+    background: rgb(47 125 240 / 14%);
+    text-decoration: none;
+  }
+
+  .matchCardMetaSeparator {
+    flex: 0 0 auto;
+    color: rgb(68 82 104 / 68%);
+  }
+
+  .matchCardA11y {
+    display: contents;
+  }
+
+  @container match-card (inline-size <= 520px) {
+    .matchCardScoreRow {
+      gap: clamp(5px, 1.4cqi, 8px);
+    }
+
+    .matchCardTeam {
+      font-size: clamp(0.82rem, 3.1cqi, 0.95rem);
+    }
+
+    .matchCardCenter {
+      min-inline-size: clamp(68px, 18cqi, 84px);
+    }
+
+    .matchCardKickoff {
+      font-size: clamp(1.58rem, 8.4cqi, 2rem);
+    }
+
+    .matchCardScore {
+      font-size: clamp(1.58rem, 8.4cqi, 2rem);
+    }
+  }
+
+  @container match-card (inline-size <= 390px) {
+    .matchCard {
+      padding-inline: 8px;
+    }
+
+    .matchCardScoreRow {
+      grid-template-columns: minmax(28px, 1fr) auto minmax(28px, 1fr);
+      gap: 4px;
+    }
+
+    .matchCardTeamName {
+      display: none;
+    }
+
+    .matchCardTeamButton {
+      gap: 0;
+    }
+
+    .matchCardTeamCopy {
+      gap: 0;
+    }
+
+    .matchCardFlag {
+      min-inline-size: 28px;
+      font-size: 1.35rem;
+    }
+  }
+
+  @media (height <= 820px) and (width >= 1181px) {
+    .header {
+      gap: 8px;
+    }
+
+    .root h2 {
+      font-size: 20px;
+    }
+
+    .header p {
+      margin: 4px 0 0;
+      font-size: 11px;
+    }
+
+    .routeSummary {
+      padding: 8px 10px;
+    }
+
+    .routeSummaryNote {
+      font-size: 9px;
+    }
+
+    .matchList {
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .matchCard {
+      padding: 12px;
+    }
+
+    .matchListDateRow h3 {
+      font-size: 1rem;
+    }
+
+    .matchCardTeam {
+      font-size: 0.92rem;
+    }
+
+    .matchCardKickoff {
+      font-size: 1.7rem;
+    }
+
+    .matchCardScore {
+      font-size: 1.7rem;
+    }
+
+    .matchCardCenter {
+      min-inline-size: 80px;
+    }
+
+    .matchCardMetaLine {
+      font-size: 0.72rem;
+    }
+  }
+
+  @media (height <= 760px) and (width >= 1181px) {
+    .matchCard {
+      padding: 8px 10px;
+    }
+  }
+
+  @media (width <= 720px) {
+    .clearButton {
+      min-height: 44px;
+    }
+
+    .detailMetrics {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .routeLegList li {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .icon {
+    display: inline-grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    flex: 0 0 auto;
+    border-radius: 12px;
+    background: var(--color-red-soft);
+    font-size: 1.55rem;
+  }
+
+  @media (width <= 720px) {
+    .matchListDateTimeline {
+      gap: 8px;
+      padding: 8px;
+      overflow: auto;
+    }
+
+    .matchListDateRow {
+      margin-bottom: 4px;
+    }
+
+    .matchListDateRow h3 {
+      font-size: 0.96rem;
+    }
+
+    .matchCard {
+      gap: 5px;
+      padding: 10px 8px;
+    }
+  }
+
+  @media (width <= 720px) and (height <= 700px) {
+    .matchListDateTimeline {
+      gap: 6px;
+      padding: 7px;
+    }
+
+    .matchListDateRow h3 {
+      font-size: 0.9rem;
+    }
+
+    .matchCard {
+      gap: 4px;
+      padding: 8px 6px;
+    }
+  }
+
+  .root {
+    border: 1px solid rgb(23 32 42 / 8%);
+    border-radius: 20px;
+    container: result-card / inline-size;
+    display: grid;
+    grid-template-rows: auto auto auto minmax(0, 1fr);
+    align-self: stretch;
+    padding: 12px;
+    overflow: hidden;
+    background: var(--color-panel-strong);
+    box-shadow: var(--shadow-card);
+    min-height: 0;
+  }
+
+  .matchList {
+    display: grid;
+    gap: 10px;
+    min-height: 0;
+    margin: 14px 0 0;
+    padding: 8px;
+    overflow: auto;
+    border-radius: 10px;
+    background: rgb(23 32 42 / 4.5%);
+    scrollbar-gutter: stable;
+    list-style: none;
+    overscroll-behavior: contain;
+  }
+
+  @media (height <= 820px) and (width >= 1181px) {
+    .root {
+      min-height: 0;
+      overflow: auto;
+      padding: 10px;
+      flex: 0 0 auto;
+    }
+  }
+
+  @media (width <= 720px) {
+    .root {
+      border-radius: 16px;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .matchList {
+      min-height: 0;
+      overscroll-behavior: contain;
+      overflow: auto;
+    }
+  }
+}

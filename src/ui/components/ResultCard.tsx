@@ -12,6 +12,7 @@ import type {
   ResultGroupNavigationViewModel,
 } from "../../features/explorer/types";
 import { classNames } from "./classNames";
+import s from "./ResultCard.module.css";
 
 type ResultCardProps = {
   readonly result: ExplorerResultViewModel;
@@ -45,15 +46,16 @@ export function ResultCard({ result, onAction, onMatchVenueFocusChange }: Result
   return (
     <section
       id="selection-results"
-      class={classNames("result-card", isDateTimeline && "result-card--date-timeline")}
+      class={classNames(s.root, isDateTimeline && s.dateTimeline)}
       aria-labelledby="result-card-title"
+      data-testid="result-card"
     >
       <p class="visually-hidden" aria-live="polite">
         {createResultStatusLabel(result)}
       </p>
       {shouldShowHeader ? (
-        <header class="result-card__header">
-          <span class="result-card__icon" aria-hidden="true">
+        <header class={s.header} data-testid="result-card-header">
+          <span class={s.icon} aria-hidden="true">
             {result.icon}
           </span>
           <div>
@@ -72,17 +74,17 @@ export function ResultCard({ result, onAction, onMatchVenueFocusChange }: Result
       )}
 
       {!isDateTimeline && result.routeSummary ? (
-        <div class="route-summary">
-          <div class="route-summary__headline">
+        <div class={s.routeSummary}>
+          <div class={s.routeSummaryHeadline}>
             <span>{result.routeSummary.itineraryLabel}</span>
             <strong>{result.routeSummary.totalDistanceLabel}</strong>
           </div>
-          <p class="route-summary__note">{result.routeSummary.distanceMethodLabel}</p>
+          <p class={s.routeSummaryNote}>{result.routeSummary.distanceMethodLabel}</p>
           {result.routeSummary.venueCountExplanationLabel ? (
-            <p class="route-summary__note">{result.routeSummary.venueCountExplanationLabel}</p>
+            <p class={s.routeSummaryNote}>{result.routeSummary.venueCountExplanationLabel}</p>
           ) : null}
           {result.routeSummary.legs.length > 0 ? (
-            <ol class="route-leg-list" aria-label="Route legs by fixture date">
+            <ol class={s.routeLegList} aria-label="Route legs by fixture date">
               {result.routeSummary.legs.map((leg) => (
                 <li key={`${leg.fromDateLabel}-${leg.toDateLabel}-${leg.fromVenueLabel}`}>
                   <span>{leg.fromDateLabel}</span>
@@ -104,28 +106,27 @@ export function ResultCard({ result, onAction, onMatchVenueFocusChange }: Result
       {result.matches.length > 0 ? (
         <ol
           ref={matchListRef}
-          class={classNames("match-list", isDateTimeline && "match-list--date-timeline")}
+          class={classNames(s.matchList, isDateTimeline && s.matchListDateTimeline)}
           aria-label={isDateTimeline ? "Tournament fixtures by date" : undefined}
+          data-testid="match-list"
         >
           {result.matches.map((match, index) => (
             <li
-              class={classNames(
-                "match-list__item",
-                match.isInitialScrollTarget && "is-initial-scroll-target",
-              )}
+              class={s.matchListItem}
               data-initial-scroll-target={match.isInitialScrollTarget ? "true" : undefined}
               key={match.matchId}
             >
               {shouldShowMatchDateHeading(result.matches, index) ? (
-                <div class="match-list__date-row">
+                <div class={s.matchListDateRow}>
                   <h3>{match.dateHeadingLabel}</h3>
                 </div>
               ) : null}
               <article
-                class="match-card"
+                class={s.matchCard}
                 aria-label={`${match.matchupAriaLabel}, ${match.statusLabel}, ${match.secondaryText}`}
+                data-testid="match-card"
               >
-                <span class="match-card__score-row">
+                <span class={s.matchCardScoreRow} data-testid="match-card-score-row">
                   <MatchTeam team={match.homeTeam} side="home" onAction={onAction} />
                   <MatchCenter match={match} />
                   <MatchTeam team={match.awayTeam} side="away" onAction={onAction} />
@@ -135,7 +136,7 @@ export function ResultCard({ result, onAction, onMatchVenueFocusChange }: Result
                   onAction={onAction}
                   onMatchVenueFocusChange={onMatchVenueFocusChange}
                 />
-                <span class="match-card__a11y">
+                <span class={s.matchCardA11y}>
                   <span class="visually-hidden">{match.matchupAriaLabel}</span>
                   <span class="visually-hidden">
                     {match.scoreLineLabel ?? `${match.statusLabel}, ${match.secondaryText}`}
@@ -146,9 +147,13 @@ export function ResultCard({ result, onAction, onMatchVenueFocusChange }: Result
           ))}
         </ol>
       ) : (
-        <div class="result-card__empty">
+        <div class={s.empty}>
           <p>{result.emptyMessage}</p>
-          <button class="clear-button" type="button" onClick={() => onAction({ type: "clearAll" })}>
+          <button
+            class={s.clearButton}
+            type="button"
+            onClick={() => onAction({ type: "clearAll" })}
+          >
             Clear selection
           </button>
         </div>
@@ -171,13 +176,13 @@ function ResultSubtitle({
   }
 
   if (!groupNavigation) {
-    return <p class="result-card__subtitle">{subtitle}</p>;
+    return <p>{subtitle}</p>;
   }
 
   return (
-    <p class="result-card__subtitle result-card__subtitle--with-group-link">
+    <p>
       <a
-        class="result-card__group-link"
+        class={s.groupLink}
         href={groupNavigation.href}
         onClick={(event) => {
           event.preventDefault();
@@ -187,7 +192,7 @@ function ResultSubtitle({
       >
         {groupNavigation.label}
       </a>
-      <span class="result-card__subtitle-separator" aria-hidden="true">
+      <span class={s.subtitleSeparator} aria-hidden="true">
         ·
       </span>
       <span>{groupNavigation.trailingLabel}</span>
@@ -212,7 +217,7 @@ function MatchTeam({
   readonly team: MatchTeamViewModel;
 }) {
   const flag = team.flagEmoji ? (
-    <span class="match-card__flag" aria-hidden="true">
+    <span class={s.matchCardFlag} aria-hidden="true" data-testid="match-card-flag">
       {team.flagEmoji}
     </span>
   ) : null;
@@ -220,21 +225,25 @@ function MatchTeam({
   const content =
     side === "home" ? (
       <>
-        <span class="match-card__team-name">{team.displayName}</span>
+        <span class={s.matchCardTeamName} data-testid="match-card-team-name">
+          {team.displayName}
+        </span>
         {flag}
       </>
     ) : (
       <>
         {flag}
-        <span class="match-card__team-name">{team.displayName}</span>
+        <span class={s.matchCardTeamName} data-testid="match-card-team-name">
+          {team.displayName}
+        </span>
       </>
     );
 
   return (
-    <span class={classNames("match-card__team", `match-card__team--${side}`)}>
+    <span class={classNames(s.matchCardTeam, matchTeamSideClassBySide[side])} data-team-side={side}>
       {countryId ? (
         <button
-          class="match-card__action match-card__team-button"
+          class={classNames(s.matchCardAction, s.matchCardTeamButton)}
           type="button"
           aria-label={`Select country ${team.displayName}`}
           onClick={() => onAction({ type: "selectCountry", countryId })}
@@ -242,11 +251,16 @@ function MatchTeam({
           {content}
         </button>
       ) : (
-        <span class="match-card__team-copy">{content}</span>
+        <span class={s.matchCardTeamCopy}>{content}</span>
       )}
     </span>
   );
 }
+
+const matchTeamSideClassBySide: Readonly<Record<"home" | "away", string>> = {
+  away: s.matchCardTeamAway,
+  home: s.matchCardTeamHome,
+};
 
 function MatchFixtureMeta({
   match,
@@ -261,28 +275,28 @@ function MatchFixtureMeta({
   const groupLabel = match.groupLabel;
 
   return (
-    <span class="match-card__meta-line">
+    <span class={s.matchCardMetaLine} data-testid="match-card-meta-line">
       {groupCode && groupLabel ? (
         <>
           <button
-            class="match-card__action match-card__meta-button match-card__group-button"
+            class={classNames(s.matchCardAction, s.matchCardMetaButton, s.matchCardGroupButton)}
             type="button"
             aria-label={`Select group ${groupLabel}`}
             onClick={() => onAction({ type: "selectGroup", groupCode })}
           >
             {groupLabel}
           </button>
-          <span class="match-card__meta-separator" aria-hidden="true">
+          <span class={s.matchCardMetaSeparator} aria-hidden="true">
             ·
           </span>
         </>
       ) : null}
       <span>{match.stageMetaLabel}</span>
-      <span class="match-card__meta-separator" aria-hidden="true">
+      <span class={s.matchCardMetaSeparator} aria-hidden="true">
         ·
       </span>
       <button
-        class="match-card__action match-card__meta-button"
+        class={classNames(s.matchCardAction, s.matchCardMetaButton)}
         type="button"
         aria-label={`Select match venue ${match.venueLabel}`}
         onBlur={() => onMatchVenueFocusChange(null)}
@@ -300,23 +314,39 @@ function MatchFixtureMeta({
 function MatchCenter({ match }: { readonly match: MatchListItemViewModel }) {
   if (match.homeScoreLabel && match.awayScoreLabel) {
     return (
-      <span class="match-card__center">
+      <span class={s.matchCardCenter}>
         <span
           class={classNames(
-            "match-card__score",
-            match.winningSide === "home" && "is-winner",
-            match.winningSide === "away" && "is-muted",
+            s.matchCardScore,
+            match.winningSide === "home" && s.isWinner,
+            match.winningSide === "away" && s.isMuted,
           )}
+          data-score-state={
+            match.winningSide === "home"
+              ? "winner"
+              : match.winningSide === "away"
+                ? "muted"
+                : "neutral"
+          }
+          data-testid="match-card-score"
         >
           {match.homeScoreLabel}
         </span>
-        <span class="match-card__status">{match.shortStatusLabel ?? match.statusLabel}</span>
+        <span class={s.matchCardStatus}>{match.shortStatusLabel ?? match.statusLabel}</span>
         <span
           class={classNames(
-            "match-card__score",
-            match.winningSide === "away" && "is-winner",
-            match.winningSide === "home" && "is-muted",
+            s.matchCardScore,
+            match.winningSide === "away" && s.isWinner,
+            match.winningSide === "home" && s.isMuted,
           )}
+          data-score-state={
+            match.winningSide === "away"
+              ? "winner"
+              : match.winningSide === "home"
+                ? "muted"
+                : "neutral"
+          }
+          data-testid="match-card-score"
         >
           {match.awayScoreLabel}
         </span>
@@ -325,11 +355,13 @@ function MatchCenter({ match }: { readonly match: MatchListItemViewModel }) {
   }
 
   return (
-    <span class="match-card__center">
+    <span class={s.matchCardCenter}>
       {match.normalizedStatus === "scheduled" ? (
-        <span class="match-card__kickoff">{match.kickoffLabel}</span>
+        <span class={s.matchCardKickoff} data-testid="match-card-kickoff">
+          {match.kickoffLabel}
+        </span>
       ) : (
-        <span class="match-card__status match-card__status--scoreless">
+        <span class={classNames(s.matchCardStatus, s.matchCardStatusScoreless)}>
           {match.shortStatusLabel ?? match.statusLabel}
         </span>
       )}
@@ -359,9 +391,9 @@ function ResultDetails({ details }: { readonly details: ExplorerDetailViewModel 
 
 function MetricGrid({ metrics }: { readonly metrics: readonly DetailMetricViewModel[] }) {
   return (
-    <dl class="detail-metrics">
+    <dl class={s.detailMetrics} data-testid="detail-metrics">
       {metrics.map((metric) => (
-        <div class="detail-metric" key={metric.label}>
+        <div class={s.detailMetric} key={metric.label}>
           <dt>{metric.label}</dt>
           <dd>{metric.value}</dd>
         </div>
@@ -374,7 +406,7 @@ function GroupStandings({ details }: { readonly details: GroupDetailViewModel })
   return (
     // biome-ignore-start lint/a11y/noNoninteractiveTabindex: Wide standings tables need a keyboard-focusable scroll container.
     <section
-      class="group-standings"
+      class={s.groupStandings}
       aria-label="Scrollable group table"
       tabIndex={0}
       onKeyDown={handleGroupStandingsKeyDown}
@@ -383,7 +415,7 @@ function GroupStandings({ details }: { readonly details: GroupDetailViewModel })
         <caption>{details.groupLabel} standings</caption>
         <thead>
           <tr>
-            <th class="group-standings__team-heading" scope="col">
+            <th class={s.groupStandingsTeamHeading} scope="col">
               {details.groupLabel}
             </th>
             <th scope="col">P</th>
@@ -401,16 +433,16 @@ function GroupStandings({ details }: { readonly details: GroupDetailViewModel })
           {details.standings.map((row) => (
             <tr key={row.countryId ?? row.teamLabel}>
               <th scope="row">
-                <span class="group-standings__team">
-                  <span class="group-standings__rank" aria-hidden="true">
+                <span class={s.groupStandingsTeam}>
+                  <span class={s.groupStandingsRank} aria-hidden="true">
                     {row.position}
                   </span>
                   {row.teamFlagEmoji ? (
-                    <span class="group-standings__flag" aria-hidden="true">
+                    <span class={s.groupStandingsFlag} aria-hidden="true">
                       {row.teamFlagEmoji}
                     </span>
                   ) : null}
-                  <span class="group-standings__code" aria-hidden="true">
+                  <span class={s.groupStandingsCode} aria-hidden="true">
                     {row.teamCodeLabel}
                   </span>
                   <span class="visually-hidden">
@@ -427,7 +459,7 @@ function GroupStandings({ details }: { readonly details: GroupDetailViewModel })
               <td>{row.goalDifferenceLabel}</td>
               <td>{row.points}</td>
               <td>
-                <span class="group-standings__form">
+                <span class={s.groupStandingsForm}>
                   <span class="visually-hidden">{row.teamPlainLabel} form:</span>
                   {row.form.map((entry, index) => (
                     <GroupStandingFormEntry entry={entry} index={index} key={index} />
@@ -452,7 +484,11 @@ function GroupStandingFormEntry({
 }) {
   return (
     <span
-      class={classNames("group-standings__form-entry", `is-${entry.result}`)}
+      class={classNames(
+        s.groupStandingsFormEntry,
+        groupStandingFormEntryClassByResult[entry.result],
+      )}
+      data-form-result={entry.result}
       title={entry.label}
     >
       <span class="visually-hidden">
@@ -461,6 +497,15 @@ function GroupStandingFormEntry({
     </span>
   );
 }
+
+const groupStandingFormEntryClassByResult: Readonly<
+  Record<GroupStandingFormEntryViewModel["result"], string>
+> = {
+  draw: s.isDraw,
+  loss: s.isLoss,
+  pending: s.isPending,
+  win: s.isWin,
+};
 
 function handleGroupStandingsKeyDown(event: KeyboardEvent) {
   const scrollContainer = event.currentTarget as HTMLElement;

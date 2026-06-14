@@ -1,0 +1,107 @@
+input {
+  font: inherit;
+}
+
+select {
+  font: inherit;
+}
+
+textarea {
+  font: inherit;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+button:focus-visible {
+  outline: 3px solid #8f1414;
+  outline-offset: 2px;
+}
+
+input:focus-visible {
+  outline: 3px solid #8f1414;
+  outline-offset: 2px;
+}
+
+select:focus-visible {
+  outline: 3px solid #8f1414;
+  outline-offset: 2px;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+html {
+  min-width: 1160px;
+  background: #0c1118;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  min-height: 100%;
+}
+
+body {
+  min-width: 1160px;
+  margin: 0;
+  background:
+    radial-gradient(circle at 78% 18%, rgb(255 255 255 / 96%), transparent 34%),
+    linear-gradient(135deg, #f8fbfe 0%, #eef4f9 48%, #e2ebf4 100%);
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  min-height: 0;
+}
+
+@media (width <= 1180px) {
+  html {
+    min-width: 0;
+    height: auto;
+    min-height: 100%;
+    overflow: auto;
+  }
+
+  body {
+    min-width: 0;
+    height: auto;
+    min-height: 100%;
+    overflow: auto;
+  }
+
+  #app {
+    min-width: 0;
+    height: auto;
+    min-height: 100%;
+    overflow: auto;
+  }
+}
+
+@media (width <= 720px) {
+  html {
+    min-width: 0;
+    block-size: 100dvh;
+    height: 100vh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body {
+    min-width: 0;
+    block-size: 100dvh;
+    height: 100vh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  #app {
+    min-width: 0;
+    block-size: 100dvh;
+    height: 100vh;
+    min-height: 0;
+    overflow: hidden;
+  }
+}
