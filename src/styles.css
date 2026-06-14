@@ -1276,6 +1276,27 @@ select:focus-visible,
   white-space: normal;
 }
 
+.match-card__group-button {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 22px;
+  padding: 2px 7px;
+  border: 1px solid rgba(47, 111, 221, 0.28);
+  border-radius: 6px;
+  color: #2f6fdd;
+  background: rgba(47, 125, 240, 0.08);
+  font-weight: 900;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.match-card__group-button:hover {
+  border-color: rgba(47, 111, 221, 0.52);
+  color: #2157b8;
+  background: rgba(47, 125, 240, 0.14);
+  text-decoration: none;
+}
+
 .match-card__meta-separator {
   flex: 0 0 auto;
   color: rgba(68, 82, 104, 0.68);

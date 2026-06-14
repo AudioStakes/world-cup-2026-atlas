@@ -229,7 +229,10 @@ describe("ResultCard", () => {
     expect(matchScope.getByText("2")).toHaveClass("is-winner");
     expect(matchScope.getByText("1")).toHaveClass("is-muted");
     expect(matchCard.querySelector(".match-card__meta-line")).toHaveTextContent(
-      "First Stage·Group D·Los Angeles Stadium (Los Angeles)",
+      "Group D·First Stage·Los Angeles Stadium (Los Angeles)",
+    );
+    expect(matchScope.getByRole("button", { name: "Select group Group D" })).toHaveClass(
+      "match-card__group-button",
     );
 
     fireEvent.click(matchCard);

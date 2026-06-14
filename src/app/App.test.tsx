@@ -406,7 +406,10 @@ describe("App", () => {
     expect(matchScope.getByText("13:00")).toBeInTheDocument();
     expect(matchScope.getByText("South Africa")).toBeInTheDocument();
     expect(matchCard.querySelector(".match-card__meta-line")).toHaveTextContent(
-      "First Stage·Group A·Estadio Azteca (Mexico City)",
+      "Group A·First Stage·Estadio Azteca (Mexico City)",
+    );
+    expect(within(matchCard).getByRole("button", { name: "Select group Group A" })).toHaveClass(
+      "match-card__group-button",
     );
     expect(matchScope.getByText("Mexico vs South Africa")).toHaveClass("visually-hidden");
     expect(matchScope.queryByText(/Estadio Azteca · Mexico City, Mexico/)).not.toBeInTheDocument();

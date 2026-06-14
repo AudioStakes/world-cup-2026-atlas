@@ -262,22 +262,22 @@ function MatchFixtureMeta({
 
   return (
     <span class="match-card__meta-line">
-      <span>{match.stageMetaLabel}</span>
       {groupCode && groupLabel ? (
         <>
-          <span class="match-card__meta-separator" aria-hidden="true">
-            ·
-          </span>
           <button
-            class="match-card__action match-card__meta-button"
+            class="match-card__action match-card__meta-button match-card__group-button"
             type="button"
             aria-label={`Select group ${groupLabel}`}
             onClick={() => onAction({ type: "selectGroup", groupCode })}
           >
             {groupLabel}
           </button>
+          <span class="match-card__meta-separator" aria-hidden="true">
+            ·
+          </span>
         </>
       ) : null}
+      <span>{match.stageMetaLabel}</span>
       <span class="match-card__meta-separator" aria-hidden="true">
         ·
       </span>
