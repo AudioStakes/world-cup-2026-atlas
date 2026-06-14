@@ -273,6 +273,44 @@ describe("refreshResultsSnapshot", () => {
     });
   });
 
+  it("preserves the original error when provider error diagnostics fail to write", async () => {
+    const kv = createFakeKv();
+    const failingKv = {
+      ...kv,
+      put: vi.fn(async (key: string, value: string) => {
+        if (key === providerErrorKey) {
+          throw new Error("KV write denied test-api-football-key");
+        }
+
+        await kv.put(key, value);
+      }),
+    };
+    const fetchFixturesByDate = vi.fn(async () => {
+      throw new Error("Provider unavailable test-api-football-key");
+    });
+
+    await expect(
+      refreshResultsSnapshot({
+        env: createFakeEnv(failingKv),
+        now: new Date("2026-06-11T19:00:00.000Z"),
+        fetchFixturesByDate,
+        fixtureIdToMatchId: new Map([[1001, matchId("match-001")]]),
+      }),
+    ).rejects.toThrow(
+      [
+        "Provider poll failed: Provider unavailable [redacted]",
+        "Failed to write provider error diagnostics: provider error: KV write denied [redacted]",
+      ].join("\n"),
+    );
+
+    expect(fetchFixturesByDate).toHaveBeenCalledOnce();
+    expect(kv.values.has(providerErrorKey)).toBe(false);
+    expect(kv.values.get(lastFetchedAtKey)).toBe("2026-06-11T19:00:00.000Z");
+    expect(kv.values.get(createRequestCountKey("2026-06-11"))).toBe("1");
+    expect(kv.values.get(pollStatusKey)).toContain("Provider unavailable [redacted]");
+    expect(kv.values.get(pollStatusKey)).not.toContain("test-api-football-key");
+  });
+
   it("updates poll status on interval skips without replacing the latest snapshot", async () => {
     const existingSnapshot = {
       schemaVersion: 1,

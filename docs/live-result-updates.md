@@ -87,6 +87,7 @@ Interpret the common empty states this way:
 - `match-results/request-count/YYYY-MM-DD`: daily request budget guard
 - `match-results/poll-status/latest.json`: latest sanitized polling decision and outcome
 - `match-results/provider-error/latest.json`: latest provider error diagnostics
+- `match-results/diagnostics/write-probe.json`: non-sensitive remote KV write preflight result
 
 ## Provider diagnostics
 
@@ -134,6 +135,13 @@ pnpm wrangler kv key get "match-results/request-count/YYYY-MM-DD" --binding RESU
 Do not paste secret values into diagnostics. Provider error diagnostics should contain only the
 timestamp and failure message.
 
+If a manual poll prints `Failed to write remote KV key ...`, treat it as a remote KV write access or
+configuration failure. Check that the GitHub repository secret `CLOUDFLARE_API_TOKEN` is present,
+belongs to the expected Cloudflare account, and has `Workers KV Storage: Edit`. Also confirm
+`CLOUDFLARE_ACCOUNT_ID`, the `RESULTS_KV` binding, and the production namespace id in
+`wrangler.toml`. Do not paste API keys, Cloudflare tokens, headers, or full provider responses into
+issues, docs, PRs, comments, or logs.
+
 ## Manual diagnostics and provider polling
 
 Use the GitHub Actions workflow:
@@ -163,6 +171,12 @@ ISO timestamp for the polling decision, which makes it possible to test an activ
 or after natural cron timing. The poll path calls `refreshResultsSnapshot()` directly through
 `scripts/poll-live-results.mjs`; it does not add a production debug endpoint.
 
+Before a `--write-kv` real run can call API-FOOTBALL, `scripts/poll-live-results.mjs` writes a small
+non-sensitive preflight value to `match-results/diagnostics/write-probe.json`. The GitHub Actions
+summary reports `KV write preflight: passed` or `KV write preflight: failed`. If the preflight fails,
+the script stops before any provider request is made. The write probe is a diagnostic key and may be
+left in KV.
+
 Diagnostics-only runs need Cloudflare repository secrets for Wrangler access. Provider poll runs also
 need `API_FOOTBALL_KEY` available as a GitHub repository secret because the provider request runs from
 GitHub Actions, not from the deployed Worker. A Cloudflare Worker secret named `API_FOOTBALL_KEY`
@@ -170,7 +184,9 @@ allows deployed Worker cron polling, but it is not readable by GitHub Actions. M
 workflow runs need a separate GitHub repository secret with the same name. If that GitHub repository
 secret is missing, the manual provider poll workflow cannot run.
 
-Never write secret values in docs, PRs, comments, workflow inputs, or logs.
+Never write secret values in docs, PRs, comments, workflow inputs, or logs. If KV writes are failing,
+do not repeat `run_provider_poll=true`; fix the Cloudflare token/account/binding issue first so
+API-FOOTBALL request count is not consumed by retries that cannot write results.
 
 Local script entry points:
 

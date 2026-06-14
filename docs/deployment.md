@@ -171,6 +171,11 @@ consume API-FOOTBALL request count and write remote `RESULTS_KV`. When enabled, 
 `pnpm poll:live-results` with explicit provider-request and KV-write flags, then diagnoses
 `/api/results` again.
 
+Before the real provider request, `pnpm poll:live-results` writes a non-sensitive KV preflight value
+to `match-results/diagnostics/write-probe.json`. The Actions summary reports
+`KV write preflight: passed` or `KV write preflight: failed`. A failed preflight stops before
+API-FOOTBALL is called, so fix the KV write issue before running `run_provider_poll=true` again.
+
 Diagnostics-only runs use `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` from GitHub repository
 secrets for Wrangler access. Provider poll runs also require `API_FOOTBALL_KEY` as a GitHub
 repository secret because that optional request is made from GitHub Actions. The Cloudflare Worker
@@ -181,6 +186,12 @@ The optional `now` input is an ISO timestamp used by the polling decision. Use a
 known match polling window when testing before natural cron timing would poll. Do not paste
 `API_FOOTBALL_KEY`, `CLOUDFLARE_API_TOKEN`, or any other secret value into workflow inputs, logs,
 issues, docs, or PR text.
+
+If the workflow prints `Failed to write remote KV key ...`, check that the GitHub Secret
+`CLOUDFLARE_API_TOKEN` is for the expected account and includes `Workers KV Storage: Edit`. Also
+check `CLOUDFLARE_ACCOUNT_ID`, the `RESULTS_KV` binding, and the production namespace id in
+`wrangler.toml`. Do not keep retrying provider polls while this failure is present; manual provider
+polls are allowed to consume API-FOOTBALL request count only after KV writes are known to work.
 
 Read `match-results/poll-status/latest.json` as the latest scheduled/manual poll trace:
 

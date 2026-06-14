@@ -17,6 +17,7 @@ export default defineConfig({
       "src/**/*.spec.{ts,tsx}",
       "workers/**/*.test.{ts,tsx}",
       "workers/**/*.spec.{ts,tsx}",
+      "scripts/**/*.test.mjs",
     ],
     exclude: ["e2e/**", "node_modules/**", "dist/**"],
     setupFiles: "./src/test/setup.ts",
