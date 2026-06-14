@@ -159,6 +159,37 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     await expect(panel.getByRole("heading", { name: "Round of 32" })).toBeVisible();
     await expect(panel.getByText("Match 73", { exact: true })).toBeVisible();
     await expect(panel.getByText("Runner-up Group A vs Runner-up Group B")).toBeVisible();
+
+    const tabVisualState = await page.evaluate(() => {
+      const selectedTab = document.querySelector<HTMLElement>(
+        ".group-panel-tab[aria-selected='true']",
+      );
+      const inactiveTab = document.querySelector<HTMLElement>(
+        ".group-panel-tab[aria-selected='false']",
+      );
+      const tabPanel = document.querySelector<HTMLElement>(".groups-section [role='tabpanel']");
+      const selectedRect = selectedTab?.getBoundingClientRect();
+      const panelRect = tabPanel?.getBoundingClientRect();
+      const selectedStyles = selectedTab ? getComputedStyle(selectedTab) : null;
+      const inactiveStyles = inactiveTab ? getComputedStyle(inactiveTab) : null;
+      const selectedIndicator = selectedTab ? getComputedStyle(selectedTab, "::before") : null;
+
+      return {
+        activeIndicatorColor: selectedIndicator?.backgroundColor ?? "",
+        activeTabBackground: selectedStyles?.backgroundColor ?? "",
+        inactiveTabBackground: inactiveStyles?.backgroundColor ?? "",
+        selectedLabel: selectedTab?.textContent?.trim() ?? "",
+        tabPanelSeamGap:
+          selectedRect && panelRect ? Math.round(panelRect.top - selectedRect.bottom) : null,
+      };
+    });
+
+    expect(tabVisualState.selectedLabel).toBe("Tournament");
+    expect(tabVisualState.activeIndicatorColor).toBe("rgb(47, 125, 240)");
+    expect(tabVisualState.activeTabBackground).not.toBe(tabVisualState.inactiveTabBackground);
+    expect(
+      Math.abs(tabVisualState.tabPanelSeamGap ?? Number.POSITIVE_INFINITY),
+    ).toBeLessThanOrEqual(1);
   });
 
   test("@smoke keeps a selected filter active when clicked again", async ({ page }) => {
