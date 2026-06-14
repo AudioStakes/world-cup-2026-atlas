@@ -12,6 +12,7 @@
 - Test: `pnpm test`
 - E2E: `pnpm e2e`
 - If running `pnpm verify:full`, do not run `pnpm verify` separately; `verify:full` already runs it.
+- When narrowing unknown JSON to `Record<string, unknown>`, use bracket/helper access; dot property access fails typecheck.
 - When files change, run only the closest useful check needed for the change; stop hooks run broader verification.
 - For Groups & Teams layout/visibility CSS changes, run `pnpm e2e --grep "keeps every Groups"`; do not insert an extra `--` before `--grep`.
 

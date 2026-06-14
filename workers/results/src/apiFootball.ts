@@ -5,6 +5,11 @@ import { normalizeApiFootballStatus } from "../../../src/matchResults/normalizeA
 import type { SnapshotMatchResult } from "../../../src/matchResults/types";
 import type { WorkerEnv } from "./workerTypes";
 
+const PROVIDER_ERRORS_MESSAGE = "API-FOOTBALL returned errors";
+const MAX_ERROR_KEYS = 12;
+const MAX_ERROR_MESSAGES = 8;
+const MAX_ERROR_MESSAGE_LENGTH = 180;
+
 type ApiFootballFixture = {
   readonly fixture: {
     readonly id: number;
@@ -19,6 +24,31 @@ type ApiFootballFixture = {
     readonly away: number | null;
   };
 };
+
+export type ApiFootballProviderErrorDetails = {
+  readonly kind: "provider-errors" | "http-error";
+  readonly errorType?: string;
+  readonly errorKeys?: readonly string[];
+  readonly errorMessages?: readonly string[];
+  readonly responseCount?: number;
+  readonly httpStatus?: number;
+  readonly request?: {
+    readonly league?: string;
+    readonly season?: string;
+    readonly date?: string;
+    readonly timezone?: string;
+  };
+};
+
+export class ApiFootballProviderError extends Error {
+  readonly details: ApiFootballProviderErrorDetails;
+
+  constructor(message: string, details: ApiFootballProviderErrorDetails) {
+    super(message);
+    this.name = "ApiFootballProviderError";
+    this.details = details;
+  }
+}
 
 export async function fetchApiFootballFixturesByDate(
   env: WorkerEnv,
@@ -37,12 +67,34 @@ export async function fetchApiFootballFixturesByDate(
       "x-apisports-key": env.API_FOOTBALL_KEY,
     },
   });
+  const request = createProviderRequestSummary(url);
 
   if (!response.ok) {
-    throw new Error(`API-FOOTBALL request failed with ${response.status}`);
+    throw new ApiFootballProviderError(`API-FOOTBALL request failed with ${response.status}`, {
+      kind: "http-error",
+      httpStatus: response.status,
+      request,
+    });
   }
 
-  return response.json();
+  const body = await response.json();
+
+  const providerErrors = isRecord(body) ? getRecordValue(body, "errors") : null;
+
+  if (hasProviderErrors(providerErrors)) {
+    throw new ApiFootballProviderError(
+      PROVIDER_ERRORS_MESSAGE,
+      createApiFootballProviderErrorDetails({
+        errors: providerErrors,
+        request,
+        ...(isRecord(body) ? { response: getRecordValue(body, "response") } : {}),
+        secrets: [env.API_FOOTBALL_KEY],
+        status: response.status,
+      }),
+    );
+  }
+
+  return body;
 }
 
 export function normalizeApiFootballFixturesResponse(input: {
@@ -101,7 +153,10 @@ function parseApiFootballFixturesResponse(input: unknown): readonly ApiFootballF
   }
 
   if (hasProviderErrors(errors)) {
-    throw new Error("API-FOOTBALL returned errors");
+    throw new ApiFootballProviderError(
+      PROVIDER_ERRORS_MESSAGE,
+      createApiFootballProviderErrorDetails({ errors, response }),
+    );
   }
 
   const fixtures: ApiFootballFixture[] = [];
@@ -115,6 +170,147 @@ function parseApiFootballFixturesResponse(input: unknown): readonly ApiFootballF
   }
 
   return fixtures;
+}
+
+export function createApiFootballProviderErrorDetails(input: {
+  readonly errors: unknown;
+  readonly request?: ApiFootballProviderErrorDetails["request"];
+  readonly response?: unknown;
+  readonly secrets?: readonly (string | undefined)[];
+  readonly status?: number;
+}): ApiFootballProviderErrorDetails {
+  const errorKeys = isRecord(input.errors)
+    ? Object.keys(input.errors).slice(0, MAX_ERROR_KEYS)
+    : undefined;
+  const errorMessages = collectProviderErrorMessages(input.errors, input.secrets ?? []);
+  const responseCount = Array.isArray(input.response) ? input.response.length : undefined;
+
+  return {
+    kind: "provider-errors",
+    errorType: getProviderErrorType(input.errors),
+    ...(errorKeys && errorKeys.length > 0 ? { errorKeys } : {}),
+    ...(errorMessages.length > 0 ? { errorMessages } : {}),
+    ...(responseCount !== undefined ? { responseCount } : {}),
+    ...(input.status !== undefined ? { httpStatus: input.status } : {}),
+    ...(input.request ? { request: input.request } : {}),
+  };
+}
+
+function createProviderRequestSummary(
+  url: URL,
+): NonNullable<ApiFootballProviderErrorDetails["request"]> {
+  const request: {
+    league?: string;
+    season?: string;
+    date?: string;
+    timezone?: string;
+  } = {};
+
+  for (const key of ["league", "season", "date", "timezone"] as const) {
+    const value = url.searchParams.get(key);
+
+    if (value !== null) {
+      request[key] = value;
+    }
+  }
+
+  return request;
+}
+
+function getProviderErrorType(input: unknown): string {
+  if (Array.isArray(input)) {
+    return "array";
+  }
+
+  if (input === null) {
+    return "null";
+  }
+
+  return typeof input;
+}
+
+function collectProviderErrorMessages(
+  input: unknown,
+  secrets: readonly (string | undefined)[],
+): readonly string[] {
+  const messages: string[] = [];
+
+  collectProviderErrorMessagesInto(input, messages, secrets);
+
+  return messages.slice(0, MAX_ERROR_MESSAGES);
+}
+
+function collectProviderErrorMessagesInto(
+  input: unknown,
+  messages: string[],
+  secrets: readonly (string | undefined)[],
+  path = "",
+): void {
+  if (messages.length >= MAX_ERROR_MESSAGES || input === null || input === undefined) {
+    return;
+  }
+
+  if (typeof input === "string") {
+    const message = sanitizeProviderErrorString(input, secrets);
+
+    if (message) {
+      messages.push(path ? `${path}: ${message}` : message);
+    }
+
+    return;
+  }
+
+  if (Array.isArray(input)) {
+    for (let index = 0; index < input.length && messages.length < MAX_ERROR_MESSAGES; index += 1) {
+      collectProviderErrorMessagesInto(input[index], messages, secrets, path);
+    }
+
+    return;
+  }
+
+  if (isRecord(input)) {
+    for (const [key, value] of Object.entries(input)) {
+      if (messages.length >= MAX_ERROR_MESSAGES) {
+        return;
+      }
+
+      if (isSensitiveProviderErrorKey(key)) {
+        continue;
+      }
+
+      collectProviderErrorMessagesInto(value, messages, secrets, path ? `${path}.${key}` : key);
+    }
+  }
+}
+
+function sanitizeProviderErrorString(
+  input: string,
+  secrets: readonly (string | undefined)[],
+): string | null {
+  let value = input.trim();
+
+  if (value.length === 0) {
+    return null;
+  }
+
+  for (const secret of secrets) {
+    if (secret && secret.length > 0) {
+      value = value.replaceAll(secret, "[redacted]");
+    }
+  }
+
+  value = value.replaceAll(/Bearer\s+[A-Za-z0-9._~+/=-]+/gi, "Bearer [redacted]");
+  value = value.replaceAll(/x-apisports-key\s*[:=]\s*\S+/gi, "x-apisports-key=[redacted]");
+
+  return value.length <= MAX_ERROR_MESSAGE_LENGTH
+    ? value
+    : `${value.slice(0, MAX_ERROR_MESSAGE_LENGTH)}...`;
+}
+
+function isSensitiveProviderErrorKey(key: string): boolean {
+  return /api[-_]?key|x-apisports-key|token|secret|authorization|auth|password|credential|header/i.test(
+    key,
+  );
 }
 
 function parseApiFootballFixture(input: unknown): ApiFootballFixture | null {

@@ -2,6 +2,10 @@
 import { spawnSync } from "node:child_process";
 import { appendFileSync } from "node:fs";
 import {
+  formatProviderErrorDetailsLines,
+  summarizeProviderErrorText,
+} from "./provider-error-diagnostics.mjs";
+import {
   createRemoteProductionKvGetArgs,
   DEFAULT_WRANGLER_CONFIG,
 } from "./remote-production-kv-args.mjs";
@@ -91,6 +95,9 @@ if (options.skipWrangler) {
     emit(`Provider error: ${providerError.status}`);
     emit(`Provider error at: ${providerError.at}`);
     emit(`Provider error message: ${providerError.message}`);
+    for (const line of formatProviderErrorDetailsLines(providerError.details)) {
+      emit(line);
+    }
   }
 }
 
@@ -339,29 +346,7 @@ function summarizeSnapshotObject(input) {
 }
 
 function summarizeProviderError(text) {
-  try {
-    const parsed = JSON.parse(text);
-
-    if (!isRecord(parsed)) {
-      return {
-        status: "invalid",
-        at: "-",
-        message: "-",
-      };
-    }
-
-    return {
-      status: "present",
-      at: typeof parsed.at === "string" ? parsed.at : "-",
-      message: typeof parsed.message === "string" ? parsed.message : "-",
-    };
-  } catch {
-    return {
-      status: "invalid-json",
-      at: "-",
-      message: "-",
-    };
-  }
+  return summarizeProviderErrorText(text);
 }
 
 function emitPollStatusSummary(text) {
@@ -396,6 +381,9 @@ function emitPollStatusSummary(text) {
   emit(`latestSnapshotProvider: ${formatNullableStringField(parsed.latestSnapshotProvider)}`);
   emit(`latestSnapshotFetchedAt: ${formatNullableStringField(parsed.latestSnapshotFetchedAt)}`);
   emit(`errorMessage: ${formatNullableStringField(parsed.errorMessage)}`);
+  for (const line of formatProviderErrorDetailsLines(parsed.errorDetails, "errorDetails")) {
+    emit(line);
+  }
 }
 
 function formatSnapshotRow(key, value, summary) {
