@@ -49,6 +49,11 @@ If the current time is outside every match's kickoff-through-four-hour polling w
 does not call API-FOOTBALL. During the pre-tournament period, this is the expected behavior unless a
 manual poll is run with a timestamp inside an active match window.
 
+Every `refreshResultsSnapshot()` invocation writes sanitized polling status to
+`match-results/poll-status/latest.json`. This happens for successful provider polls, provider
+errors, and policy skips such as `outside-window`, `interval-not-elapsed`, `soft-limit-reached`, and
+`hard-limit-reached`.
+
 ## Public fallback behavior
 
 `/api/results` reads snapshots in this order:
@@ -65,25 +70,58 @@ An empty fixture mapping does not prevent provider calls. It does mean provider 
 attached to internal matches, so a successful provider call can still write an API-FOOTBALL snapshot
 with `matches: []`. Use the diagnostics workflow to distinguish this from a provider call failure.
 
+Interpret the common empty states this way:
+
+- `provider: "manual"` with `isFallback: true` means `/api/results` is healthy but live results have
+  not been written to KV yet.
+- `provider: "api-football"` with `matches: []` means an API-FOOTBALL poll wrote a valid snapshot,
+  but fixture mapping may still be empty or the returned fixtures may be unmapped.
+- A provider error is diagnosed through `match-results/provider-error/latest.json` and
+  `match-results/poll-status/latest.json`, not from `matches: []` alone.
+
 ## KV Keys
 
 - `match-results/latest.json`: latest validated snapshot
 - `match-results/last-known-good.json`: fallback snapshot from the last successful provider update
 - `match-results/last-fetched-at`: provider polling interval guard
 - `match-results/request-count/YYYY-MM-DD`: daily request budget guard
+- `match-results/poll-status/latest.json`: latest sanitized polling decision and outcome
 - `match-results/provider-error/latest.json`: latest provider error diagnostics
 
 ## Provider diagnostics
+
+When `/api/results` remains on the bundled fallback, check production in this order:
+
+1. `/api/results`
+2. `match-results/latest.json`
+3. `match-results/last-known-good.json`
+4. `match-results/poll-status/latest.json`
+5. `match-results/provider-error/latest.json`
 
 When provider polling fails, the Worker writes `match-results/provider-error/latest.json` with the
 failure timestamp and message. Failed provider calls after at least one attempted request also update
 `match-results/last-fetched-at` and increment `match-results/request-count/YYYY-MM-DD` for the
 attempted date-level requests, so outages do not bypass the polling interval or request budget.
 
+`match-results/poll-status/latest.json` explains the latest scheduled or manual poll without
+storing secrets, request headers, authorization headers, or provider response bodies. Read these
+fields first:
+
+- `checkedAt`: when the poll decision was evaluated
+- `result`: `skipped`, `success`, or `provider-error`
+- `decision.shouldPoll`, `decision.reason`, and `decision.activeDates`: why polling did or did not
+  proceed
+- `attemptedProviderRequests`: date-level provider calls made by this invocation
+- `writtenMatches`: matches written into the latest snapshot
+- `requestCountBefore`: daily request count before the invocation
+- `latestSnapshotProvider` and `latestSnapshotFetchedAt`: snapshot visible after the invocation
+- `errorMessage`: sanitized provider error message, or `null`
+
 Inspect the latest provider error through the Cloudflare dashboard, or with Wrangler:
 
 ```bash
 pnpm wrangler kv key get "match-results/provider-error/latest.json" --binding RESULTS_KV --remote --text --config wrangler.toml
+pnpm wrangler kv key get "match-results/poll-status/latest.json" --binding RESULTS_KV --remote --text --config wrangler.toml
 ```
 
 Inspect the polling guard and request count with:
@@ -105,13 +143,16 @@ Use the GitHub Actions workflow:
 ```
 
 The default `workflow_dispatch` path is diagnostics-only. It installs dependencies, runs focused
-typechecks and Worker tests, verifies the Worker deployment exists, checks the three result-related
-KV keys, and summarizes `/api/results` with only:
+typechecks and Worker tests, verifies the Worker deployment exists, checks the result-related KV
+keys, and summarizes `/api/results` with only:
 
 - `provider`
 - `fetchedAt`
 - `matches.length`
 - `isFallback`
+- poll status `checkedAt`, `result`, `decision.shouldPoll`, `decision.reason`, `activeDates`,
+  `attemptedProviderRequests`, `writtenMatches`, `requestCountBefore`, `latestSnapshotProvider`,
+  `latestSnapshotFetchedAt`, and `errorMessage`
 - provider error `at` and `message`
 
 It does not display secret values or full provider responses.
@@ -124,7 +165,12 @@ or after natural cron timing. The poll path calls `refreshResultsSnapshot()` dir
 
 Diagnostics-only runs need Cloudflare repository secrets for Wrangler access. Provider poll runs also
 need `API_FOOTBALL_KEY` available as a GitHub repository secret because the provider request runs from
-GitHub Actions, not from the deployed Worker.
+GitHub Actions, not from the deployed Worker. A Cloudflare Worker secret named `API_FOOTBALL_KEY`
+allows deployed Worker cron polling, but it is not readable by GitHub Actions. Manual provider poll
+workflow runs need a separate GitHub repository secret with the same name. If that GitHub repository
+secret is missing, the manual provider poll workflow cannot run.
+
+Never write secret values in docs, PRs, comments, workflow inputs, or logs.
 
 Local script entry points:
 

@@ -8,6 +8,7 @@ const KV_KEYS = [
   { label: "latest", key: "match-results/latest.json", type: "snapshot" },
   { label: "last-known-good", key: "match-results/last-known-good.json", type: "snapshot" },
   { label: "provider-error", key: "match-results/provider-error/latest.json", type: "error" },
+  { label: "poll-status", key: "match-results/poll-status/latest.json", type: "poll-status" },
 ];
 
 const options = parseArgs(process.argv.slice(2));
@@ -51,6 +52,22 @@ if (options.skipWrangler) {
     const summary = value.exists ? summarizeSnapshot(value.text) : null;
 
     emit(formatSnapshotRow(item.key, value, summary));
+  }
+}
+
+emit("");
+emit("## Poll status");
+emit("");
+
+if (options.skipWrangler) {
+  emit("Poll status: skipped");
+} else {
+  const pollStatusValue = readKvText("match-results/poll-status/latest.json");
+
+  if (!pollStatusValue.exists) {
+    emit("Poll status: missing");
+  } else {
+    emitPollStatusSummary(pollStatusValue.text);
   }
 }
 
@@ -218,7 +235,7 @@ function readKvText(key) {
   if (!result.ok) {
     return {
       exists: false,
-      status: "missing-or-unreadable",
+      status: "missing",
       text: "",
     };
   }
@@ -354,6 +371,40 @@ function summarizeProviderError(text) {
   }
 }
 
+function emitPollStatusSummary(text) {
+  let parsed;
+
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    emit("Poll status: invalid-json");
+    return;
+  }
+
+  if (!isRecord(parsed)) {
+    emit("Poll status: invalid");
+    return;
+  }
+
+  const decision = isRecord(parsed.decision) ? parsed.decision : {};
+  const activeDates = Array.isArray(decision.activeDates)
+    ? decision.activeDates.filter((date) => typeof date === "string").join(", ")
+    : "";
+
+  emit("Poll status: present");
+  emit(`checkedAt: ${formatStringField(parsed.checkedAt)}`);
+  emit(`result: ${formatStringField(parsed.result)}`);
+  emit(`decision.shouldPoll: ${formatBooleanField(decision.shouldPoll)}`);
+  emit(`decision.reason: ${formatStringField(decision.reason)}`);
+  emit(`activeDates: ${activeDates || "(none)"}`);
+  emit(`attemptedProviderRequests: ${formatNumberField(parsed.attemptedProviderRequests)}`);
+  emit(`writtenMatches: ${formatNumberField(parsed.writtenMatches)}`);
+  emit(`requestCountBefore: ${formatNumberField(parsed.requestCountBefore)}`);
+  emit(`latestSnapshotProvider: ${formatNullableStringField(parsed.latestSnapshotProvider)}`);
+  emit(`latestSnapshotFetchedAt: ${formatNullableStringField(parsed.latestSnapshotFetchedAt)}`);
+  emit(`errorMessage: ${formatNullableStringField(parsed.errorMessage)}`);
+}
+
 function formatSnapshotRow(key, value, summary) {
   if (!value.exists || !summary) {
     return `| ${key} | ${value.status} | - | - | - | - |`;
@@ -362,6 +413,26 @@ function formatSnapshotRow(key, value, summary) {
   return `| ${key} | ${summary.valid ? "present" : "invalid"} | ${summary.provider} | ${
     summary.fetchedAt
   } | ${summary.matchesLength} | ${summary.isFallback} |`;
+}
+
+function formatStringField(value) {
+  return typeof value === "string" ? value : "-";
+}
+
+function formatNullableStringField(value) {
+  if (value === null) {
+    return "null";
+  }
+
+  return formatStringField(value);
+}
+
+function formatBooleanField(value) {
+  return typeof value === "boolean" ? String(value) : "-";
+}
+
+function formatNumberField(value) {
+  return typeof value === "number" && Number.isFinite(value) ? String(value) : "-";
 }
 
 function emit(line) {

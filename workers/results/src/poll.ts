@@ -1,6 +1,7 @@
 import { appData } from "../../../src/data/appData";
 import type { MatchId } from "../../../src/domain/ids";
 import { parseMatchResultsSnapshot } from "../../../src/matchResults/parseMatchResultsSnapshot";
+import type { PollingDecision } from "../../../src/matchResults/pollingPolicy";
 import { createPollingDecision } from "../../../src/matchResults/pollingPolicy";
 import type { MatchResultsSnapshot, SnapshotMatchResult } from "../../../src/matchResults/types";
 import {
@@ -13,9 +14,24 @@ import {
   lastFetchedAtKey,
   lastKnownGoodSnapshotKey,
   latestSnapshotKey,
+  pollStatusKey,
   providerErrorKey,
 } from "./kvKeys";
 import type { WorkerEnv } from "./workerTypes";
+
+type PollStatus = {
+  readonly schemaVersion: 1;
+  readonly checkedAt: string;
+  readonly result: "skipped" | "success" | "provider-error";
+  readonly decision: PollingDecision;
+  readonly requestCountKey: string;
+  readonly requestCountBefore: number;
+  readonly attemptedProviderRequests: number;
+  readonly writtenMatches: number;
+  readonly latestSnapshotProvider: MatchResultsSnapshot["provider"] | null;
+  readonly latestSnapshotFetchedAt: string | null;
+  readonly errorMessage: string | null;
+};
 
 export async function refreshResultsSnapshot(input: {
   readonly env: WorkerEnv;
@@ -37,8 +53,21 @@ export async function refreshResultsSnapshot(input: {
     lastFetchedAt: parseDate(lastFetchedAtValue),
     requestCountToday: parseRequestCount(requestCountValue),
   });
+  const requestCountBefore = parseRequestCount(requestCountValue);
 
   if (!decision.shouldPoll) {
+    const latestSnapshot = await readLatestSnapshot(input.env);
+    await writePollStatus(input.env, {
+      checkedAt: nowIso,
+      result: "skipped",
+      decision,
+      requestCountKey,
+      requestCountBefore,
+      attemptedProviderRequests: 0,
+      writtenMatches: 0,
+      latestSnapshot,
+      errorMessage: null,
+    });
     return;
   }
 
@@ -74,18 +103,42 @@ export async function refreshResultsSnapshot(input: {
       input.env.RESULTS_KV.put(lastFetchedAtKey, nowIso),
       input.env.RESULTS_KV.put(
         requestCountKey,
-        String(parseRequestCount(requestCountValue) + decision.activeDates.length),
+        String(requestCountBefore + decision.activeDates.length),
       ),
+      writePollStatus(input.env, {
+        checkedAt: nowIso,
+        result: "success",
+        decision,
+        requestCountKey,
+        requestCountBefore,
+        attemptedProviderRequests,
+        writtenMatches: snapshot.matches.length,
+        latestSnapshot: snapshot,
+        errorMessage: null,
+      }),
     ]);
   } catch (error) {
+    const errorMessage = createSafeErrorMessage(error, [input.env.API_FOOTBALL_KEY]);
+    const latestSnapshot = await readLatestSnapshot(input.env);
     const failedPollWrites: Promise<void>[] = [
       input.env.RESULTS_KV.put(
         providerErrorKey,
         JSON.stringify({
           at: nowIso,
-          message: error instanceof Error ? error.message : "Unknown provider error",
+          message: errorMessage,
         }),
       ),
+      writePollStatus(input.env, {
+        checkedAt: nowIso,
+        result: "provider-error",
+        decision,
+        requestCountKey,
+        requestCountBefore,
+        attemptedProviderRequests,
+        writtenMatches: 0,
+        latestSnapshot,
+        errorMessage,
+      }),
     ];
 
     if (attemptedProviderRequests > 0) {
@@ -93,13 +146,64 @@ export async function refreshResultsSnapshot(input: {
         input.env.RESULTS_KV.put(lastFetchedAtKey, nowIso),
         input.env.RESULTS_KV.put(
           requestCountKey,
-          String(parseRequestCount(requestCountValue) + attemptedProviderRequests),
+          String(requestCountBefore + attemptedProviderRequests),
         ),
       );
     }
 
     await Promise.all(failedPollWrites);
   }
+}
+
+async function readLatestSnapshot(env: WorkerEnv): Promise<MatchResultsSnapshot | null> {
+  return parseMatchResultsSnapshot(await env.RESULTS_KV.get(latestSnapshotKey, "json"));
+}
+
+async function writePollStatus(
+  env: WorkerEnv,
+  input: {
+    readonly checkedAt: string;
+    readonly result: PollStatus["result"];
+    readonly decision: PollingDecision;
+    readonly requestCountKey: string;
+    readonly requestCountBefore: number;
+    readonly attemptedProviderRequests: number;
+    readonly writtenMatches: number;
+    readonly latestSnapshot: MatchResultsSnapshot | null;
+    readonly errorMessage: string | null;
+  },
+): Promise<void> {
+  const status: PollStatus = {
+    schemaVersion: 1,
+    checkedAt: input.checkedAt,
+    result: input.result,
+    decision: input.decision,
+    requestCountKey: input.requestCountKey,
+    requestCountBefore: input.requestCountBefore,
+    attemptedProviderRequests: input.attemptedProviderRequests,
+    writtenMatches: input.writtenMatches,
+    latestSnapshotProvider: input.latestSnapshot?.provider ?? null,
+    latestSnapshotFetchedAt: input.latestSnapshot?.fetchedAt ?? null,
+    errorMessage: input.errorMessage,
+  };
+
+  await env.RESULTS_KV.put(pollStatusKey, JSON.stringify(status));
+}
+
+function createSafeErrorMessage(error: unknown, secrets: readonly (string | undefined)[]): string {
+  let message = error instanceof Error ? error.message : "Unknown provider error";
+
+  if (message.length === 0) {
+    message = "Unknown provider error";
+  }
+
+  for (const secret of secrets) {
+    if (secret && secret.length > 0) {
+      message = message.replaceAll(secret, "[redacted]");
+    }
+  }
+
+  return message.length <= 500 ? message : `${message.slice(0, 500)}...`;
 }
 
 function mergeSnapshotResults(
