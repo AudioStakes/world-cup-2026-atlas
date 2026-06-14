@@ -4,6 +4,7 @@ import type {
   ExplorerAction,
 } from "../../features/explorer/types";
 import { classNames } from "./classNames";
+import s from "./DateSelector.module.css";
 
 type DateSelectorProps = {
   readonly dateSelector: DateSelectorViewModel;
@@ -19,23 +20,27 @@ const weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const
 
 export function DateSelector({ dateSelector, onAction }: DateSelectorProps) {
   return (
-    <section class="panel-section date-section" aria-labelledby="date-selector-title">
+    <section
+      class={classNames("panel-section", s.root)}
+      aria-labelledby="date-selector-title"
+      data-testid="date-section"
+    >
       <h2 id="date-selector-title" class="visually-hidden">
         {dateSelector.title}
       </h2>
 
-      <div class="date-months">
+      <div class={s.dateMonths}>
         {dateSelector.months.map((month) => (
-          <div class="date-month" key={month.monthLabel}>
-            <p class="date-month__label">{month.monthLabel}</p>
-            <div class="date-calendar">
+          <div class={s.dateMonth} key={month.monthLabel}>
+            <p class={s.dateMonthLabel}>{month.monthLabel}</p>
+            <div class={s.dateCalendar}>
               {weekdayLabels.map((weekday) => (
-                <span class="date-calendar__weekday" key={weekday}>
+                <span class={s.dateCalendarWeekday} key={weekday}>
                   {weekday}
                 </span>
               ))}
               {createLeadingBlankDays(month.dates).map((blankDay) => (
-                <span class="date-calendar__blank" key={blankDay} aria-hidden="true" />
+                <span class={s.dateCalendarBlank} key={blankDay} aria-hidden="true" />
               ))}
               {month.dates.map((dateOption) => (
                 <DateChip key={dateOption.date} dateOption={dateOption} onAction={onAction} />
@@ -52,19 +57,19 @@ function DateChip({ dateOption, onAction }: DateChipProps) {
   return (
     <button
       class={classNames(
-        "date-chip",
-        dateOption.isSelected && "is-selected",
-        dateOption.isToday && "is-today",
-        !dateOption.hasFixture && "has-no-fixture",
-        dateOption.availability === "outsideCurrentFilter" && "is-outside-current-filter",
+        s.dateChip,
+        dateOption.isSelected && s.isSelected,
+        dateOption.isToday && s.isToday,
+        !dateOption.hasFixture && s.hasNoFixture,
+        dateOption.availability === "outsideCurrentFilter" && s.isOutsideCurrentFilter,
       )}
       type="button"
       aria-pressed={dateOption.isSelected}
       aria-label={createDateChipAriaLabel(dateOption)}
       onClick={() => onAction({ type: "selectDate", date: dateOption.date })}
     >
-      <span class="date-chip__date">{formatDayOfMonth(dateOption.date)}</span>
-      <span class="date-chip__meta" aria-hidden="true">
+      <span class={s.dateChipDate}>{formatDayOfMonth(dateOption.date)}</span>
+      <span class={s.dateChipMeta} aria-hidden="true">
         {createVisibleDateMeta(dateOption)}
       </span>
     </button>

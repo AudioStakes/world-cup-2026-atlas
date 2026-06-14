@@ -104,18 +104,16 @@ describe("ResultCard", () => {
       />,
     );
 
-    expect(document.querySelector(".result-card--date-timeline")).toBeInTheDocument();
-    expect(document.querySelector(".result-card__header")).not.toBeInTheDocument();
-    expect(document.querySelector(".detail-metrics")).not.toBeInTheDocument();
-    expect(screen.getByRole("list", { name: "Tournament fixtures by date" })).toHaveClass(
-      "match-list--date-timeline",
+    expect(screen.getByTestId("result-card")).toBeInTheDocument();
+    expect(screen.queryByTestId("result-card-header")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("detail-metrics")).not.toBeInTheDocument();
+    expect(screen.getByRole("list", { name: "Tournament fixtures by date" })).toBe(
+      screen.getByTestId("match-list"),
     );
     expect(screen.getByText("Friday 12 June 2026")).toBeInTheDocument();
     expect(screen.getByText("Saturday 13 June 2026")).toBeInTheDocument();
     expect(screen.getByText("Sunday 14 June 2026")).toBeInTheDocument();
-    expect(document.querySelector("[data-initial-scroll-target]")).toHaveClass(
-      "is-initial-scroll-target",
-    );
+    expect(document.querySelector("[data-initial-scroll-target]")).toBeInTheDocument();
   });
 
   it("renders a country group subtitle as an actionable route", () => {
@@ -145,7 +143,6 @@ describe("ResultCard", () => {
 
     const groupLink = screen.getByRole("link", { name: "Show Group C details" });
 
-    expect(groupLink).toHaveClass("result-card__group-link");
     expect(groupLink).toHaveTextContent("Group C");
     expect(groupLink.getAttribute("href")).toBe("?group=C");
     expect(screen.getByText("HAI · CONCACAF")).toBeInTheDocument();
@@ -193,15 +190,12 @@ describe("ResultCard", () => {
     );
 
     expect(screen.getByRole("columnheader", { name: "Group D" })).toBeInTheDocument();
-    expect(document.querySelector(".result-card__header")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("result-card-header")).not.toBeInTheDocument();
     expect(screen.queryByText("4 teams")).not.toBeInTheDocument();
     expect(screen.getByText("USA")).toBeInTheDocument();
     expect(screen.getByText("1. United States")).toHaveClass("visually-hidden");
     expect(screen.queryByRole("columnheader", { name: "Matches" })).not.toBeInTheDocument();
-    expect(document.querySelector(".group-standings__form-entry.is-win")).toHaveAttribute(
-      "title",
-      "Win 2-1",
-    );
+    expect(document.querySelector('[data-form-result="win"]')).toHaveAttribute("title", "Win 2-1");
   });
 
   it("renders completed fixtures with a FIFA-style scoreline", () => {
@@ -215,7 +209,7 @@ describe("ResultCard", () => {
       />,
     );
 
-    const matchCard = document.querySelector(".match-card");
+    const matchCard = document.querySelector('[data-testid="match-card"]');
 
     if (!(matchCard instanceof HTMLElement)) {
       throw new Error("Expected match card to render");
@@ -226,13 +220,13 @@ describe("ResultCard", () => {
     expect(screen.getByText("Saturday 13 June 2026")).toBeInTheDocument();
     expect(matchScope.getByText("United States")).toBeInTheDocument();
     expect(matchScope.getByText("FT")).toBeInTheDocument();
-    expect(matchScope.getByText("2")).toHaveClass("is-winner");
-    expect(matchScope.getByText("1")).toHaveClass("is-muted");
-    expect(matchCard.querySelector(".match-card__meta-line")).toHaveTextContent(
+    expect(matchScope.getByText("2")).toHaveAttribute("data-score-state", "winner");
+    expect(matchScope.getByText("1")).toHaveAttribute("data-score-state", "muted");
+    expect(matchCard.querySelector('[data-testid="match-card-meta-line"]')).toHaveTextContent(
       "Group D·First Stage·Los Angeles Stadium (Los Angeles)",
     );
-    expect(matchScope.getByRole("button", { name: "Select group Group D" })).toHaveClass(
-      "match-card__group-button",
+    expect(matchScope.getByRole("button", { name: "Select group Group D" })).toHaveTextContent(
+      "Group D",
     );
 
     fireEvent.click(matchCard);

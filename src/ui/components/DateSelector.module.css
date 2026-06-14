@@ -1,0 +1,240 @@
+@layer components {
+  .root {
+    display: flex;
+    max-height: 340px;
+    min-height: 0;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .dateMonths {
+    grid-row: 3;
+    min-height: 0;
+    max-height: 100%;
+    flex: 1 1 auto;
+    padding: 0 10px 10px;
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+
+  .dateMonth {
+    margin: 0 0 8px;
+  }
+
+  .dateMonthLabel {
+    margin: 2px 0 5px;
+    color: var(--color-muted);
+    font-size: 10px;
+    font-weight: 950;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .dateCalendar {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(30px, 1fr));
+    gap: 5px;
+  }
+
+  .dateCalendarWeekday {
+    color: rgb(20 30 44 / 68%);
+    font-size: 0.62rem;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  .dateCalendarBlank {
+    min-block-size: 44px;
+  }
+
+  .dateChip {
+    display: flex;
+    min-width: 44px;
+    min-height: 44px;
+    min-block-size: 44px;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 2px;
+    padding: 5px 3px;
+    border: 1px solid rgb(23 32 42 / 8%);
+    border-radius: 9px;
+    color: rgb(23 32 42 / 72%);
+    background: rgb(255 255 255 / 66%);
+    font-size: 9px;
+    font-weight: 850;
+    line-height: 1.05;
+    text-align: center;
+    cursor: pointer;
+  }
+
+  .dateChipDate {
+    font-size: 0.95rem;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: 0.01em;
+  }
+
+  .dateChipMeta {
+    color: rgb(23 32 42 / 68%);
+    font-size: 9px;
+    font-weight: 750;
+  }
+
+  .dateChip:hover {
+    border-color: rgb(181 31 31 / 22%);
+    color: var(--color-red);
+  }
+
+  .dateChip.isOutsideCurrentFilter {
+    border-color: rgb(23 32 42 / 14%);
+    color: rgb(23 32 42 / 70%);
+    background: rgb(255 255 255 / 50%);
+  }
+
+  .dateChip.isOutsideCurrentFilter .dateChipMeta {
+    color: rgb(23 32 42 / 68%);
+  }
+
+  .dateChip.hasNoFixture {
+    color: rgb(23 32 42 / 62%);
+    background: rgb(255 255 255 / 42%);
+  }
+
+  .dateChip.hasNoFixture .dateChipMeta {
+    color: rgb(23 32 42 / 68%);
+  }
+
+  .dateChip.isToday {
+    border-color: var(--color-red-line);
+    color: var(--color-red);
+    background: rgb(255 255 255 / 94%);
+    box-shadow: 0 4px 12px rgb(181 31 31 / 16%);
+  }
+
+  .dateChip.isToday .dateChipMeta {
+    color: rgb(181 31 31 / 72%);
+  }
+
+  .dateChip.isSelected {
+    border-color: var(--color-red);
+    color: #fff;
+    background: var(--color-red);
+  }
+
+  .dateChip.isSelected .dateChipMeta {
+    color: rgb(255 255 255 / 82%);
+  }
+
+  @media (height <= 820px) and (width >= 1181px) {
+    .root {
+      flex: 0 0 auto;
+    }
+
+    .dateMonths {
+      padding: 0 10px 8px;
+    }
+
+    .dateMonth {
+      margin-bottom: 6px;
+    }
+
+    .dateMonthLabel {
+      margin: 2px 0 4px;
+      font-size: 9px;
+    }
+
+    .dateChip {
+      min-height: 44px;
+      padding: 4px 3px;
+      font-size: 8px;
+    }
+  }
+
+  @media (height <= 760px) and (width >= 1181px) {
+    .dateChip {
+      min-height: 44px;
+    }
+  }
+
+  @media (width <= 720px) {
+    .root {
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .dateMonths {
+      display: grid;
+      gap: 2px;
+      min-height: 0;
+      padding: 5px 7px;
+      overflow: auto;
+      overscroll-behavior: contain;
+    }
+
+    .dateMonth {
+      display: grid;
+      grid-template-columns: 2rem minmax(0, 1fr);
+      align-items: center;
+      gap: 3px;
+      margin: 0;
+    }
+
+    .dateMonthLabel {
+      margin: 0;
+      font-size: 0.64rem;
+      line-height: 1;
+    }
+
+    .dateCalendar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .dateCalendarWeekday,
+    .dateCalendarBlank,
+    .dateChipMeta {
+      display: none;
+    }
+
+    .dateChip {
+      min-width: 23px;
+      min-height: 24px;
+      min-inline-size: 23px;
+      min-block-size: 24px;
+      padding: 3px 2px;
+      border-radius: 7px;
+    }
+
+    .dateChipDate {
+      font-size: 0.72rem;
+    }
+  }
+
+  @media (width <= 720px) and (height <= 700px) {
+    .dateMonths {
+      padding: 4px 6px;
+    }
+
+    .dateMonth {
+      grid-template-columns: 1.7rem minmax(0, 1fr);
+    }
+
+    .dateChip {
+      min-width: 20px;
+      min-height: 20px;
+      min-inline-size: 20px;
+      min-block-size: 20px;
+      padding: 2px;
+    }
+
+    .dateChipDate {
+      font-size: 0.65rem;
+    }
+  }
+}

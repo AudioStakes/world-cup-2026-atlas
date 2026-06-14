@@ -1,0 +1,30 @@
+declare const styles: {
+  readonly groupPanelTab: string;
+  readonly groupPanelTabs: string;
+  readonly groupTeamCard: string;
+  readonly groupTeamCode: string;
+  readonly groupTeamCopy: string;
+  readonly groupTeamFlag: string;
+  readonly groupTeamGrid: string;
+  readonly groupTeamHeaderButton: string;
+  readonly groupTeamMeta: string;
+  readonly groupTeamName: string;
+  readonly groupTeamRowButton: string;
+  readonly groupTeamRows: string;
+  readonly isOutsideCurrentFilter: string;
+  readonly isPlaceholder: string;
+  readonly isRelated: string;
+  readonly isSelected: string;
+  readonly root: string;
+  readonly tournamentMatch: string;
+  readonly tournamentMatchDate: string;
+  readonly tournamentMatchList: string;
+  readonly tournamentMatchMatchup: string;
+  readonly tournamentMatchNumber: string;
+  readonly tournamentMatchVenue: string;
+  readonly tournamentRound: string;
+  readonly tournamentRoundHeader: string;
+  readonly tournamentRounds: string;
+};
+
+export default styles;
