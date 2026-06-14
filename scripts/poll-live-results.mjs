@@ -1,0 +1,468 @@
+#!/usr/bin/env node
+import { spawnSync } from "node:child_process";
+import { appendFileSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { createServer } from "vite";
+
+const WRANGLER_CONFIG = "wrangler.toml";
+const DEFAULT_CRON = "*/5 * * * *";
+
+const options = parseArgs(process.argv.slice(2));
+
+if (options.help) {
+  printHelp();
+  process.exit(0);
+}
+
+if (options.writeKv && !options.allowProviderRequest) {
+  fail("--write-kv requires --allow-provider-request.");
+}
+
+if (options.writeKv) {
+  options.remoteKv = true;
+}
+
+const now = readNow(options.now ?? process.env.PROVIDER_POLL_NOW);
+const nowIso = now.toISOString();
+const summaryLines = [];
+const server = await createServer({
+  appType: "custom",
+  logLevel: "error",
+  server: {
+    middlewareMode: true,
+  },
+});
+
+try {
+  const {
+    appData,
+    createPollingDecision,
+    createRequestCountKey,
+    lastFetchedAtKey,
+    latestSnapshotKey,
+    providerErrorKey,
+    refreshResultsSnapshot,
+  } = await loadRuntimeModules(server);
+  const today = nowIso.slice(0, 10);
+  const requestCountKey = createRequestCountKey(today);
+  const baseKv = options.remoteKv ? createRemoteKv({ writable: false }) : createMemoryKv();
+  const [lastFetchedAtValue, requestCountValue] = await Promise.all([
+    baseKv.get(lastFetchedAtKey),
+    baseKv.get(requestCountKey),
+  ]);
+  const decision = createPollingDecision({
+    matches: appData.matches,
+    venues: appData.venues,
+    now,
+    lastFetchedAt: parseDate(lastFetchedAtValue),
+    requestCountToday: parseRequestCount(requestCountValue),
+  });
+
+  emit("# Live results provider poll");
+  emit("");
+  emit(`mode: ${options.writeKv ? "real-run" : "dry-run"}`);
+  emit(`remoteKv: ${String(options.remoteKv)}`);
+  emit(`now: ${nowIso}`);
+  emit(`cron: ${options.cron}`);
+  emit(`decision.shouldPoll: ${String(decision.shouldPoll)}`);
+  emit(`decision.reason: ${decision.reason}`);
+  emit(`decision.activeDates: ${decision.activeDates.join(", ") || "(none)"}`);
+  emit(`lastFetchedAt: ${lastFetchedAtValue ?? "(missing)"}`);
+  emit(`requestCountKey: ${requestCountKey}`);
+  emit(`requestCountToday: ${parseRequestCount(requestCountValue)}`);
+  emit("");
+
+  if (!options.allowProviderRequest) {
+    emit("Provider request: skipped; pass --allow-provider-request to consume API-FOOTBALL quota.");
+    writeStepSummary(options.summaryFile ?? process.env.GITHUB_STEP_SUMMARY, summaryLines);
+    process.exit(0);
+  }
+
+  if (!decision.shouldPoll) {
+    emit(`Provider request: skipped by polling policy (${decision.reason}).`);
+    writeStepSummary(options.summaryFile ?? process.env.GITHUB_STEP_SUMMARY, summaryLines);
+    process.exit(0);
+  }
+
+  if (!process.env.API_FOOTBALL_KEY) {
+    fail("API_FOOTBALL_KEY is required for --allow-provider-request; the value is never printed.");
+  }
+
+  const kv = options.writeKv
+    ? createRemoteKv({ writable: true })
+    : createDryRunKv({ fallbackKv: baseKv });
+  const env = {
+    RESULTS_KV: kv,
+    API_FOOTBALL_KEY: process.env.API_FOOTBALL_KEY,
+    API_FOOTBALL_BASE_URL: process.env.API_FOOTBALL_BASE_URL,
+    API_FOOTBALL_LEAGUE_ID: process.env.API_FOOTBALL_LEAGUE_ID,
+    API_FOOTBALL_SEASON: process.env.API_FOOTBALL_SEASON,
+    ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS,
+  };
+
+  await refreshResultsSnapshot({
+    env,
+    now,
+  });
+
+  emit(`Provider request dates attempted: ${decision.activeDates.length}`);
+  emit(`KV writes: ${options.writeKv ? "remote" : "dry-run only"}`);
+  emit("");
+  emit("## Resulting diagnostics");
+  emit("");
+
+  const latestSnapshot = await kv.get(latestSnapshotKey);
+  const providerError = await kv.get(providerErrorKey);
+  const requestCountAfter = await kv.get(requestCountKey);
+
+  emit(formatSnapshotSummary("latest snapshot", latestSnapshot));
+  emit(formatProviderErrorSummary(providerError, nowIso));
+  emit(`requestCountTodayAfter: ${parseRequestCount(requestCountAfter)}`);
+  writeStepSummary(options.summaryFile ?? process.env.GITHUB_STEP_SUMMARY, summaryLines);
+} finally {
+  await server.close();
+}
+
+function parseArgs(args) {
+  const parsed = {
+    allowProviderRequest: false,
+    cron: DEFAULT_CRON,
+    help: false,
+    now: null,
+    remoteKv: false,
+    summaryFile: null,
+    writeKv: false,
+  };
+
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+
+    if (arg === "--") {
+      continue;
+    }
+
+    if (arg === "--help" || arg === "-h") {
+      parsed.help = true;
+      continue;
+    }
+
+    if (arg === "--allow-provider-request") {
+      parsed.allowProviderRequest = true;
+      continue;
+    }
+
+    if (arg === "--remote-kv") {
+      parsed.remoteKv = true;
+      continue;
+    }
+
+    if (arg === "--write-kv") {
+      parsed.writeKv = true;
+      continue;
+    }
+
+    if (arg === "--now") {
+      parsed.now = readRequiredArg(args, index, arg);
+      index += 1;
+      continue;
+    }
+
+    if (arg?.startsWith("--now=")) {
+      parsed.now = arg.slice("--now=".length);
+      continue;
+    }
+
+    if (arg === "--cron") {
+      parsed.cron = readRequiredArg(args, index, arg);
+      index += 1;
+      continue;
+    }
+
+    if (arg?.startsWith("--cron=")) {
+      parsed.cron = arg.slice("--cron=".length);
+      continue;
+    }
+
+    if (arg === "--summary-file") {
+      parsed.summaryFile = readRequiredArg(args, index, arg);
+      index += 1;
+      continue;
+    }
+
+    if (arg?.startsWith("--summary-file=")) {
+      parsed.summaryFile = arg.slice("--summary-file=".length);
+      continue;
+    }
+
+    throw new Error(`Unknown argument: ${arg}`);
+  }
+
+  return parsed;
+}
+
+function readRequiredArg(args, index, flag) {
+  const value = args[index + 1];
+
+  if (!value || value.startsWith("--")) {
+    throw new Error(`${flag} requires a value.`);
+  }
+
+  return value;
+}
+
+async function loadRuntimeModules(viteServer) {
+  const [appDataModule, pollingPolicyModule, kvKeysModule, pollModule] = await Promise.all([
+    viteServer.ssrLoadModule("/src/data/appData.ts"),
+    viteServer.ssrLoadModule("/src/matchResults/pollingPolicy.ts"),
+    viteServer.ssrLoadModule("/workers/results/src/kvKeys.ts"),
+    viteServer.ssrLoadModule("/workers/results/src/poll.ts"),
+  ]);
+
+  return {
+    appData: appDataModule.appData,
+    createPollingDecision: pollingPolicyModule.createPollingDecision,
+    createRequestCountKey: kvKeysModule.createRequestCountKey,
+    lastFetchedAtKey: kvKeysModule.lastFetchedAtKey,
+    latestSnapshotKey: kvKeysModule.latestSnapshotKey,
+    providerErrorKey: kvKeysModule.providerErrorKey,
+    refreshResultsSnapshot: pollModule.refreshResultsSnapshot,
+  };
+}
+
+function createMemoryKv(initialValues = new Map()) {
+  const values = new Map(initialValues);
+
+  return {
+    values,
+    async get(key, type) {
+      const value = values.get(key) ?? null;
+
+      if (value === null || type !== "json") {
+        return value;
+      }
+
+      return JSON.parse(value);
+    },
+    async put(key, value) {
+      values.set(key, value);
+    },
+  };
+}
+
+function createDryRunKv({ fallbackKv }) {
+  const memoryKv = createMemoryKv();
+
+  return {
+    writes: memoryKv.values,
+    async get(key, type) {
+      const writtenValue = memoryKv.values.get(key);
+
+      if (writtenValue !== undefined) {
+        return type === "json" ? JSON.parse(writtenValue) : writtenValue;
+      }
+
+      return fallbackKv.get(key, type);
+    },
+    async put(key, value) {
+      await memoryKv.put(key, value);
+    },
+  };
+}
+
+function createRemoteKv({ writable }) {
+  return {
+    async get(key, type) {
+      const value = readRemoteKvText(key);
+
+      if (value === null || type !== "json") {
+        return value;
+      }
+
+      return JSON.parse(value);
+    },
+    async put(key, value) {
+      if (!writable) {
+        throw new Error("Remote KV writes require --write-kv.");
+      }
+
+      writeRemoteKvText(key, value);
+    },
+  };
+}
+
+function readRemoteKvText(key) {
+  const result = runWrangler([
+    "kv",
+    "key",
+    "get",
+    key,
+    "--binding",
+    "RESULTS_KV",
+    "--remote",
+    "--text",
+    "--config",
+    WRANGLER_CONFIG,
+  ]);
+
+  if (!result.ok) {
+    return null;
+  }
+
+  return result.stdout.trim();
+}
+
+function writeRemoteKvText(key, value) {
+  const tempDir = mkdtempSync(path.join(tmpdir(), "live-results-kv-"));
+  const tempPath = path.join(tempDir, "value.txt");
+
+  try {
+    writeFileSync(tempPath, value);
+
+    const result = runWrangler([
+      "kv",
+      "key",
+      "put",
+      key,
+      "--path",
+      tempPath,
+      "--binding",
+      "RESULTS_KV",
+      "--remote",
+      "--config",
+      WRANGLER_CONFIG,
+    ]);
+
+    if (!result.ok) {
+      throw new Error(`Failed to write remote KV key ${key}.`);
+    }
+  } finally {
+    rmSync(tempDir, { force: true, recursive: true });
+  }
+}
+
+function runWrangler(args) {
+  const result = spawnSync("pnpm", ["wrangler", ...args], {
+    encoding: "utf8",
+    env: process.env,
+    maxBuffer: 5 * 1024 * 1024,
+  });
+
+  return {
+    ok: result.status === 0,
+    stdout: result.stdout ?? "",
+  };
+}
+
+function readNow(value) {
+  const date = value ? new Date(value) : new Date();
+
+  if (Number.isNaN(date.getTime())) {
+    fail(`Invalid --now value: ${value}`);
+  }
+
+  return date;
+}
+
+function parseDate(value) {
+  if (!value) {
+    return null;
+  }
+
+  const date = new Date(value);
+
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function parseRequestCount(value) {
+  if (!value) {
+    return 0;
+  }
+
+  const parsedValue = Number(value);
+
+  return Number.isInteger(parsedValue) && parsedValue >= 0 ? parsedValue : 0;
+}
+
+function formatSnapshotSummary(label, value) {
+  if (!value) {
+    return `${label}: missing`;
+  }
+
+  try {
+    const parsed = JSON.parse(value);
+
+    if (!isRecord(parsed)) {
+      return `${label}: invalid`;
+    }
+
+    const provider = typeof parsed.provider === "string" ? parsed.provider : "-";
+    const fetchedAt = typeof parsed.fetchedAt === "string" ? parsed.fetchedAt : "-";
+    const matchesLength = Array.isArray(parsed.matches) ? parsed.matches.length : "-";
+    const isFallback = Object.hasOwn(parsed, "isFallback") ? String(parsed.isFallback) : "absent";
+
+    return `${label}: provider=${provider}, fetchedAt=${fetchedAt}, matches.length=${matchesLength}, isFallback=${isFallback}`;
+  } catch {
+    return `${label}: invalid-json`;
+  }
+}
+
+function formatProviderErrorSummary(value, nowIso) {
+  if (!value) {
+    return "provider error: missing";
+  }
+
+  try {
+    const parsed = JSON.parse(value);
+
+    if (!isRecord(parsed)) {
+      return "provider error: invalid";
+    }
+
+    const at = typeof parsed.at === "string" ? parsed.at : "-";
+    const message = typeof parsed.message === "string" ? parsed.message : "-";
+    const freshness = at === nowIso ? "current-run" : "previous-run";
+
+    return `provider error: ${freshness}, at=${at}, message=${message}`;
+  } catch {
+    return "provider error: invalid-json";
+  }
+}
+
+function emit(line) {
+  console.log(line);
+  summaryLines.push(line);
+}
+
+function writeStepSummary(summaryFile, lines) {
+  if (!summaryFile) {
+    return;
+  }
+
+  appendFileSync(summaryFile, `${lines.join("\n")}\n\n`);
+}
+
+function fail(message) {
+  console.error(message);
+  process.exit(1);
+}
+
+function isRecord(input) {
+  return typeof input === "object" && input !== null && !Array.isArray(input);
+}
+
+function printHelp() {
+  console.log(`Usage: node scripts/poll-live-results.mjs [options]
+
+Default mode computes the polling decision only. It does not call API-FOOTBALL and does not write KV.
+
+Options:
+  --now <iso>                 Evaluate polling at this timestamp. Defaults to current time.
+  --remote-kv                 Read polling guard values from remote RESULTS_KV.
+  --allow-provider-request    Allow API-FOOTBALL calls when polling policy says to poll.
+  --write-kv                  Write resulting snapshot/diagnostics to remote RESULTS_KV.
+  --cron <expr>               Record the cron expression used by the manual run.
+  --summary-file <path>       Append Markdown diagnostics to a summary file.
+  --help                      Show this help.
+`);
+}

@@ -37,6 +37,46 @@ files, issue comments, PR bodies, or logs.
 4. Leave uncertain fixtures unmapped until the provider id and internal match are confirmed.
 5. Run the mapping checks and relevant Worker tests before opening or updating a PR.
 
+## Provider fixture extraction
+
+Use a reduced, secret-free working extract when comparing provider fixtures to internal matches.
+Do not commit the full API-FOOTBALL response body. If a temporary file is needed, keep it outside the
+repository or delete it after the mapping review.
+
+Useful provider columns:
+
+- `providerFixtureId`: `fixture.id`
+- `fixtureDate`: `fixture.date`
+- `statusShort`: `fixture.status.short`
+- `homeTeamId`: `teams.home.id`
+- `homeTeamName`: `teams.home.name`
+- `awayTeamId`: `teams.away.id`
+- `awayTeamName`: `teams.away.name`
+- `venueName`: `fixture.venue.name`
+
+For a local provider response file that is safe to inspect, this extracts only the useful mapping
+columns:
+
+```bash
+jq -r '.response[] | [.fixture.id, .fixture.date, .fixture.status.short, .teams.home.id, .teams.home.name, .teams.away.id, .teams.away.name, .fixture.venue.name] | @tsv' /tmp/api-football-fixtures.json
+```
+
+Compare each provider row against `src/data/matches.ts` using:
+
+- internal match number and `match-001` through `match-104` id
+- date
+- kickoff time
+- venue
+- `homeParticipant`
+- `awayParticipant`
+
+If date, kickoff, venue, or participants are uncertain, leave the row unmapped. A missing score is
+safer than a score attached to the wrong internal match.
+
+If a reduced fixture artifact is needed for review, prefer a hand-curated JSONL or TSV containing
+only the columns above plus the proposed internal `matchId`. Confirm API-FOOTBALL license and
+redistribution terms before committing even reduced provider-derived data.
+
 ## Fixture ids not yet confirmed
 
 An empty mapping is allowed while fixture ids are not confirmed. In that state, the provider poll can
@@ -63,6 +103,8 @@ pnpm check:fixture-mapping -- --strict
 Strict mode currently requires mappings for all 104 internal matches. The normal `pnpm verify` path
 runs the non-strict check, so duplicate provider fixture ids, duplicate internal `matchId` values,
 and unknown internal matches fail without requiring the mapping to be complete yet.
+
+Do not use strict mode as a release gate until all 104 matches have confirmed provider fixture ids.
 
 Useful related checks:
 
