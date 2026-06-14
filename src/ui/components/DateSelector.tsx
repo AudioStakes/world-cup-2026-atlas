@@ -18,18 +18,11 @@ type DateChipProps = {
 const weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 
 export function DateSelector({ dateSelector, onAction }: DateSelectorProps) {
-  const hasOutsideCurrentFilterDates = dateSelector.months.some((month) =>
-    month.dates.some((dateOption) => dateOption.availability === "outsideCurrentFilter"),
-  );
-
   return (
     <section class="panel-section date-section" aria-labelledby="date-selector-title">
       <h2 id="date-selector-title" class="visually-hidden">
         {dateSelector.title}
       </h2>
-      {hasOutsideCurrentFilterDates ? (
-        <p class="filter-hint">Dimmed dates do not include the current selection.</p>
-      ) : null}
 
       <div class="date-months">
         {dateSelector.months.map((month) => (
@@ -61,6 +54,7 @@ function DateChip({ dateOption, onAction }: DateChipProps) {
       class={classNames(
         "date-chip",
         dateOption.isSelected && "is-selected",
+        dateOption.isToday && "is-today",
         !dateOption.hasFixture && "has-no-fixture",
         dateOption.availability === "outsideCurrentFilter" && "is-outside-current-filter",
       )}
@@ -108,6 +102,10 @@ function createDateChipAriaLabel(dateOption: DateOptionViewModel): string {
 
   if (dateOption.matchCountLabel) {
     parts.push(dateOption.matchCountLabel);
+  }
+
+  if (dateOption.isToday) {
+    parts.push("today");
   }
 
   if (dateOption.kickoffRangeLabel) {

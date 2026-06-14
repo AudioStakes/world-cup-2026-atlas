@@ -23,10 +23,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Enable pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          run_install: false
+      - name: Enable Corepack
+        run: corepack enable
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -38,12 +36,15 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run quality gate
-        run: pnpm verify
+        run: pnpm check && pnpm check:policy && pnpm typecheck && pnpm test && pnpm test:coverage && pnpm test:coverage:workers
 
       - name: Build for GitHub Pages
         run: pnpm build
         env:
           GITHUB_PAGES: "true"
+
+      - name: Validate Worker config
+        run: pnpm check:worker-config
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

@@ -1,13 +1,26 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/preact";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { countryId, matchId } from "../domain/ids";
 import {
   EXPLORER_MAP_DISPLAY_VIEWBOX,
   EXPLORER_MAP_VIEWBOX,
 } from "../features/explorer/mapViewport";
+import type { MatchResultsSnapshot } from "../matchResults/types";
 import { App } from "./App";
+
+const originalDateTimeFormatResolvedOptions = Intl.DateTimeFormat.prototype.resolvedOptions;
 
 function selectJapan() {
   fireEvent.click(screen.getByRole("button", { name: "Select Japan" }));
+}
+
+function mockBrowserTimeZone(timeZone: string | null) {
+  const resolvedOptions = originalDateTimeFormatResolvedOptions.call(new Intl.DateTimeFormat());
+
+  vi.spyOn(Intl.DateTimeFormat.prototype, "resolvedOptions").mockReturnValue({
+    ...resolvedOptions,
+    timeZone: timeZone ?? undefined,
+  } as Intl.ResolvedDateTimeFormatOptions);
 }
 
 function getFirstMatchCard() {
@@ -18,6 +31,29 @@ function getFirstMatchCard() {
   }
 
   return matchCard as HTMLElement;
+}
+
+function mockResultsSnapshotFetch(snapshot: MatchResultsSnapshot) {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => jsonResponse(snapshot)),
+  );
+}
+
+function jsonResponse(data: unknown, init?: ResponseInit): Response {
+  return new Response(JSON.stringify(data), {
+    headers: { "Content-Type": "application/json" },
+    status: 200,
+    ...init,
+  });
+}
+
+function getFirstMatchVenueButton() {
+  const venueButton = within(getFirstMatchCard()).getByRole("button", {
+    name: "Select match venue Mexico City",
+  });
+
+  return venueButton;
 }
 
 function getVenueMarker(venueId: string) {
@@ -139,10 +175,16 @@ describe("App", () => {
   beforeEach(() => {
     window.history.replaceState(null, "", "/");
     vi.spyOn(Date, "now").mockReturnValue(new Date(2026, 5, 11, 9).getTime());
+    mockBrowserTimeZone(null);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => jsonResponse({}, { status: 404 })),
+    );
   });
 
   afterEach(() => {
     MockResizeObserver.reset();
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
 
     if (originalResizeObserver) {
@@ -197,6 +239,34 @@ describe("App", () => {
     );
   });
 
+  it("keeps the active selection when the same selected control is clicked again", () => {
+    render(<App />);
+
+    selectJapan();
+    selectJapan();
+
+    expect(screen.getByRole("heading", { name: "Japan" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Select Japan" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(window.location.search).toBe("?country=jpn");
+    expect(screen.queryByText("Start exploring")).not.toBeInTheDocument();
+  });
+
+  it("keeps the default date selected when the active default date is clicked again", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: /Select Thu Jun 11/ }));
+
+    expect(screen.getByRole("button", { name: /Select Thu Jun 11/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(window.location.search).toBe("");
+    expect(screen.queryByText("Start exploring")).not.toBeInTheDocument();
+  });
+
   it("keeps only the last clicked filter in the browser URL", () => {
     render(<App />);
 
@@ -242,8 +312,16 @@ describe("App", () => {
   it("keeps countries selectable from the groups table", () => {
     render(<App />);
 
-    const groupsSection = screen.getByRole("region", { name: "Groups & Teams" });
+    const groupsSection = screen.getByRole("region", { name: "Group and Tournament" });
 
+    expect(within(groupsSection).getByRole("tab", { name: "Group" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(within(groupsSection).getByRole("tab", { name: "Tournament" })).toHaveAttribute(
+      "aria-selected",
+      "false",
+    );
     expect(within(groupsSection).getByRole("button", { name: "Select Group A" })).toHaveTextContent(
       "A",
     );
@@ -272,11 +350,32 @@ describe("App", () => {
     expect(within(groupsSection).queryByText("JPN · AFC")).not.toBeInTheDocument();
   });
 
+  it("switches the group panel to tournament rounds", () => {
+    render(<App />);
+
+    const groupsSection = screen.getByRole("region", { name: "Group and Tournament" });
+    fireEvent.click(within(groupsSection).getByRole("tab", { name: "Tournament" }));
+
+    expect(within(groupsSection).getByRole("tab", { name: "Tournament" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(within(groupsSection).getByRole("heading", { name: "Round of 32" })).toBeInTheDocument();
+    expect(within(groupsSection).getByText("Match 73")).toBeInTheDocument();
+    expect(
+      within(groupsSection).getByText("Runner-up Group A vs Runner-up Group B"),
+    ).toBeInTheDocument();
+    expect(
+      within(groupsSection).queryByRole("button", { name: "Select Japan" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("omits redundant panel headings from the visible explorer controls", () => {
     render(<App />);
 
     expect(screen.queryByText("Explore")).not.toBeInTheDocument();
     expect(screen.queryByText("Dates")).not.toBeInTheDocument();
+    expect(screen.queryByText("Groups & Teams")).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Date" })).toHaveClass("visually-hidden");
     expect(screen.getByRole("region", { name: "Date" })).toBeInTheDocument();
   });
@@ -296,33 +395,100 @@ describe("App", () => {
     expect(restDateButton).toHaveTextContent("Rest");
   });
 
-  it("renders match cards as compact date matchup venue rows", () => {
+  it("renders match cards as FIFA-style fixture rows", () => {
     render(<App />);
 
     const matchCard = getFirstMatchCard();
     const matchScope = within(matchCard);
 
-    expect(matchScope.getByText("Thu Jun 11 13:00 CT")).toBeInTheDocument();
-    expect(matchScope.getByText("🇲🇽 MEX vs 🇿🇦 RSA")).toBeInTheDocument();
-    expect(matchScope.getByText("🇲🇽 Mexico vs 🇿🇦 South Africa")).toHaveClass("visually-hidden");
-    expect(matchScope.getByText("Scheduled")).toBeInTheDocument();
+    expect(screen.getByText("Thursday 11 June 2026")).toBeInTheDocument();
+    expect(matchScope.getByText("Mexico")).toBeInTheDocument();
+    expect(matchScope.getByText("13:00")).toBeInTheDocument();
+    expect(matchScope.getByText("South Africa")).toBeInTheDocument();
+    expect(matchCard.querySelector(".match-card__meta-line")).toHaveTextContent(
+      "First Stage·Group A·Estadio Azteca (Mexico City)",
+    );
+    expect(matchScope.getByText("Mexico vs South Africa")).toHaveClass("visually-hidden");
     expect(matchScope.queryByText(/Estadio Azteca · Mexico City, Mexico/)).not.toBeInTheDocument();
   });
 
-  it("highlights the matching venue marker when a match card is hovered or focused", () => {
+  it("renders runtime match results from the Worker snapshot when available", async () => {
+    mockResultsSnapshotFetch({
+      schemaVersion: 1,
+      provider: "api-football",
+      fetchedAt: "2026-06-11T21:00:00.000Z",
+      matches: [
+        {
+          matchId: matchId("match-001"),
+          provider: "api-football",
+          providerFixtureId: 1001,
+          status: "finished",
+          shortStatus: "FT",
+          elapsed: 90,
+          homeTeamId: countryId("mex"),
+          awayTeamId: countryId("rsa"),
+          homeScore: 2,
+          awayScore: 0,
+          kickoffAt: "2026-06-11T19:00:00.000Z",
+          updatedAt: "2026-06-11T21:00:00.000Z",
+        },
+      ],
+    });
+
     render(<App />);
 
-    const matchCard = getFirstMatchCard();
+    await waitFor(() => {
+      expect(within(getFirstMatchCard()).getByText("FT")).toBeInTheDocument();
+    });
+    expect(within(getFirstMatchCard()).getByText("2")).toBeInTheDocument();
+    expect(within(getFirstMatchCard()).getByText("0")).toBeInTheDocument();
+    expect(within(getFirstMatchCard()).queryByText("13:00")).not.toBeInTheDocument();
+  });
 
-    fireEvent.mouseEnter(matchCard);
+  it("changes match card times when a header country time zone is selected", () => {
+    render(<App />);
+
+    const timeZoneSelect = screen.getByRole("combobox", { name: "Match times" });
+    expect(timeZoneSelect).toHaveValue("venue-local");
+
+    fireEvent.change(timeZoneSelect, { target: { value: "jpn" } });
+
+    const matchScope = within(getFirstMatchCard());
+    expect(timeZoneSelect).toHaveValue("jpn");
+    expect(
+      screen.getByText("Japan · JST", { selector: ".atlas-header__data-status span" }),
+    ).toBeInTheDocument();
+    expect(matchScope.getByText("04:00")).toBeInTheDocument();
+    expect(matchScope.queryByText("13:00")).not.toBeInTheDocument();
+  });
+
+  it("defaults match card times to the browser local time zone when available", () => {
+    mockBrowserTimeZone("Asia/Tokyo");
+    render(<App />);
+
+    const timeZoneSelect = screen.getByRole("combobox", { name: "Match times" });
+    const matchScope = within(getFirstMatchCard());
+
+    expect(timeZoneSelect).toHaveValue("browser-local");
+    expect(screen.getByText("Your local time · JST")).toBeInTheDocument();
+    expect(matchScope.getByText("04:00")).toBeInTheDocument();
+    expect(matchScope.queryByText("13:00")).not.toBeInTheDocument();
+  });
+
+  it("highlights the matching venue marker when a match venue control is hovered or focused", () => {
+    render(<App />);
+
+    const venueButton = getFirstMatchVenueButton();
+
+    fireEvent.mouseEnter(venueButton);
     expect(document.querySelectorAll(".venue-marker.is-highlighted")).toHaveLength(1);
     expect(document.querySelector(".venue-marker.is-highlighted")).toHaveAttribute(
       "data-venue-id",
       "mexico-city",
     );
 
-    fireEvent.mouseLeave(matchCard);
-    fireEvent.focus(matchCard);
+    fireEvent.mouseLeave(venueButton);
+    fireEvent.focus(venueButton);
     expect(document.querySelectorAll(".venue-marker.is-highlighted")).toHaveLength(1);
     expect(document.querySelector(".venue-marker.is-highlighted")).toHaveAttribute(
       "data-venue-id",
@@ -330,10 +496,33 @@ describe("App", () => {
     );
   });
 
-  it("selects a match venue when a match card is clicked", () => {
+  it("does not select a venue from the match card background", () => {
     render(<App />);
 
     fireEvent.click(getFirstMatchCard());
+
+    expect(screen.queryByRole("heading", { name: "Mexico City" })).not.toBeInTheDocument();
+    expect(window.location.search).toBe("");
+  });
+
+  it("selects a match venue, country, and group from explicit match card controls", () => {
+    render(<App />);
+
+    fireEvent.click(
+      within(getFirstMatchCard()).getByRole("button", { name: "Select country Mexico" }),
+    );
+
+    expect(screen.getByRole("heading", { name: "Mexico" })).toBeInTheDocument();
+    expect(window.location.search).toBe("?country=mex");
+
+    fireEvent.click(
+      within(getFirstMatchCard()).getByRole("button", { name: "Select group Group A" }),
+    );
+
+    expect(screen.getByRole("heading", { name: "Group A" })).toBeInTheDocument();
+    expect(window.location.search).toBe("?group=A");
+
+    fireEvent.click(getFirstMatchVenueButton());
 
     expect(screen.getByRole("heading", { name: "Mexico City" })).toBeInTheDocument();
     expect(window.location.search).toBe("?venue=mexico-city");

@@ -74,6 +74,16 @@ Derived data:
 
 Derived data should be calculated or generated from source data, not hand-maintained.
 
+## Runtime results
+
+API-FOOTBALL is used only for runtime match-result updates through the Cloudflare Worker. It is not a
+replacement for official static tournament facts such as fixtures, venues, groups, or kickoff local
+times.
+
+The Worker stores normalized result snapshots in KV. Browser code consumes those snapshots through
+`/api/results`; it must not call API-FOOTBALL or expose provider keys. See
+[Live Result Updates](live-result-updates.md).
+
 ## Next migration step
 
 The next zip should add or update production-shaped data in this order:

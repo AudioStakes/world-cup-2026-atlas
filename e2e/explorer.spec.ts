@@ -45,6 +45,16 @@ async function setBrowserToday(page: Page, dateIso: string) {
   }, `${dateIso}T12:00:00`);
 }
 
+async function disableBrowserLocalTimeZone(page: Page) {
+  await page.addInitScript(() => {
+    const originalResolvedOptions = Intl.DateTimeFormat.prototype.resolvedOptions;
+
+    Intl.DateTimeFormat.prototype.resolvedOptions = function resolvedOptionsWithoutTimeZone() {
+      return { ...originalResolvedOptions.call(this), timeZone: "" };
+    };
+  });
+}
+
 test.describe("World Cup 2026 Atlas explorer", () => {
   test("@smoke starts from today's tournament date when no URL query present", async ({ page }) => {
     await setBrowserToday(page, "2026-06-12");
@@ -86,6 +96,38 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     );
   });
 
+  test("@smoke defaults match times to the browser local time zone", async ({ page }) => {
+    await page.addInitScript(() => {
+      const originalResolvedOptions = Intl.DateTimeFormat.prototype.resolvedOptions;
+
+      Intl.DateTimeFormat.prototype.resolvedOptions = function resolvedOptionsWithLocalTimeZone() {
+        return { ...originalResolvedOptions.call(this), timeZone: "Asia/Tokyo" };
+      };
+    });
+
+    await page.goto("/?group=F");
+
+    await expect(page.locator(".result-card__header")).toHaveCount(0);
+
+    const timeZoneState = await page.evaluate(() => {
+      const select = document.querySelector<HTMLSelectElement>("#match-time-zone");
+      const selectedOption = select?.selectedOptions[0];
+
+      return {
+        firstKickoff: document.querySelector(".match-card__kickoff")?.textContent?.trim() ?? "",
+        headerSummary:
+          document.querySelector(".atlas-header__data-status span")?.textContent?.trim() ?? "",
+        selectedOptionText: selectedOption?.textContent?.trim() ?? "",
+        selectValue: select?.value ?? "",
+      };
+    });
+
+    expect(timeZoneState.selectValue).toBe("browser-local");
+    expect(timeZoneState.selectedOptionText).toBe("Your local time · JST · Asia/Tokyo");
+    expect(timeZoneState.headerSummary).toBe("Your local time · JST");
+    expect(timeZoneState.firstKickoff).toBe("05:00");
+  });
+
   test("@smoke selects team groups from the readable groups table", async ({ page }) => {
     await page.goto("/");
 
@@ -93,14 +135,46 @@ test.describe("World Cup 2026 Atlas explorer", () => {
 
     await expect(page).toHaveURL(/country=jpn/);
     await expect(page.getByRole("heading", { name: "Japan" })).toBeVisible();
-    await expect(page.getByRole("region", { name: "Groups & Teams" }).getByText("JPN")).toHaveCount(
-      1,
-    );
     await expect(
-      page.getByRole("region", { name: "Groups & Teams" }).getByRole("button", {
+      page.getByRole("region", { name: "Group and Tournament" }).getByText("JPN"),
+    ).toHaveCount(1);
+    await expect(
+      page.getByRole("region", { name: "Group and Tournament" }).getByRole("button", {
         name: "Select Japan",
       }),
     ).toBeVisible();
+  });
+
+  test("@smoke switches the group panel to tournament rounds", async ({ page }) => {
+    await page.goto("/");
+
+    const panel = page.getByRole("region", { name: "Group and Tournament" });
+    await panel.getByRole("tab", { name: "Tournament" }).click();
+
+    await expect(panel.getByRole("tab", { name: "Tournament" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    await expect(panel.getByRole("heading", { name: "Round of 32" })).toBeVisible();
+    await expect(panel.getByText("Match 73", { exact: true })).toBeVisible();
+    await expect(panel.getByText("Runner-up Group A vs Runner-up Group B")).toBeVisible();
+  });
+
+  test("@smoke keeps a selected filter active when clicked again", async ({ page }) => {
+    await page.goto("/");
+
+    await page.getByRole("button", { name: "Select Japan" }).click();
+    await expect(page).toHaveURL(/country=jpn/);
+
+    await page.getByRole("button", { name: "Select Japan" }).click();
+
+    await expect(page).toHaveURL(/country=jpn/);
+    await expect(page.getByRole("heading", { name: "Japan" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Select Japan" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await expect(page.getByText("Start exploring")).toHaveCount(0);
   });
 
   test("@smoke keeps every Groups & Teams country flag visible across viewport sizes", async ({
@@ -116,7 +190,7 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     for (const viewport of viewports) {
       await page.setViewportSize(viewport);
       await page.goto("/");
-      await page.getByRole("region", { name: "Groups & Teams" }).scrollIntoViewIfNeeded();
+      await page.getByRole("region", { name: "Group and Tournament" }).scrollIntoViewIfNeeded();
 
       const flagVisibility = await page.evaluate(() => {
         const viewport = {
@@ -152,7 +226,7 @@ test.describe("World Cup 2026 Atlas explorer", () => {
   test("@smoke gives Groups & Teams flags larger targets when space allows", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto("/");
-    await page.getByRole("region", { name: "Groups & Teams" }).scrollIntoViewIfNeeded();
+    await page.getByRole("region", { name: "Group and Tournament" }).scrollIntoViewIfNeeded();
 
     const targetSize = await page.evaluate(() => {
       const button = document.querySelector(".group-team-row-button:not(.is-placeholder)");
@@ -170,7 +244,58 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     expect(targetSize.flagWidth).toBeGreaterThanOrEqual(24);
   });
 
-  test("@smoke selects a date and shows that day's fixture details", async ({ page }) => {
+  test("@smoke keeps Groups & Teams tappable when panels stack", async ({ page }) => {
+    await page.setViewportSize({ width: 596, height: 1451 });
+    await page.goto("/?date=2026-06-20");
+
+    const stackedLayout = await page.evaluate(() => {
+      const section = document.querySelector<HTMLElement>(".groups-section");
+      const grid = section?.querySelector<HTMLElement>(".group-team-grid");
+      const firstCopy = grid?.querySelector<HTMLElement>(".group-team-copy");
+      const firstName = grid?.querySelector<HTMLElement>(".group-team-name");
+      const firstButton = grid?.querySelector<HTMLElement>(
+        ".group-team-row-button:not(.is-placeholder)",
+      );
+      const cards = Array.from(grid?.querySelectorAll<HTMLElement>(".group-team-card") ?? []);
+      const flags = Array.from(grid?.querySelectorAll<HTMLElement>(".group-team-flag") ?? []);
+      const gridStyles = grid ? getComputedStyle(grid) : null;
+      const firstButtonRect = firstButton?.getBoundingClientRect();
+      const sectionRect = section?.getBoundingClientRect();
+      const rowTops = new Set(cards.map((card) => Math.round(card.getBoundingClientRect().top)));
+      const firstNameRect = firstName?.getBoundingClientRect();
+
+      return {
+        buttonHeight: firstButtonRect?.height ?? 0,
+        buttonWidth: firstButtonRect?.width ?? 0,
+        columns:
+          gridStyles?.gridTemplateColumns.split(" ").filter((column) => column.trim().length > 0)
+            .length ?? 0,
+        copyDisplay: firstCopy ? getComputedStyle(firstCopy).display : "",
+        flagCount: flags.length,
+        hiddenFlags: flags.filter((flag) => {
+          const rect = flag.getBoundingClientRect();
+
+          return rect.width === 0 || rect.height === 0;
+        }).length,
+        nameWidth: firstNameRect?.width ?? 0,
+        rowCount: rowTops.size,
+        sectionHeight: sectionRect?.height ?? 0,
+      };
+    });
+
+    expect(stackedLayout.columns).toBe(2);
+    expect(stackedLayout.rowCount).toBeLessThanOrEqual(6);
+    expect(stackedLayout.copyDisplay).toBe("block");
+    expect(stackedLayout.nameWidth).toBeGreaterThan(0);
+    expect(stackedLayout.buttonHeight).toBeGreaterThanOrEqual(44);
+    expect(stackedLayout.buttonWidth).toBeGreaterThanOrEqual(44);
+    expect(stackedLayout.sectionHeight).toBeLessThanOrEqual(380);
+    expect(stackedLayout.flagCount).toBe(48);
+    expect(stackedLayout.hiddenFlags).toBe(0);
+  });
+
+  test("@smoke selects a date and starts the fixture timeline on that date", async ({ page }) => {
+    await disableBrowserLocalTimeZone(page);
     await page.goto("/");
 
     await page.getByRole("button", { name: /Select Tue Jun 16/ }).click();
@@ -180,10 +305,94 @@ test.describe("World Cup 2026 Atlas explorer", () => {
       "aria-pressed",
       "true",
     );
-    await expect(page.getByRole("heading", { name: "Jun 16" })).toBeVisible();
-    await expect(
-      page.locator(".detail-metrics").getByText("4 matches", { exact: true }),
-    ).toBeVisible();
+    await expect(page.locator("#selection-results")).toHaveClass(/result-card--date-timeline/);
+    await expect(page.locator(".result-card__header")).toHaveCount(0);
+    await expect(page.locator(".detail-metrics")).toHaveCount(0);
+
+    const timelineState = await page.evaluate(() => {
+      const list = document.querySelector<HTMLElement>(".match-list");
+      const scrollTarget = document.querySelector<HTMLElement>("[data-initial-scroll-target]");
+      const listRect = list?.getBoundingClientRect();
+      const targetRect = scrollTarget?.getBoundingClientRect();
+
+      return {
+        canScrollDown: list ? list.scrollTop + list.clientHeight < list.scrollHeight : false,
+        canScrollUp: list ? list.scrollTop > 0 : false,
+        matchCount: document.querySelectorAll(".match-card").length,
+        targetHeading:
+          scrollTarget?.querySelector(".match-list__date-row h3")?.textContent?.trim() ?? null,
+        targetOffsetFromListTop:
+          listRect && targetRect ? Math.round(targetRect.top - listRect.top) : null,
+      };
+    });
+
+    expect(timelineState.matchCount).toBe(104);
+    expect(timelineState.targetHeading).toBe("Tuesday 16 June 2026");
+    expect(
+      Math.abs(timelineState.targetOffsetFromListTop ?? Number.POSITIVE_INFINITY),
+    ).toBeLessThanOrEqual(1);
+    expect(timelineState.canScrollUp).toBe(true);
+    expect(timelineState.canScrollDown).toBe(true);
+  });
+
+  test("@smoke keeps narrow match cards on one score row with flags and time visible", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 320, height: 568 });
+    await page.goto("/?date=2026-06-20");
+
+    const matchCardLayout = await page.evaluate(() => {
+      const card =
+        document.querySelector<HTMLElement>("[data-initial-scroll-target] .match-card") ??
+        document.querySelector<HTMLElement>(".match-card");
+      const scoreRow = card?.querySelector<HTMLElement>(".match-card__score-row");
+      const homeFlag = card?.querySelector<HTMLElement>(
+        ".match-card__team--home .match-card__flag",
+      );
+      const awayFlag = card?.querySelector<HTMLElement>(
+        ".match-card__team--away .match-card__flag",
+      );
+      const kickoff = card?.querySelector<HTMLElement>(".match-card__kickoff, .match-card__score");
+      const teamName = card?.querySelector<HTMLElement>(".match-card__team-name");
+      const homeFlagRect = homeFlag?.getBoundingClientRect();
+      const awayFlagRect = awayFlag?.getBoundingClientRect();
+      const kickoffRect = kickoff?.getBoundingClientRect();
+      const scoreRowRect = scoreRow?.getBoundingClientRect();
+
+      return {
+        awayFlagWidth: awayFlagRect?.width ?? 0,
+        cardWidth: card?.getBoundingClientRect().width ?? 0,
+        homeFlagWidth: homeFlagRect?.width ?? 0,
+        kickoffText: kickoff?.textContent?.trim() ?? "",
+        kickoffWidth: kickoffRect?.width ?? 0,
+        scoreRowHeight: scoreRowRect?.height ?? 0,
+        teamNameDisplay: teamName ? getComputedStyle(teamName).display : null,
+        verticalCenterSpread:
+          homeFlagRect && awayFlagRect && kickoffRect
+            ? Math.max(
+                Math.abs(
+                  homeFlagRect.top +
+                    homeFlagRect.height / 2 -
+                    (kickoffRect.top + kickoffRect.height / 2),
+                ),
+                Math.abs(
+                  awayFlagRect.top +
+                    awayFlagRect.height / 2 -
+                    (kickoffRect.top + kickoffRect.height / 2),
+                ),
+              )
+            : Number.POSITIVE_INFINITY,
+      };
+    });
+
+    expect(matchCardLayout.cardWidth).toBeLessThanOrEqual(390);
+    expect(matchCardLayout.teamNameDisplay).toBe("none");
+    expect(matchCardLayout.homeFlagWidth).toBeGreaterThan(0);
+    expect(matchCardLayout.awayFlagWidth).toBeGreaterThan(0);
+    expect(matchCardLayout.kickoffText).toMatch(/^\d{2}:\d{2}$|^FT$/);
+    expect(matchCardLayout.kickoffWidth).toBeGreaterThan(0);
+    expect(matchCardLayout.scoreRowHeight).toBeLessThanOrEqual(48);
+    expect(matchCardLayout.verticalCenterSpread).toBeLessThanOrEqual(2);
   });
 
   test("@smoke selects a venue from the map", async ({ page }) => {

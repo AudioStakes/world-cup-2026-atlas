@@ -12,7 +12,12 @@ export default defineConfig({
     globals: true,
     reporters: ["dot"],
     silent: "passed-only",
-    include: ["src/**/*.test.{ts,tsx}", "src/**/*.spec.{ts,tsx}"],
+    include: [
+      "src/**/*.test.{ts,tsx}",
+      "src/**/*.spec.{ts,tsx}",
+      "workers/**/*.test.{ts,tsx}",
+      "workers/**/*.spec.{ts,tsx}",
+    ],
     exclude: ["e2e/**", "node_modules/**", "dist/**"],
     setupFiles: "./src/test/setup.ts",
   },

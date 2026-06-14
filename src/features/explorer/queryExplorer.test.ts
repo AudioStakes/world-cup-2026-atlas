@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { appData } from "../../data/appData";
-import { countryId, groupCode, localDate, venueId } from "../../domain/ids";
+import { countryId, groupCode, localDate, matchId, venueId } from "../../domain/ids";
 import { createIndexes } from "../../indexes/createIndexes";
+import type { MatchResultsSnapshot } from "../../matchResults/types";
+import { browserLocalDisplayTimeZoneId } from "./displayTimeZone";
 import { queryExplorer } from "./queryExplorer";
 import type { NormalizedExplorerViewState } from "./types";
 
@@ -26,6 +28,7 @@ describe("queryExplorer", () => {
     expect(viewModel.header.title).toBe("World Cup 2026 Atlas");
     expect(viewModel.explorePanel.groupsAndTeams.groups).toHaveLength(12);
     expect(viewModel.explorePanel.dateSelector.months.length).toBeGreaterThan(0);
+    expect(viewModel.explorePanel.result.type).toBe("date");
     expect(viewModel.map.venueMarkers).toHaveLength(appData.venues.length);
   });
 
@@ -89,5 +92,73 @@ describe("queryExplorer", () => {
 
     const dallas = viewModel.map.venueMarkers.find((venue) => venue.venueId === venueId("dallas"));
     expect(dallas?.state).toBe("selected");
+  });
+
+  it("uses browser local time as a header display option", () => {
+    const viewModel = queryExplorer(
+      appData,
+      indexes,
+      createViewState({ selectedDate: localDate("2026-06-20") }),
+      null,
+      browserLocalDisplayTimeZoneId,
+      "Asia/Tokyo",
+    );
+
+    expect(viewModel.header.timeZoneSelector.selectedValue).toBe(browserLocalDisplayTimeZoneId);
+    expect(viewModel.header.statusItems[0]).toEqual({
+      key: "selectedTimeZone",
+      label: "Your local time · JST",
+    });
+    expect(viewModel.header.timeZoneSelector.options[0]).toEqual({
+      value: browserLocalDisplayTimeZoneId,
+      label: "Your local time",
+      detailLabel: "JST · Asia/Tokyo",
+    });
+    expect(viewModel.explorePanel.result.subtitle).toBe("4 matches · 02:00–13:00 · JST");
+  });
+
+  it("includes runtime match result snapshots in the result ViewModel", () => {
+    const snapshot: MatchResultsSnapshot = {
+      schemaVersion: 1,
+      provider: "api-football",
+      fetchedAt: "2026-06-14T22:00:00.000Z",
+      matches: [
+        {
+          matchId: matchId("match-011"),
+          provider: "api-football",
+          providerFixtureId: 1011,
+          status: "finished",
+          shortStatus: "FT",
+          elapsed: 90,
+          homeTeamId: countryId("ned"),
+          awayTeamId: countryId("jpn"),
+          homeScore: 2,
+          awayScore: 1,
+          kickoffAt: "2026-06-14T20:00:00.000Z",
+          updatedAt: "2026-06-14T22:00:00.000Z",
+        },
+      ],
+    };
+    const viewModel = queryExplorer(
+      appData,
+      indexes,
+      createViewState({ selectedGroupCode: groupCode("F") }),
+      null,
+      undefined,
+      null,
+      snapshot,
+    );
+    const resultMatch = viewModel.explorePanel.result.matches.find(
+      (match) => match.matchNumberLabel === "Match 11",
+    );
+
+    expect(resultMatch).toMatchObject({
+      homeScoreLabel: "2",
+      awayScoreLabel: "1",
+      scoreLineLabel: "2-1",
+      normalizedStatus: "finished",
+      shortStatusLabel: "FT",
+      statusLabel: "Full time",
+    });
   });
 });

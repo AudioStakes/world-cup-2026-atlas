@@ -6,7 +6,8 @@ import type {
   SlotId,
   VenueId,
 } from "../../domain/ids";
-import type { MapPoint } from "../../domain/types";
+import type { MapPoint, MatchStatus } from "../../domain/types";
+import type { DisplayTimeZoneId } from "./displayTimeZone";
 
 export type ExplorerSelectionType = "country" | "group" | "date" | "venue";
 
@@ -52,6 +53,25 @@ export type ExplorerViewModel = {
 export type ExplorerHeaderViewModel = {
   readonly title: string;
   readonly subtitle: string;
+  readonly timeZoneSelector: HeaderTimeZoneSelectorViewModel;
+  readonly statusItems: readonly ExplorerHeaderStatusItemViewModel[];
+};
+
+export type ExplorerHeaderStatusItemViewModel = {
+  readonly key: "selectedTimeZone" | "dataSource";
+  readonly label: string;
+};
+
+export type HeaderTimeZoneSelectorViewModel = {
+  readonly label: string;
+  readonly selectedValue: DisplayTimeZoneId;
+  readonly options: readonly HeaderTimeZoneOptionViewModel[];
+};
+
+export type HeaderTimeZoneOptionViewModel = {
+  readonly value: DisplayTimeZoneId;
+  readonly label: string;
+  readonly detailLabel: string;
 };
 
 export type ExplorePanelViewModel = {
@@ -63,8 +83,8 @@ export type ExplorePanelViewModel = {
 };
 
 export type GroupsAndTeamsViewModel = {
-  readonly title: string;
   readonly groups: readonly GroupTeamCardViewModel[];
+  readonly tournamentRounds: readonly TournamentRoundViewModel[];
 };
 
 export type GroupTeamCardViewModel = {
@@ -88,6 +108,20 @@ export type GroupTeamRowViewModel = {
   readonly availability: FilterOptionAvailability;
 };
 
+export type TournamentRoundViewModel = {
+  readonly stageLabel: string;
+  readonly matchCountLabel: string;
+  readonly matches: readonly TournamentMatchViewModel[];
+};
+
+export type TournamentMatchViewModel = {
+  readonly matchId: MatchId;
+  readonly matchNumberLabel: string;
+  readonly dateLabel: string;
+  readonly venueLabel: string;
+  readonly matchupLabel: string;
+};
+
 export type DateSelectorViewModel = {
   readonly title: string;
   readonly months: readonly DateMonthViewModel[];
@@ -105,6 +139,7 @@ export type DateOptionViewModel = {
   readonly kickoffRangeLabel: string | null;
   readonly timeZoneSummaryLabel: string | null;
   readonly isSelected: boolean;
+  readonly isToday: boolean;
   readonly availability: FilterOptionAvailability;
   readonly hasFixture: boolean;
 };
@@ -116,10 +151,20 @@ export type ExplorerResultViewModel = {
   readonly icon: string;
   readonly title: string;
   readonly subtitle: string;
+  readonly matchCount: number;
+  readonly groupNavigation: ResultGroupNavigationViewModel | null;
   readonly details: ExplorerDetailViewModel | null;
   readonly emptyMessage: string | null;
   readonly matches: readonly MatchListItemViewModel[];
   readonly routeSummary: CountryRouteSummaryViewModel | null;
+};
+
+export type ResultGroupNavigationViewModel = {
+  readonly groupCode: GroupCode;
+  readonly label: string;
+  readonly trailingLabel: string;
+  readonly href: string;
+  readonly ariaLabel: string;
 };
 
 export type ExplorerDetailViewModel =
@@ -157,7 +202,11 @@ export type GroupDetailViewModel = {
 
 export type GroupStandingRowViewModel = {
   readonly countryId: CountryId | null;
+  readonly position: number;
   readonly teamLabel: string;
+  readonly teamPlainLabel: string;
+  readonly teamCodeLabel: string;
+  readonly teamFlagEmoji: string | null;
   readonly played: number;
   readonly won: number;
   readonly drawn: number;
@@ -166,23 +215,50 @@ export type GroupStandingRowViewModel = {
   readonly goalsAgainst: number;
   readonly goalDifferenceLabel: string;
   readonly points: number;
-  readonly matchSummary: string;
+  readonly form: readonly GroupStandingFormEntryViewModel[];
+};
+
+export type GroupStandingFormEntryViewModel = {
+  readonly result: "win" | "draw" | "loss" | "pending";
+  readonly label: string;
 };
 
 export type MatchListItemViewModel = {
   readonly matchId: MatchId;
   readonly matchNumberLabel: string;
   readonly stageLabel: string;
+  readonly stageMetaLabel: string;
+  readonly groupCode: GroupCode | null;
+  readonly groupLabel: string | null;
   readonly dateLabel: string;
+  readonly dateHeadingLabel: string;
+  readonly isInitialScrollTarget: boolean;
   readonly primaryText: string;
+  readonly homeTeam: MatchTeamViewModel;
+  readonly awayTeam: MatchTeamViewModel;
   readonly matchupText: string;
   readonly matchupAriaLabel: string;
+  readonly kickoffLabel: string;
+  readonly homeScoreLabel: string | null;
+  readonly awayScoreLabel: string | null;
+  readonly winningSide: "home" | "away" | null;
   readonly scoreLineLabel: string | null;
+  readonly normalizedStatus: MatchStatus;
+  readonly shortStatusLabel: string | null;
   readonly statusLabel: string;
   readonly secondaryText: string;
+  readonly fixtureMetaLabel: string;
   readonly venueId: VenueId;
   readonly venueLabel: string;
+  readonly venueFixtureLabel: string;
   readonly venueDetailLabel: string;
+};
+
+export type MatchTeamViewModel = {
+  readonly countryId: CountryId | null;
+  readonly flagEmoji: string | null;
+  readonly displayName: string;
+  readonly code: string | null;
 };
 
 export type CountryRouteSummaryViewModel = {

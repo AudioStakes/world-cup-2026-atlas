@@ -1,12 +1,20 @@
 import { useEffect, useMemo, useState } from "preact/hooks";
 import { appData } from "../data/appData";
 import type { VenueId } from "../domain/ids";
+import {
+  browserLocalDisplayTimeZoneId,
+  type DisplayTimeZoneId,
+  getBrowserLocalTimeZone,
+  venueLocalDisplayTimeZoneId,
+} from "../features/explorer/displayTimeZone";
 import { queryExplorer } from "../features/explorer/queryExplorer";
 import { resolveInitialExplorerViewState } from "../features/explorer/resolveInitialExplorerViewState";
 import { serializeExplorerSearchParams } from "../features/explorer/serializeExplorerSearchParams";
 import type { ExplorerAction, NormalizedExplorerViewState } from "../features/explorer/types";
 import { updateExplorerViewState } from "../features/explorer/updateExplorerViewState";
 import { createIndexes } from "../indexes/createIndexes";
+import { parseMatchResultsSnapshot } from "../matchResults/parseMatchResultsSnapshot";
+import type { MatchResultsSnapshot } from "../matchResults/types";
 import { ExplorerPage } from "../ui/components/ExplorerPage";
 
 const indexes = createIndexes(appData);
@@ -16,10 +24,26 @@ export function App() {
     resolveInitialExplorerViewState(getInitialSearchParams(), indexes),
   );
   const [focusedVenueId, setFocusedVenueId] = useState<VenueId | null>(null);
+  const [browserLocalTimeZone] = useState<string | null>(() => getBrowserLocalTimeZone());
+  const [displayTimeZoneId, setDisplayTimeZoneId] = useState<DisplayTimeZoneId>(() =>
+    browserLocalTimeZone ? browserLocalDisplayTimeZoneId : venueLocalDisplayTimeZoneId,
+  );
+  const [matchResultsSnapshot, setMatchResultsSnapshot] = useState<MatchResultsSnapshot | null>(
+    null,
+  );
 
   const viewModel = useMemo(
-    () => queryExplorer(appData, indexes, viewState, focusedVenueId),
-    [focusedVenueId, viewState],
+    () =>
+      queryExplorer(
+        appData,
+        indexes,
+        viewState,
+        focusedVenueId,
+        displayTimeZoneId,
+        browserLocalTimeZone,
+        matchResultsSnapshot,
+      ),
+    [browserLocalTimeZone, displayTimeZoneId, focusedVenueId, matchResultsSnapshot, viewState],
   );
 
   useEffect(() => {
@@ -35,8 +59,29 @@ export function App() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
+  useEffect(() => {
+    if (typeof fetch !== "function") {
+      return;
+    }
+
+    const abortController = new AbortController();
+
+    void fetchMatchResultsSnapshot(abortController.signal).then((snapshot) => {
+      if (!abortController.signal.aborted) {
+        setMatchResultsSnapshot(snapshot);
+      }
+    });
+
+    return () => abortController.abort();
+  }, []);
+
   function dispatchExplorerAction(action: ExplorerAction): void {
     const nextViewState = updateExplorerViewState(appData, indexes, viewState, action);
+
+    if (isSameExplorerViewState(viewState, nextViewState)) {
+      return;
+    }
+
     setViewState(nextViewState);
     setFocusedVenueId(null);
     syncBrowserUrl(nextViewState, "push");
@@ -47,7 +92,43 @@ export function App() {
       viewModel={viewModel}
       onAction={dispatchExplorerAction}
       onMatchVenueFocusChange={setFocusedVenueId}
+      onTimeZoneChange={setDisplayTimeZoneId}
     />
+  );
+}
+
+async function fetchMatchResultsSnapshot(
+  signal: AbortSignal,
+): Promise<MatchResultsSnapshot | null> {
+  try {
+    const requestInit: RequestInit & { readonly priority?: "low" } = {
+      headers: { Accept: "application/json" },
+      priority: "low",
+      signal,
+    };
+    const response = await fetch("/api/results", {
+      ...requestInit,
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return parseMatchResultsSnapshot(await response.json());
+  } catch {
+    return null;
+  }
+}
+
+function isSameExplorerViewState(
+  left: NormalizedExplorerViewState,
+  right: NormalizedExplorerViewState,
+): boolean {
+  return (
+    left.selectedCountryId === right.selectedCountryId &&
+    left.selectedGroupCode === right.selectedGroupCode &&
+    left.selectedDate === right.selectedDate &&
+    left.selectedVenueId === right.selectedVenueId
   );
 }
 

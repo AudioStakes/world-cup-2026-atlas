@@ -4,6 +4,7 @@ import {
   getMatchCountryIds,
   getOpponentCountryId,
   getParticipantCountryId,
+  getParticipantSlotId,
 } from "../../data/matchParticipants";
 import type { CountryId, GroupCode } from "../../domain/ids";
 import type {
@@ -11,14 +12,23 @@ import type {
   Country,
   HostCountryCode,
   Match,
+  MatchResult,
   SlotEntry,
   TournamentStage,
   Venue,
 } from "../../domain/types";
 import type { Indexes } from "../../indexes/createIndexes";
 import {
+  createMatchDisplayDateTime,
+  type DisplayTimeZoneId,
+  type DisplayTimeZonePreference,
+  resolveDisplayTimeZonePreference,
+  venueLocalDisplayTimeZoneId,
+} from "./displayTimeZone";
+import {
   formatDateLabel,
   formatDistanceLabel,
+  formatFullDateHeadingLabel,
   formatWeekdayDateLabel,
   getRequiredCountry,
 } from "./formatExplorerLabels";
@@ -27,9 +37,12 @@ import type {
   ExplorerDetailViewModel,
   ExplorerResultType,
   ExplorerResultViewModel,
+  GroupStandingFormEntryViewModel,
   GroupStandingRowViewModel,
   MatchListItemViewModel,
+  MatchTeamViewModel,
   NormalizedExplorerViewState,
+  ResultGroupNavigationViewModel,
 } from "./types";
 
 const timeZoneDisplayOrder = ["PT", "MT", "CT", "ET"] as const;
@@ -39,8 +52,15 @@ export function createResultViewModel(
   indexes: Indexes,
   viewState: NormalizedExplorerViewState,
   matchingMatches: readonly Match[],
+  displayTimeZoneId: DisplayTimeZoneId = venueLocalDisplayTimeZoneId,
+  browserLocalTimeZone: string | null = null,
 ): ExplorerResultViewModel {
   const resultType = deriveResultType(viewState);
+  const displayTimeZone = resolveDisplayTimeZonePreference(
+    data.countries,
+    displayTimeZoneId,
+    browserLocalTimeZone,
+  );
 
   if (resultType === "empty") {
     return {
@@ -48,6 +68,8 @@ export function createResultViewModel(
       icon: "🧭",
       title: "Start exploring",
       subtitle: "",
+      matchCount: 0,
+      groupNavigation: null,
       details: null,
       emptyMessage: "Select a group, team, date, or venue pin to see matching fixtures here.",
       matches: [],
@@ -55,21 +77,81 @@ export function createResultViewModel(
     };
   }
 
-  const title = createResultTitle(indexes, viewState, matchingMatches, resultType);
+  const title = createResultTitle(indexes, viewState, matchingMatches, resultType, displayTimeZone);
 
   return {
     type: resultType,
     icon: title.icon,
     title: title.title,
     subtitle: title.subtitle,
+    matchCount: matchingMatches.length,
+    groupNavigation: title.groupNavigation,
     details: createDetails(data, indexes, viewState, matchingMatches, resultType),
     emptyMessage:
       matchingMatches.length === 0 ? "No matches found for the current selection." : null,
-    matches: matchingMatches.map((match) => createMatchListItem(indexes, viewState, match)),
+    matches: createResultMatches(
+      data,
+      indexes,
+      viewState,
+      matchingMatches,
+      resultType,
+      displayTimeZone,
+    ),
     routeSummary: shouldShowCountryRouteSummary(resultType, viewState)
       ? createCountryRouteSummary(data, indexes, viewState.selectedCountryId)
       : null,
   };
+}
+
+function createResultMatches(
+  data: AppData,
+  indexes: Indexes,
+  viewState: NormalizedExplorerViewState,
+  matchingMatches: readonly Match[],
+  resultType: ExplorerResultType,
+  displayTimeZone: DisplayTimeZonePreference,
+): readonly MatchListItemViewModel[] {
+  const matches = createDisplayMatches(
+    data,
+    indexes,
+    viewState,
+    matchingMatches,
+    resultType,
+    displayTimeZone,
+  );
+  const initialScrollTargetMatchId =
+    resultType === "date" && viewState.selectedDate
+      ? (matches.find((match) => match.date === viewState.selectedDate)?.id ?? null)
+      : null;
+
+  return matches.map((match) =>
+    createMatchListItem(
+      indexes,
+      viewState,
+      match,
+      displayTimeZone,
+      match.id === initialScrollTargetMatchId,
+    ),
+  );
+}
+
+function createDisplayMatches(
+  data: AppData,
+  indexes: Indexes,
+  viewState: NormalizedExplorerViewState,
+  matchingMatches: readonly Match[],
+  resultType: ExplorerResultType,
+  displayTimeZone: DisplayTimeZonePreference,
+): readonly Match[] {
+  if (resultType !== "date" || !viewState.selectedDate) {
+    return matchingMatches;
+  }
+
+  if (matchingMatches.length === 0) {
+    return [];
+  }
+
+  return sortMatchesChronologically(data.matches, indexes, displayTimeZone);
 }
 
 function shouldShowCountryRouteSummary(
@@ -97,6 +179,7 @@ type ResultTitle = {
   readonly icon: string;
   readonly title: string;
   readonly subtitle: string;
+  readonly groupNavigation: ResultGroupNavigationViewModel | null;
 };
 
 function createResultTitle(
@@ -104,6 +187,7 @@ function createResultTitle(
   viewState: NormalizedExplorerViewState,
   matchingMatches: readonly Match[],
   resultType: ExplorerResultType,
+  displayTimeZone: DisplayTimeZonePreference,
 ): ResultTitle {
   if (resultType === "country" && viewState.selectedCountryId) {
     const country = getRequiredCountry(indexes, viewState.selectedCountryId);
@@ -113,6 +197,7 @@ function createResultTitle(
       icon: country.flagEmoji,
       title: country.name,
       subtitle: createCountrySubtitle(country, groupCode),
+      groupNavigation: createCountryGroupNavigation(country, groupCode),
     };
   }
 
@@ -122,6 +207,7 @@ function createResultTitle(
       icon: "📍",
       title: venue.name,
       subtitle: createVenueSubtitle(venue),
+      groupNavigation: null,
     };
   }
 
@@ -129,7 +215,8 @@ function createResultTitle(
     return {
       icon: "📅",
       title: formatDateLabel(viewState.selectedDate),
-      subtitle: createDateSubtitle(indexes, matchingMatches),
+      subtitle: createDateSubtitle(indexes, matchingMatches, displayTimeZone),
+      groupNavigation: null,
     };
   }
 
@@ -138,16 +225,36 @@ function createResultTitle(
       icon: "●",
       title: `Group ${viewState.selectedGroupCode}`,
       subtitle: createGroupSubtitle(indexes, viewState.selectedGroupCode, matchingMatches.length),
+      groupNavigation: null,
     };
   }
 
-  return { icon: "🧭", title: "Start exploring", subtitle: "" };
+  return { icon: "🧭", title: "Start exploring", subtitle: "", groupNavigation: null };
 }
 
-function createCountrySubtitle(country: Country, groupCode: string | null): string {
+function createCountrySubtitle(country: Country, groupCode: GroupCode | null): string {
   const groupLabel = groupCode ? `Group ${groupCode}` : "Team";
 
   return `${groupLabel} · ${country.fifaCode} · ${country.confederation}`;
+}
+
+function createCountryGroupNavigation(
+  country: Country,
+  groupCode: GroupCode | null,
+): ResultGroupNavigationViewModel | null {
+  if (!groupCode) {
+    return null;
+  }
+
+  const label = `Group ${groupCode}`;
+
+  return {
+    groupCode,
+    label,
+    trailingLabel: `${country.fifaCode} · ${country.confederation}`,
+    href: `?group=${encodeURIComponent(groupCode)}`,
+    ariaLabel: `Show ${label} details`,
+  };
 }
 
 function createGroupSubtitle(indexes: Indexes, groupCode: GroupCode, matchCount: number): string {
@@ -168,23 +275,31 @@ function getGroupSlotEntries(indexes: Indexes, groupCode: GroupCode): readonly S
     .sort((left, right) => left.slotIndex - right.slotIndex);
 }
 
-function createDateSubtitle(indexes: Indexes, matches: readonly Match[]): string {
+function createDateSubtitle(
+  indexes: Indexes,
+  matches: readonly Match[],
+  displayTimeZone: DisplayTimeZonePreference,
+): string {
   const matchCountLabel = matches.length === 1 ? "1 match" : `${matches.length} matches`;
-  const kickoffRangeLabel = createKickoffRangeLabel(matches);
-  const timeZoneSummaryLabel = createTimeZoneSummaryLabel(indexes, matches);
+  const kickoffRangeLabel = createKickoffRangeLabel(indexes, matches, displayTimeZone);
+  const timeZoneSummaryLabel = createTimeZoneSummaryLabel(indexes, matches, displayTimeZone);
 
   return [matchCountLabel, kickoffRangeLabel, timeZoneSummaryLabel].filter(Boolean).join(" · ");
 }
 
-function createKickoffRangeLabel(matches: readonly Match[]): string | null {
+function createKickoffRangeLabel(
+  indexes: Indexes,
+  matches: readonly Match[],
+  displayTimeZone: DisplayTimeZonePreference,
+): string | null {
   if (matches.length === 0) {
     return null;
   }
 
   const kickoffTimes = matches
-    .map((match) => match.kickoffLocal)
-    .slice()
-    .sort();
+    .map((match) => createDisplayDateTime(indexes, match, displayTimeZone))
+    .sort((left, right) => left.instantMs - right.instantMs)
+    .map((dateTime) => dateTime.timeLabel);
 
   const firstKickoff = kickoffTimes[0];
   const lastKickoff = kickoffTimes.at(-1);
@@ -196,9 +311,17 @@ function createKickoffRangeLabel(matches: readonly Match[]): string | null {
   return firstKickoff === lastKickoff ? firstKickoff : `${firstKickoff}–${lastKickoff}`;
 }
 
-function createTimeZoneSummaryLabel(indexes: Indexes, matches: readonly Match[]): string | null {
+function createTimeZoneSummaryLabel(
+  indexes: Indexes,
+  matches: readonly Match[],
+  displayTimeZone: DisplayTimeZonePreference,
+): string | null {
   if (matches.length === 0) {
     return null;
+  }
+
+  if (displayTimeZone.type === "country" || displayTimeZone.type === "browserLocal") {
+    return displayTimeZone.abbreviation;
   }
 
   const timeZoneAbbreviations = new Set(
@@ -226,6 +349,10 @@ function createVenueDetailLabel(venue: Venue): string {
   return `${venue.stadiumName} · ${createVenueCityLabel(venue)} · ${venue.timeZone.abbreviation}`;
 }
 
+function createVenueFixtureLabel(venue: Venue): string {
+  return `${venue.stadiumName} (${venue.name})`;
+}
+
 function createVenueCityLabel(venue: Venue): string {
   return `${venue.city}, ${formatHostCountryCode(venue.countryCode)}`;
 }
@@ -245,24 +372,71 @@ function createMatchListItem(
   indexes: Indexes,
   viewState: NormalizedExplorerViewState,
   match: Match,
+  displayTimeZone: DisplayTimeZonePreference,
+  isInitialScrollTarget = false,
 ): MatchListItemViewModel {
   const venue = getRequiredVenue(indexes, match.venueId);
+  const displayDateTime = createMatchDisplayDateTime(match, venue, displayTimeZone);
+  const score = createScoreLabels(match.result);
+  const statusLabel = createMatchStatusLabel(match.result);
 
   return {
     matchId: match.id,
     matchNumberLabel: `Match ${match.matchNumber}`,
     stageLabel: formatStageLabel(match),
-    dateLabel: formatWeekdayDateLabel(match.date),
+    stageMetaLabel: createMatchStageMetaLabel(match),
+    groupCode: getMatchGroupCode(match),
+    groupLabel: getMatchGroupCode(match) ? formatStageLabel(match) : null,
+    dateLabel: formatWeekdayDateLabel(displayDateTime.date),
+    dateHeadingLabel: formatFullDateHeadingLabel(displayDateTime.date),
+    isInitialScrollTarget,
     primaryText: createMatchPrimaryText(indexes, viewState, match),
+    homeTeam: createMatchTeam(indexes, match.homeParticipant),
+    awayTeam: createMatchTeam(indexes, match.awayParticipant),
     matchupText: createMatchupText(indexes, match),
     matchupAriaLabel: createMatchupAriaLabel(indexes, match),
+    kickoffLabel: displayDateTime.timeLabel,
+    homeScoreLabel: score?.homeScoreLabel ?? null,
+    awayScoreLabel: score?.awayScoreLabel ?? null,
+    winningSide: createWinningSide(match),
     scoreLineLabel: createScoreLineLabel(match),
-    statusLabel: match.result ? "Full time" : "Scheduled",
-    secondaryText: `${match.kickoffLocal} ${venue.timeZone.abbreviation}`,
+    normalizedStatus: match.result?.status ?? "scheduled",
+    shortStatusLabel: match.result?.shortStatus ?? null,
+    statusLabel,
+    secondaryText: `${displayDateTime.timeLabel} ${displayDateTime.timeZoneLabel}`,
+    fixtureMetaLabel: createFixtureMetaLabel(match, venue),
     venueId: venue.id,
     venueLabel: venue.name,
+    venueFixtureLabel: createVenueFixtureLabel(venue),
     venueDetailLabel: createVenueDetailLabel(venue),
   };
+}
+
+function sortMatchesChronologically(
+  matches: readonly Match[],
+  indexes: Indexes,
+  displayTimeZone: DisplayTimeZonePreference,
+): readonly Match[] {
+  return matches
+    .slice()
+    .sort(
+      (left, right) =>
+        createDisplayDateTime(indexes, left, displayTimeZone).instantMs -
+          createDisplayDateTime(indexes, right, displayTimeZone).instantMs ||
+        left.matchNumber - right.matchNumber,
+    );
+}
+
+function createDisplayDateTime(
+  indexes: Indexes,
+  match: Match,
+  displayTimeZone: DisplayTimeZonePreference,
+) {
+  return createMatchDisplayDateTime(
+    match,
+    getRequiredVenue(indexes, match.venueId),
+    displayTimeZone,
+  );
 }
 
 function createDetails(
@@ -289,17 +463,7 @@ function createDetails(
   }
 
   if (resultType === "date" && viewState.selectedDate) {
-    return {
-      type: "date",
-      metrics: [
-        { label: "Matches", value: formatCount(matchingMatches.length, "match") },
-        { label: "Kickoff window", value: createKickoffRangeLabel(matchingMatches) ?? "Rest day" },
-        {
-          label: "Time zones",
-          value: createTimeZoneSummaryLabel(indexes, matchingMatches) ?? "None",
-        },
-      ],
-    };
+    return null;
   }
 
   if (resultType === "venue" && viewState.selectedVenueId) {
@@ -339,11 +503,58 @@ function createFifaRankingLabel(country: Country): string {
 }
 
 function createScoreLineLabel(match: Match): string | null {
-  if (!match.result) {
+  const score = createScoreLabels(match.result);
+
+  if (!score) {
     return null;
   }
 
-  return `${match.result.homeGoals}-${match.result.awayGoals}`;
+  return `${score.homeScoreLabel}-${score.awayScoreLabel}`;
+}
+
+function createScoreLabels(
+  result: MatchResult | undefined,
+): { readonly homeScoreLabel: string; readonly awayScoreLabel: string } | null {
+  if (!result || typeof result.homeGoals !== "number" || typeof result.awayGoals !== "number") {
+    return null;
+  }
+
+  return {
+    homeScoreLabel: String(result.homeGoals),
+    awayScoreLabel: String(result.awayGoals),
+  };
+}
+
+function createMatchStatusLabel(result: MatchResult | undefined): string {
+  switch (result?.status ?? "scheduled") {
+    case "scheduled":
+      return "Scheduled";
+    case "live":
+      return "Live";
+    case "finished":
+      return "Full time";
+    case "postponed":
+      return "Postponed";
+    case "cancelled":
+      return "Cancelled";
+    case "suspended":
+      return "Suspended";
+    case "abandoned":
+      return "Abandoned";
+    case "unknown":
+      return "Status unknown";
+  }
+}
+
+function hasFinishedScore(result: MatchResult | undefined): result is MatchResult & {
+  readonly homeGoals: number;
+  readonly awayGoals: number;
+} {
+  return (
+    result?.status === "finished" &&
+    typeof result.homeGoals === "number" &&
+    typeof result.awayGoals === "number"
+  );
 }
 
 function createGroupStandings(
@@ -358,6 +569,9 @@ function createGroupStandings(
     return {
       countryId: country?.id ?? null,
       teamLabel: country ? `${country.flagEmoji} ${country.name}` : slotEntry.slotId,
+      teamPlainLabel: country?.name ?? slotEntry.slotId,
+      teamCodeLabel: country?.fifaCode ?? slotEntry.slotId,
+      teamFlagEmoji: country?.flagEmoji ?? null,
       played: 0,
       won: 0,
       drawn: 0,
@@ -365,7 +579,7 @@ function createGroupStandings(
       goalsFor: 0,
       goalsAgainst: 0,
       points: 0,
-      matchSummary: createTeamFixtureSummary(data, indexes, groupCode, country?.id ?? null),
+      form: createTeamForm(data, groupCode, slotEntry),
     };
   });
   const rowsByCountryId = new Map(
@@ -382,7 +596,7 @@ function createGroupStandings(
     }
 
     const result = match.result;
-    if (!result) {
+    if (!hasFinishedScore(result)) {
       continue;
     }
 
@@ -400,18 +614,26 @@ function createGroupStandings(
   }
 
   return rows
-    .map((row) => ({
-      ...row,
-      goalDifferenceLabel: formatGoalDifference(row.goalsFor - row.goalsAgainst),
-    }))
+    .map((row) => {
+      const goalDifference = row.goalsFor - row.goalsAgainst;
+
+      return {
+        ...row,
+        goalDifference,
+        goalDifferenceLabel: formatGoalDifference(goalDifference),
+      };
+    })
     .sort(
       (left, right) =>
         right.points - left.points ||
-        Number.parseInt(right.goalDifferenceLabel, 10) -
-          Number.parseInt(left.goalDifferenceLabel, 10) ||
+        right.goalDifference - left.goalDifference ||
         right.goalsFor - left.goalsFor ||
         left.teamLabel.localeCompare(right.teamLabel),
-    );
+    )
+    .map(({ goalDifference: _goalDifference, ...row }, index) => ({
+      ...row,
+      position: index + 1,
+    }));
 }
 
 function applyGroupResult(
@@ -442,36 +664,75 @@ function applyGroupResult(
   }
 }
 
-function createTeamFixtureSummary(
+function createTeamForm(
   data: AppData,
-  indexes: Indexes,
   groupCode: GroupCode,
-  countryId: CountryId | null,
-): string {
-  if (!countryId) {
-    return "TBD";
-  }
-
-  const summaries = data.matches
+  slotEntry: SlotEntry,
+): readonly GroupStandingFormEntryViewModel[] {
+  return data.matches
     .filter(
       (match) =>
         match.stage === "group" &&
         "groupCode" in match &&
         match.groupCode === groupCode &&
-        getMatchCountryIds(match).includes(countryId),
+        isMatchForGroupSlot(match, slotEntry),
     )
     .sort(
       (left, right) => left.date.localeCompare(right.date) || left.matchNumber - right.matchNumber,
     )
-    .map((match) => {
-      const opponentId = getOpponentCountryId(match, countryId);
-      const opponent = opponentId ? indexes.countriesById.get(opponentId) : null;
-      const resultLabel = createScoreLineLabel(match) ?? "scheduled";
+    .map(
+      (match): GroupStandingFormEntryViewModel => createTeamFormEntry(match, slotEntry.countryId),
+    );
+}
 
-      return opponent ? `${opponent.fifaCode} ${resultLabel}` : resultLabel;
-    });
+function isMatchForGroupSlot(match: Match, slotEntry: SlotEntry): boolean {
+  if (slotEntry.countryId && getMatchCountryIds(match).includes(slotEntry.countryId)) {
+    return true;
+  }
 
-  return summaries.length > 0 ? summaries.join(" · ") : "No fixtures";
+  return (
+    getParticipantSlotId(match.homeParticipant) === slotEntry.slotId ||
+    getParticipantSlotId(match.awayParticipant) === slotEntry.slotId
+  );
+}
+
+function createTeamFormEntry(
+  match: Match,
+  countryId: CountryId | undefined,
+): GroupStandingFormEntryViewModel {
+  const result = match.result;
+
+  if (!countryId || !hasFinishedScore(result)) {
+    return {
+      result: "pending",
+      label: "Fixture pending",
+    };
+  }
+
+  const homeCountryId = getParticipantCountryId(match.homeParticipant);
+  const isHome = homeCountryId === countryId;
+  const goalsFor = isHome ? result.homeGoals : result.awayGoals;
+  const goalsAgainst = isHome ? result.awayGoals : result.homeGoals;
+  const scoreLabel = `${goalsFor}-${goalsAgainst}`;
+
+  if (goalsFor > goalsAgainst) {
+    return {
+      result: "win",
+      label: `Win ${scoreLabel}`,
+    };
+  }
+
+  if (goalsFor < goalsAgainst) {
+    return {
+      result: "loss",
+      label: `Loss ${scoreLabel}`,
+    };
+  }
+
+  return {
+    result: "draw",
+    label: `Draw ${scoreLabel}`,
+  };
 }
 
 function formatGoalDifference(goalDifference: number): string {
@@ -488,6 +749,16 @@ function formatStageLabel(match: Match): string {
   }
 
   return formatTournamentStageLabel(match.stage);
+}
+
+function createMatchStageMetaLabel(match: Match): string {
+  return getMatchGroupCode(match) ? "First Stage" : formatStageLabel(match);
+}
+
+function getMatchGroupCode(match: Match): GroupCode | null {
+  return match.stage === "group" && "groupCode" in match && match.groupCode
+    ? match.groupCode
+    : null;
 }
 
 function formatTournamentStageLabel(stage: TournamentStage): string {
@@ -517,10 +788,50 @@ function createMatchupText(indexes: Indexes, match: Match): string {
 }
 
 function createMatchupAriaLabel(indexes: Indexes, match: Match): string {
-  return `${formatParticipant(indexes, match.homeParticipant)} vs ${formatParticipant(
+  return `${formatParticipantPlain(indexes, match.homeParticipant)} vs ${formatParticipantPlain(
     indexes,
     match.awayParticipant,
   )}`;
+}
+
+function createMatchTeam(
+  indexes: Indexes,
+  participant: Match["homeParticipant"],
+): MatchTeamViewModel {
+  const countryId = getParticipantCountryId(participant);
+  const country = getMatchCountry(indexes, countryId ?? undefined);
+
+  if (country) {
+    return {
+      countryId: country.id,
+      flagEmoji: country.flagEmoji,
+      displayName: country.shortName,
+      code: country.fifaCode,
+    };
+  }
+
+  return {
+    countryId: null,
+    flagEmoji: null,
+    displayName: formatParticipantLabel(participant),
+    code: null,
+  };
+}
+
+function createFixtureMetaLabel(match: Match, venue: Venue): string {
+  if (match.stage === "group") {
+    return `First Stage · ${formatStageLabel(match)} · ${createVenueFixtureLabel(venue)}`;
+  }
+
+  return `${formatStageLabel(match)} · ${createVenueFixtureLabel(venue)}`;
+}
+
+function createWinningSide(match: Match): "home" | "away" | null {
+  if (!hasFinishedScore(match.result) || match.result.homeGoals === match.result.awayGoals) {
+    return null;
+  }
+
+  return match.result.homeGoals > match.result.awayGoals ? "home" : "away";
 }
 
 function formatParticipantCompact(indexes: Indexes, participant: Match["homeParticipant"]): string {
@@ -559,6 +870,17 @@ function formatParticipant(indexes: Indexes, participant: Match["homeParticipant
 
   if (country) {
     return `${country.flagEmoji} ${country.name}`;
+  }
+
+  return formatParticipantLabel(participant);
+}
+
+function formatParticipantPlain(indexes: Indexes, participant: Match["homeParticipant"]): string {
+  const countryId = getParticipantCountryId(participant);
+  const country = getMatchCountry(indexes, countryId ?? undefined);
+
+  if (country) {
+    return country.name;
   }
 
   return formatParticipantLabel(participant);
@@ -670,7 +992,7 @@ function formatCount(count: number, noun: "match" | "venue"): string {
   return `${count} ${count === 1 ? "venue" : "venues"}`;
 }
 
-function findCountryGroupCode(indexes: Indexes, countryId: CountryId): string | null {
+function findCountryGroupCode(indexes: Indexes, countryId: CountryId): GroupCode | null {
   for (const slotEntry of indexes.slotEntriesBySlotId.values()) {
     if (slotEntry.countryId === countryId) {
       return slotEntry.groupCode;

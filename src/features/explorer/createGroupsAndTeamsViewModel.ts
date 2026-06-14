@@ -1,13 +1,25 @@
-import { getMatchCountryIds } from "../../data/matchParticipants";
+import { formatParticipantLabel, getMatchCountryIds } from "../../data/matchParticipants";
 import type { CountryId, GroupCode } from "../../domain/ids";
-import type { AppData, Country, Match } from "../../domain/types";
+import type { AppData, Country, Match, TournamentStage } from "../../domain/types";
 import type { Indexes } from "../../indexes/createIndexes";
 import { queryMatchesByViewState } from "../../queries/queryMatchesByViewState";
+import { formatDateLabel } from "./formatExplorerLabels";
 import type {
   FilterOptionAvailability,
   GroupsAndTeamsViewModel,
   NormalizedExplorerViewState,
+  TournamentMatchViewModel,
+  TournamentRoundViewModel,
 } from "./types";
+
+const knockoutStageOrder: readonly TournamentStage[] = [
+  "roundOf32",
+  "roundOf16",
+  "quarterFinal",
+  "semiFinal",
+  "thirdPlace",
+  "final",
+];
 
 export function createGroupsAndTeamsViewModel(
   data: AppData,
@@ -18,7 +30,6 @@ export function createGroupsAndTeamsViewModel(
   const hasAnySelection = hasSelection(viewState);
 
   return {
-    title: "Groups & Teams",
     groups: data.groups.map((group) => {
       const isSelected = viewState.selectedGroupCode === group.code;
       const hasHit = hitSets.groupCodes.has(group.code);
@@ -64,7 +75,66 @@ export function createGroupsAndTeamsViewModel(
         }),
       };
     }),
+    tournamentRounds: createTournamentRounds(data, indexes),
   };
+}
+
+function createTournamentRounds(
+  data: AppData,
+  indexes: Indexes,
+): readonly TournamentRoundViewModel[] {
+  return knockoutStageOrder.flatMap((stage) => {
+    const matches = data.matches
+      .filter((match) => match.stage === stage)
+      .slice()
+      .sort(
+        (left, right) =>
+          left.date.localeCompare(right.date) || left.matchNumber - right.matchNumber,
+      );
+
+    if (matches.length === 0) {
+      return [];
+    }
+
+    return [
+      {
+        stageLabel: formatTournamentStageLabel(stage),
+        matchCountLabel: `${matches.length} ${matches.length === 1 ? "match" : "matches"}`,
+        matches: matches.map((match) => createTournamentMatch(match, indexes)),
+      },
+    ];
+  });
+}
+
+function createTournamentMatch(match: Match, indexes: Indexes): TournamentMatchViewModel {
+  return {
+    matchId: match.id,
+    matchNumberLabel: `Match ${match.matchNumber}`,
+    dateLabel: formatDateLabel(match.date),
+    venueLabel: indexes.venuesById.get(match.venueId)?.name ?? "Venue TBD",
+    matchupLabel: `${formatParticipantLabel(match.homeParticipant)} vs ${formatParticipantLabel(
+      match.awayParticipant,
+    )}`,
+  };
+}
+
+function formatTournamentStageLabel(stage: TournamentStage): string {
+  switch (stage) {
+    case "group":
+      return "Group stage";
+    case "roundOf32":
+      return "Round of 32";
+    case "roundOf16":
+      return "Round of 16";
+    case "quarterFinal":
+      return "Quarter-finals";
+    case "semiFinal":
+      return "Semi-finals";
+    case "thirdPlace":
+      return "Third-place match";
+    case "final":
+      return "Final";
+  }
 }
 
 function createCountryMetaLabel(countryCode: string, country: Country | undefined): string {
