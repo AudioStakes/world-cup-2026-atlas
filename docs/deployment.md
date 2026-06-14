@@ -89,6 +89,12 @@ API-FOOTBALL fixture mappings after provider fixture ids are confirmed.
 The Worker cron is configured to run every five minutes. Provider calls are still guarded in code by
 the 20-minute interval, match polling window, and daily request budget.
 
+When using Wrangler to read or write production remote `RESULTS_KV`, include `--preview false`
+because `wrangler.toml` defines both production `id` and `preview_id`. Use `--preview` only for
+intentional preview namespace operations. If Wrangler reports
+`RESULTS_KV has both a namespace ID and a preview ID`, rerun the production KV command with
+`--preview false`.
+
 ## Cloudflare Worker deploy workflow
 
 The workflow is defined in:
@@ -174,7 +180,9 @@ consume API-FOOTBALL request count and write remote `RESULTS_KV`. When enabled, 
 Before the real provider request, `pnpm poll:live-results` writes a non-sensitive KV preflight value
 to `match-results/diagnostics/write-probe.json`. The Actions summary reports
 `KV write preflight: passed` or `KV write preflight: failed`. A failed preflight stops before
-API-FOOTBALL is called, so fix the KV write issue before running `run_provider_poll=true` again.
+API-FOOTBALL is called, so fix the KV write issue before running `run_provider_poll=true` again. The
+preflight also detects Wrangler production/preview namespace ambiguity before provider request count
+can be consumed.
 
 Diagnostics-only runs use `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` from GitHub repository
 secrets for Wrangler access. Provider poll runs also require `API_FOOTBALL_KEY` as a GitHub

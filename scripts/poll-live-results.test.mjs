@@ -138,8 +138,64 @@ describe("poll-live-results CLI", () => {
     expect(runWranglerCommand).toHaveBeenCalledWith(
       expect.arrayContaining(["put", KV_WRITE_PREFLIGHT_KEY]),
     );
+    expect(getKvCommands(runWranglerCommand).every(hasPreviewFalse)).toBe(true);
+  });
+
+  it("writes real-run remote KV values to the production namespace", async () => {
+    process.env.API_FOOTBALL_KEY = "test-api-football-secret";
+    const refreshResultsSnapshot = vi.fn(async ({ env }) => {
+      await env.RESULTS_KV.put("match-results/latest.json", "{}");
+    });
+    const server = createFakeViteServer({ refreshResultsSnapshot });
+    const runWranglerCommand = vi.fn((args) => {
+      if (args.includes("get")) {
+        const key = args[3];
+        return createWranglerResult({
+          ok: true,
+          stdout: key?.includes("request-count") ? "0" : "",
+        });
+      }
+
+      return createWranglerResult({ ok: true });
+    });
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await main(
+      [
+        "--remote-kv",
+        "--allow-provider-request",
+        "--write-kv",
+        "--now",
+        "2026-06-14T17:30:00.000Z",
+      ],
+      {
+        createViteServer: async () => server,
+        runWranglerCommand,
+      },
+    );
+
+    const putCommands = getKvCommands(runWranglerCommand).filter((args) => args.includes("put"));
+
+    expect(refreshResultsSnapshot).toHaveBeenCalledOnce();
+    expect(putCommands).toEqual([
+      expect.arrayContaining(["put", KV_WRITE_PREFLIGHT_KEY]),
+      expect.arrayContaining(["put", "match-results/latest.json"]),
+    ]);
+    expect(getKvCommands(runWranglerCommand).every(hasPreviewFalse)).toBe(true);
   });
 });
+
+function getKvCommands(runWranglerCommand) {
+  return runWranglerCommand.mock.calls
+    .map(([args]) => args)
+    .filter((args) => Array.isArray(args) && args[0] === "kv");
+}
+
+function hasPreviewFalse(args) {
+  const previewIndex = args.indexOf("--preview");
+
+  return previewIndex >= 0 && args[previewIndex + 1] === "false";
+}
 
 function createWranglerResult({
   ok,

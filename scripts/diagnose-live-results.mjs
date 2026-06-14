@@ -1,9 +1,13 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
 import { appendFileSync } from "node:fs";
+import {
+  createRemoteProductionKvGetArgs,
+  DEFAULT_WRANGLER_CONFIG,
+} from "./remote-production-kv-args.mjs";
 
 const DEFAULT_WORKER_URL = "https://world-cup-2026-atlas.audiostakes.workers.dev";
-const WRANGLER_CONFIG = "wrangler.toml";
+const WRANGLER_CONFIG = DEFAULT_WRANGLER_CONFIG;
 const KV_KEYS = [
   { label: "latest", key: "match-results/latest.json", type: "snapshot" },
   { label: "last-known-good", key: "match-results/last-known-good.json", type: "snapshot" },
@@ -219,18 +223,7 @@ function parseDeploymentList(stdout) {
 }
 
 function readKvText(key) {
-  const result = runWrangler([
-    "kv",
-    "key",
-    "get",
-    key,
-    "--binding",
-    "RESULTS_KV",
-    "--remote",
-    "--text",
-    "--config",
-    WRANGLER_CONFIG,
-  ]);
+  const result = runWrangler(createRemoteProductionKvGetArgs(key, { config: WRANGLER_CONFIG }));
 
   if (!result.ok) {
     return {
