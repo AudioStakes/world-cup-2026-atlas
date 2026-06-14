@@ -39,6 +39,68 @@ async function clickVenueControlCenter(page: Page, venueId: string) {
   await page.mouse.click(controlBox.x + controlBox.width / 2, controlBox.y + controlBox.height / 2);
 }
 
+async function openMobileFiltersIfNeeded(page: Page, viewportWidth: number) {
+  if (viewportWidth > 720) {
+    await page.getByRole("region", { name: "Group and Tournament" }).scrollIntoViewIfNeeded();
+    return;
+  }
+
+  await page.getByRole("button", { name: /Filters/ }).click();
+  await expect(page.locator("#group-filter-sheet")).toBeVisible();
+}
+
+async function openMobileMapIfNeeded(page: Page, viewportWidth: number) {
+  if (viewportWidth > 720) {
+    return;
+  }
+
+  await page.getByRole("button", { name: "Open map" }).click();
+  await expect(page.locator(".map-panel.is-map-expanded")).toBeVisible();
+}
+
+async function dispatchTouchGesture(
+  page: Page,
+  selector: string,
+  events: readonly {
+    readonly type: "touchend" | "touchmove" | "touchstart";
+    readonly touches: readonly { readonly id: number; readonly x: number; readonly y: number }[];
+  }[],
+) {
+  await page.locator(selector).evaluate((element, gestureEvents) => {
+    const target = element as HTMLElement;
+
+    const createTouch = (touch: { readonly id: number; readonly x: number; readonly y: number }) =>
+      new Touch({
+        clientX: touch.x,
+        clientY: touch.y,
+        force: 1,
+        identifier: touch.id,
+        pageX: touch.x,
+        pageY: touch.y,
+        radiusX: 1,
+        radiusY: 1,
+        rotationAngle: 0,
+        screenX: touch.x,
+        screenY: touch.y,
+        target,
+      });
+
+    for (const gestureEvent of gestureEvents) {
+      const touches = gestureEvent.touches.map(createTouch);
+
+      target.dispatchEvent(
+        new TouchEvent(gestureEvent.type, {
+          bubbles: true,
+          cancelable: true,
+          changedTouches: touches,
+          targetTouches: touches,
+          touches: gestureEvent.type === "touchend" ? [] : touches,
+        }),
+      );
+    }
+  }, events);
+}
+
 async function setBrowserToday(page: Page, dateIso: string) {
   await page.addInitScript((fixedNow) => {
     Date.now = () => new Date(fixedNow).getTime();
@@ -223,29 +285,17 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     for (const viewport of viewports) {
       await page.setViewportSize(viewport);
       await page.goto("/");
-      await page.getByRole("region", { name: "Group and Tournament" }).scrollIntoViewIfNeeded();
+      await openMobileFiltersIfNeeded(page, viewport.width);
 
       const flagVisibility = await page.evaluate(() => {
-        const viewport = {
-          bottom: window.innerHeight,
-          left: 0,
-          right: window.innerWidth,
-          top: 0,
-        };
         const flags = Array.from(document.querySelectorAll('[data-testid="group-team-flag"]'));
 
         return {
           hiddenFlags: flags.filter((flag) => {
             const rect = flag.getBoundingClientRect();
+            const style = getComputedStyle(flag);
 
-            return (
-              rect.width === 0 ||
-              rect.height === 0 ||
-              rect.left < viewport.left ||
-              rect.right > viewport.right ||
-              rect.top < viewport.top ||
-              rect.bottom > viewport.bottom
-            );
+            return rect.width === 0 || rect.height === 0 || style.visibility === "hidden";
           }).length,
           totalFlags: flags.length,
         };
@@ -277,9 +327,10 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     expect(targetSize.flagWidth).toBeGreaterThanOrEqual(24);
   });
 
-  test("@smoke keeps Groups & Teams compact when panels stack", async ({ page }) => {
-    await page.setViewportSize({ width: 596, height: 1451 });
+  test("@smoke expands mobile Groups & Teams into readable filter targets", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/?date=2026-06-20");
+    await openMobileFiltersIfNeeded(page, 390);
 
     const stackedLayout = await page.evaluate(() => {
       const section = document.querySelector<HTMLElement>('[data-testid="groups-section"]');
@@ -317,25 +368,63 @@ test.describe("World Cup 2026 Atlas explorer", () => {
         nameWidth: firstNameRect?.width ?? 0,
         rowCount: rowTops.size,
         sectionHeight: sectionRect?.height ?? 0,
+        sheetVisibility: document.querySelector("#group-filter-sheet")
+          ? getComputedStyle(document.querySelector("#group-filter-sheet") as HTMLElement)
+              .visibility
+          : "",
       };
     });
 
-    expect(stackedLayout.columns).toBe(3);
-    expect(stackedLayout.rowCount).toBeLessThanOrEqual(4);
+    expect(stackedLayout.columns).toBe(1);
+    expect(stackedLayout.rowCount).toBe(12);
     expect(stackedLayout.copyDisplay).toBe("block");
     expect(stackedLayout.nameWidth).toBeGreaterThan(0);
-    expect(stackedLayout.buttonHeight).toBeGreaterThanOrEqual(20);
-    expect(stackedLayout.buttonWidth).toBeGreaterThanOrEqual(40);
-    expect(stackedLayout.sectionHeight).toBeLessThanOrEqual(180);
+    expect(stackedLayout.buttonHeight).toBeGreaterThanOrEqual(44);
+    expect(stackedLayout.buttonWidth).toBeGreaterThanOrEqual(60);
+    expect(stackedLayout.sectionHeight).toBeLessThanOrEqual(90);
     expect(stackedLayout.flagCount).toBe(48);
     expect(stackedLayout.hiddenFlags).toBe(0);
+    expect(stackedLayout.sheetVisibility).toBe("visible");
+    await expect(
+      page.locator("#group-filter-sheet").getByText("South Africa", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.locator("#group-filter-sheet").getByText("Bosnia and Herzegovina", { exact: true }),
+    ).toBeVisible();
   });
 
-  test("@smoke keeps the narrow mobile dashboard within one viewport", async ({ page }) => {
+  test("@smoke dismisses mobile Groups & Teams sheet and returns focus", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/?date=2026-06-20");
+
+    const opener = page.getByRole("button", { name: /Filters/ });
+    const sheet = page.locator("#group-filter-sheet");
+
+    await opener.click();
+    await expect(page.getByRole("dialog", { name: "Teams and groups" })).toBeVisible();
+    await expect(sheet).toHaveAttribute("aria-modal", "true");
+    await expect(page.getByRole("button", { name: "Close", exact: true })).toBeFocused();
+
+    await page.keyboard.press("Escape");
+    await expect(sheet).toBeHidden();
+    await expect(opener).toBeFocused();
+
+    await opener.click();
+    await page.getByRole("button", { name: "Close", exact: true }).click();
+    await expect(sheet).toBeHidden();
+    await expect(opener).toBeFocused();
+
+    await opener.click();
+    await expect(sheet).toBeVisible();
+    await page.mouse.click(12, 12);
+    await expect(sheet).toBeHidden();
+  });
+
+  test("@smoke keeps the narrow mobile dashboard controlled and scrollable", async ({ page }) => {
     const viewports = [
-      { height: 1451, minMapHeight: 320, minResultsHeight: 520, width: 537 },
-      { height: 844, minMapHeight: 180, minResultsHeight: 300, width: 390 },
-      { height: 568, minMapHeight: 90, minResultsHeight: 190, width: 320 },
+      { height: 1451, minMapHeight: 176, minResultsHeight: 360, width: 537 },
+      { height: 844, minMapHeight: 176, minResultsHeight: 300, width: 390 },
+      { height: 568, minMapHeight: 176, minResultsHeight: 260, width: 320 },
     ];
 
     for (const viewport of viewports) {
@@ -362,31 +451,44 @@ test.describe("World Cup 2026 Atlas explorer", () => {
           header: rectFor(".atlas-header"),
           map: rectFor(".map-panel"),
           results: rectFor('[data-testid="result-card"]'),
+          summary: rectFor(".mobile-selection-summary"),
         };
-        const insideViewport = Object.values(regions).every(
+        const chromeInsideViewport = [
+          regions.header,
+          regions.dates,
+          regions.groups,
+          regions.summary,
+        ].every(
           (rect) => rect && rect.height > 0 && rect.top >= 0 && rect.bottom <= viewportBottom,
         );
         const scrollingElement = document.scrollingElement ?? document.documentElement;
 
         return {
+          bodyOverflowX:
+            document.documentElement.scrollWidth - document.documentElement.clientWidth,
           datesHeight: regions.dates?.height ?? 0,
           groupsHeight: regions.groups?.height ?? 0,
           headerHeight: regions.header?.height ?? 0,
-          insideViewport,
+          mapTop: regions.map?.top ?? 0,
+          chromeInsideViewport,
           mapHeight: regions.map?.height ?? 0,
           pageScrollHeight: scrollingElement.scrollHeight,
           resultsHeight: regions.results?.height ?? 0,
+          summaryHeight: regions.summary?.height ?? 0,
           viewportHeight: viewportBottom,
         };
       });
 
       expect(dashboard.headerHeight).toBeLessThanOrEqual(52);
       expect(dashboard.datesHeight).toBeLessThanOrEqual(110);
-      expect(dashboard.groupsHeight).toBeLessThanOrEqual(180);
+      expect(dashboard.groupsHeight).toBeLessThanOrEqual(90);
+      expect(dashboard.summaryHeight).toBeLessThanOrEqual(90);
       expect(dashboard.resultsHeight).toBeGreaterThanOrEqual(viewport.minResultsHeight);
       expect(dashboard.mapHeight).toBeGreaterThanOrEqual(viewport.minMapHeight);
-      expect(dashboard.insideViewport).toBe(true);
-      expect(dashboard.pageScrollHeight).toBeLessThanOrEqual(dashboard.viewportHeight);
+      expect(dashboard.chromeInsideViewport).toBe(true);
+      expect(dashboard.mapTop).toBeLessThanOrEqual(dashboard.viewportHeight + 180);
+      expect(dashboard.pageScrollHeight).toBeLessThanOrEqual(dashboard.viewportHeight + 360);
+      expect(dashboard.bodyOverflowX).toBe(0);
     }
   });
 
@@ -452,6 +554,7 @@ test.describe("World Cup 2026 Atlas explorer", () => {
         '[data-testid="match-card-kickoff"], [data-testid="match-card-score"]',
       );
       const teamName = card?.querySelector<HTMLElement>('[data-testid="match-card-team-name"]');
+      const teamCode = card?.querySelector<HTMLElement>('[class*="matchCardTeamCode"]');
       const homeFlagRect = homeFlag?.getBoundingClientRect();
       const awayFlagRect = awayFlag?.getBoundingClientRect();
       const kickoffRect = kickoff?.getBoundingClientRect();
@@ -464,6 +567,8 @@ test.describe("World Cup 2026 Atlas explorer", () => {
         kickoffText: kickoff?.textContent?.trim() ?? "",
         kickoffWidth: kickoffRect?.width ?? 0,
         scoreRowHeight: scoreRowRect?.height ?? 0,
+        teamCodeDisplay: teamCode ? getComputedStyle(teamCode).display : null,
+        teamCodeText: teamCode?.textContent?.trim() ?? "",
         teamNameDisplay: teamName ? getComputedStyle(teamName).display : null,
         verticalCenterSpread:
           homeFlagRect && awayFlagRect && kickoffRect
@@ -485,6 +590,8 @@ test.describe("World Cup 2026 Atlas explorer", () => {
 
     expect(matchCardLayout.cardWidth).toBeLessThanOrEqual(390);
     expect(matchCardLayout.teamNameDisplay).toBe("none");
+    expect(matchCardLayout.teamCodeDisplay).toBe("block");
+    expect(matchCardLayout.teamCodeText).toMatch(/^[A-Z0-9]{2,4}$/);
     expect(matchCardLayout.homeFlagWidth).toBeGreaterThan(0);
     expect(matchCardLayout.awayFlagWidth).toBeGreaterThan(0);
     expect(matchCardLayout.kickoffText).toMatch(/^\d{2}:\d{2}$|^FT$/);
@@ -505,6 +612,129 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     ).toBeVisible();
   });
 
+  test("@smoke opens the mobile map with legend and supports zoom and pan", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/?date=2026-06-14");
+
+    await openMobileMapIfNeeded(page, 390);
+
+    await expect(page.getByRole("dialog", { name: "Interactive map" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Close", exact: true })).toBeFocused();
+
+    const legend = page.locator(".map-legend");
+
+    await expect(legend.getByText("Selected venue", { exact: true })).toBeVisible();
+    await expect(legend.getByText("Venue with match", { exact: true })).toBeVisible();
+    await expect(legend.getByText("Other venue", { exact: true })).toBeVisible();
+    await expect(page.locator(".map-venue-detail")).toContainText("match");
+
+    const mapCanvas = page.locator(".map-panel.is-map-expanded .map-canvas");
+    const mapCanvasBox = await mapCanvas.boundingBox();
+
+    if (!mapCanvasBox) {
+      throw new Error("Expected expanded map canvas to be visible");
+    }
+
+    const beforeZoomViewBox = await page
+      .locator(".map-panel.is-map-expanded .map-svg")
+      .getAttribute("viewBox");
+
+    await page.mouse.move(
+      mapCanvasBox.x + mapCanvasBox.width * 0.25,
+      mapCanvasBox.y + mapCanvasBox.height * 0.3,
+    );
+    await page.mouse.wheel(0, -500);
+
+    const zoomedViewBox = await page
+      .locator(".map-panel.is-map-expanded .map-svg")
+      .getAttribute("viewBox");
+
+    await page.mouse.down();
+    await page.mouse.move(
+      mapCanvasBox.x + mapCanvasBox.width * 0.25 - 80,
+      mapCanvasBox.y + mapCanvasBox.height * 0.3 - 30,
+      { steps: 8 },
+    );
+    await page.mouse.up();
+
+    const pannedViewBox = await page
+      .locator(".map-panel.is-map-expanded .map-svg")
+      .getAttribute("viewBox");
+
+    expect(zoomedViewBox).not.toBe(beforeZoomViewBox);
+    expect(pannedViewBox).not.toBe(zoomedViewBox);
+
+    await page
+      .locator(".map-panel.is-map-expanded .venue-marker-control.is-highlighted")
+      .first()
+      .click();
+    await expect(page).toHaveURL(/venue=/);
+    await expect(page.locator(".map-venue-detail")).toContainText("Selected venue");
+
+    await page.keyboard.press("Escape");
+    await expect(page.locator(".map-panel.is-map-expanded")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Open map" })).toBeFocused();
+  });
+
+  test("@smoke supports mobile touch pinch zoom and pan on the expanded map", async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({
+      baseURL: "http://127.0.0.1:5173",
+      hasTouch: true,
+      isMobile: true,
+      viewport: { width: 390, height: 844 },
+    });
+    const page = await context.newPage();
+
+    await page.goto("/?date=2026-06-14");
+    await openMobileMapIfNeeded(page, 390);
+
+    const mapCanvas = page.locator(".map-panel.is-map-expanded .map-canvas");
+    const mapCanvasBox = await mapCanvas.boundingBox();
+
+    if (!mapCanvasBox) {
+      throw new Error("Expected expanded map canvas to be visible");
+    }
+
+    const svg = page.locator(".map-panel.is-map-expanded .map-svg");
+    const initialViewBox = await svg.getAttribute("viewBox");
+    const centerX = mapCanvasBox.x + mapCanvasBox.width / 2;
+    const centerY = mapCanvasBox.y + mapCanvasBox.height / 2;
+
+    await dispatchTouchGesture(page, ".map-panel.is-map-expanded .map-canvas", [
+      {
+        type: "touchstart",
+        touches: [
+          { id: 1, x: centerX - 24, y: centerY - 24 },
+          { id: 2, x: centerX + 24, y: centerY + 24 },
+        ],
+      },
+      {
+        type: "touchmove",
+        touches: [
+          { id: 1, x: centerX - 96, y: centerY - 96 },
+          { id: 2, x: centerX + 96, y: centerY + 96 },
+        ],
+      },
+      { type: "touchend", touches: [] },
+    ]);
+
+    await expect.poll(() => svg.getAttribute("viewBox")).not.toBe(initialViewBox);
+
+    const zoomedViewBox = await svg.getAttribute("viewBox");
+
+    await dispatchTouchGesture(page, ".map-panel.is-map-expanded .map-canvas", [
+      { type: "touchstart", touches: [{ id: 1, x: centerX, y: centerY }] },
+      { type: "touchmove", touches: [{ id: 1, x: centerX - 80, y: centerY - 40 }] },
+      { type: "touchend", touches: [] },
+    ]);
+
+    await expect.poll(() => svg.getAttribute("viewBox")).not.toBe(zoomedViewBox);
+
+    await context.close();
+  });
+
   test("@smoke keeps HTML venue controls aligned to SVG marker centers across resize changes", async ({
     page,
   }) => {
@@ -514,6 +744,7 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     await expectVenueMarkerAlignment(page, "dallas");
 
     await page.setViewportSize({ width: 430, height: 932 });
+    await openMobileMapIfNeeded(page, 430);
     await expectVenueMarkerAlignment(page, "dallas");
 
     await page.setViewportSize({ width: 932, height: 430 });
@@ -535,6 +766,7 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     for (const viewport of viewports) {
       await page.setViewportSize(viewport);
       await page.goto("/?country=bos");
+      await openMobileMapIfNeeded(page, viewport.width);
 
       for (const venueId of ["toronto", "boston", "new-york-new-jersey", "philadelphia"]) {
         await expectVenueMarkerAlignment(page, venueId);

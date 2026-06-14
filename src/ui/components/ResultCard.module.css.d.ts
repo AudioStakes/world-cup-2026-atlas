@@ -38,9 +38,11 @@ declare const styles: {
   readonly matchCardTeam: string;
   readonly matchCardTeamAway: string;
   readonly matchCardTeamButton: string;
+  readonly matchCardTeamCode: string;
   readonly matchCardTeamCopy: string;
   readonly matchCardTeamHome: string;
   readonly matchCardTeamName: string;
+  readonly matchCardVenueButton: string;
   readonly matchList: string;
   readonly matchListDateRow: string;
   readonly matchListDateTimeline: string;

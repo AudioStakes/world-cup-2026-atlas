@@ -192,7 +192,9 @@ describe("ResultCard", () => {
     expect(screen.getByRole("columnheader", { name: "Group D" })).toBeInTheDocument();
     expect(screen.queryByTestId("result-card-header")).not.toBeInTheDocument();
     expect(screen.queryByText("4 teams")).not.toBeInTheDocument();
-    expect(screen.getByText("USA")).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("table", { name: "Group D standings" })).getByText("USA"),
+    ).toBeInTheDocument();
     expect(screen.getByText("1. United States")).toHaveClass("visually-hidden");
     expect(screen.queryByRole("columnheader", { name: "Matches" })).not.toBeInTheDocument();
     expect(document.querySelector('[data-form-result="win"]')).toHaveAttribute("title", "Win 2-1");

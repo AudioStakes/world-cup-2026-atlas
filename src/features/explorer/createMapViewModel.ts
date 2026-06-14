@@ -26,6 +26,7 @@ export function createMapViewModel(
     : hasActiveSelection(viewState)
       ? new Set(matchingMatches.map((match) => match.venueId))
       : new Set<VenueId>();
+  const matchCountsByVenueId = createMatchCountsByVenueId(matchingMatches);
 
   return {
     backgroundFeatures: createMapBackgroundFeatures(),
@@ -35,6 +36,7 @@ export function createMapViewModel(
       stadiumName: venue.stadiumName,
       cityLabel: createVenueCityLabel(venue),
       timeZoneLabel: venue.timeZone.abbreviation,
+      matchCount: matchCountsByVenueId.get(venue.id) ?? 0,
       label: getVenueMarkerLabel(venue),
       tooltipLabel: createVenueTooltipLabel(venue),
       ariaLabel: createVenueAriaLabel(venue),
@@ -45,6 +47,16 @@ export function createMapViewModel(
       ? createCountryRoutes(data, indexes, viewState.selectedCountryId)
       : [],
   };
+}
+
+function createMatchCountsByVenueId(matches: readonly Match[]): ReadonlyMap<VenueId, number> {
+  const counts = new Map<VenueId, number>();
+
+  for (const match of matches) {
+    counts.set(match.venueId, (counts.get(match.venueId) ?? 0) + 1);
+  }
+
+  return counts;
 }
 
 function createMapBackgroundFeatures(): readonly ExplorerMapBackgroundFeatureViewModel[] {

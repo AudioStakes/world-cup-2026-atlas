@@ -51,6 +51,7 @@
   }
 
   .dateChip {
+    position: relative;
     display: flex;
     min-width: 44px;
     min-height: 44px;
@@ -71,6 +72,23 @@
     cursor: pointer;
   }
 
+  .dateChip::before,
+  .dateChip::after {
+    position: absolute;
+    display: none;
+    content: "";
+    pointer-events: none;
+  }
+
+  .dateChip::after {
+    inset-block-start: 6px;
+    inset-inline-end: 6px;
+    inline-size: 6px;
+    block-size: 6px;
+    border-radius: 999px;
+    background: var(--color-red);
+  }
+
   .dateChipDate {
     font-size: 0.95rem;
     font-weight: 900;
@@ -82,6 +100,18 @@
     color: rgb(23 32 42 / 68%);
     font-size: 9px;
     font-weight: 750;
+  }
+
+  .dateChipStatus {
+    display: none;
+    color: #8f1414;
+    font-size: 8px;
+    font-weight: 950;
+    line-height: 1;
+    max-inline-size: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .dateChip:hover {
@@ -110,9 +140,13 @@
 
   .dateChip.isToday {
     border-color: var(--color-red-line);
-    color: var(--color-red);
+    color: #8f1414;
     background: rgb(255 255 255 / 94%);
-    box-shadow: 0 4px 12px rgb(181 31 31 / 16%);
+    box-shadow: 0 4px 12px rgb(181 31 31 / 10%);
+  }
+
+  .dateChip.isToday::after {
+    display: block;
   }
 
   .dateChip.isToday .dateChipMeta {
@@ -121,12 +155,26 @@
 
   .dateChip.isSelected {
     border-color: var(--color-red);
-    color: #fff;
-    background: var(--color-red);
+    color: #8f1414;
+    background: var(--color-red-soft);
+    box-shadow:
+      0 4px 12px rgb(181 31 31 / 12%),
+      inset 0 -3px 0 rgb(181 31 31 / 54%);
+  }
+
+  .dateChip.isSelected::before {
+    inset-block-start: 6px;
+    inset-inline-start: 7px;
+    display: block;
+    inline-size: 5px;
+    block-size: 9px;
+    border: solid #8f1414;
+    border-width: 0 2px 2px 0;
+    transform: rotate(40deg);
   }
 
   .dateChip.isSelected .dateChipMeta {
-    color: rgb(255 255 255 / 82%);
+    color: rgb(143 20 20 / 82%);
   }
 
   @media (height <= 820px) and (width >= 1181px) {
@@ -163,78 +211,101 @@
   @media (width <= 720px) {
     .root {
       min-height: 0;
-      overflow: hidden;
+      overflow: visible;
     }
 
     .dateMonths {
-      display: grid;
-      gap: 2px;
+      display: flex;
+      align-items: stretch;
+      gap: 10px;
       min-height: 0;
-      padding: 5px 7px;
-      overflow: auto;
-      overscroll-behavior: contain;
+      padding: 8px 9px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      overscroll-behavior-inline: contain;
+      scroll-padding-inline: 9px;
+      scroll-snap-type: x proximity;
+      scrollbar-gutter: auto;
     }
 
     .dateMonth {
-      display: grid;
-      grid-template-columns: 2rem minmax(0, 1fr);
-      align-items: center;
-      gap: 3px;
+      display: flex;
+      flex: 0 0 auto;
+      align-items: stretch;
+      gap: 6px;
       margin: 0;
+      scroll-snap-align: start;
     }
 
     .dateMonthLabel {
+      display: grid;
+      min-inline-size: 44px;
+      min-block-size: 48px;
+      place-items: center;
       margin: 0;
-      font-size: 0.64rem;
-      line-height: 1;
+      padding-inline: 7px;
+      border: 1px solid rgb(23 32 42 / 8%);
+      border-radius: 12px;
+      color: rgb(23 32 42 / 64%);
+      background: rgb(255 255 255 / 62%);
+      font-size: 0.66rem;
+      line-height: 1.05;
+      text-align: center;
     }
 
     .dateCalendar {
       display: flex;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       align-items: center;
-      gap: 2px;
+      gap: 6px;
     }
 
     .dateCalendarWeekday,
-    .dateCalendarBlank,
-    .dateChipMeta {
+    .dateCalendarBlank {
       display: none;
     }
 
     .dateChip {
-      min-width: 23px;
-      min-height: 24px;
-      min-inline-size: 23px;
-      min-block-size: 24px;
-      padding: 3px 2px;
-      border-radius: 7px;
+      min-width: 56px;
+      min-height: 48px;
+      min-inline-size: 56px;
+      min-block-size: 48px;
+      gap: 2px;
+      padding: 6px 7px 5px;
+      border-radius: 12px;
+      scroll-snap-align: center;
     }
 
     .dateChipDate {
-      font-size: 0.72rem;
+      font-size: 1rem;
+    }
+
+    .dateChipMeta {
+      display: block;
+      font-size: 0.66rem;
+      line-height: 1;
+    }
+
+    .dateChipStatus {
+      display: block;
     }
   }
 
   @media (width <= 720px) and (height <= 700px) {
     .dateMonths {
-      padding: 4px 6px;
-    }
-
-    .dateMonth {
-      grid-template-columns: 1.7rem minmax(0, 1fr);
+      padding: 7px 8px;
     }
 
     .dateChip {
-      min-width: 20px;
-      min-height: 20px;
-      min-inline-size: 20px;
-      min-block-size: 20px;
-      padding: 2px;
+      min-width: 52px;
+      min-height: 44px;
+      min-inline-size: 52px;
+      min-block-size: 44px;
+      padding: 5px 7px;
     }
 
     .dateChipDate {
-      font-size: 0.65rem;
+      font-size: 0.92rem;
     }
   }
 }

@@ -294,6 +294,7 @@ export type VenueMarkerViewModel = {
   readonly stadiumName: string;
   readonly cityLabel: string;
   readonly timeZoneLabel: string;
+  readonly matchCount: number;
   readonly label: string;
   readonly tooltipLabel: string;
   readonly ariaLabel: string;

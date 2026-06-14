@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 import type { VenueId } from "../../domain/ids";
 import {
   EXPLORER_MAP_DISPLAY_VIEWBOX,
@@ -11,6 +11,7 @@ import type {
   VenueMarkerViewModel,
 } from "../../features/explorer/types";
 import { classNames } from "./classNames";
+import { trapFocusWithin } from "./focusTrap";
 
 type MapViewProps = {
   readonly map: ExplorerMapViewModel;
@@ -19,20 +20,59 @@ type MapViewProps = {
 
 export function MapView({ map, onAction }: MapViewProps) {
   const viewBox = EXPLORER_MAP_DISPLAY_VIEWBOX;
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [mapViewport, setMapViewport] = useState<MapViewportState>(defaultMapViewportState);
+  const isExpandedRef = useRef(isExpanded);
+  const mapViewportRef = useRef(mapViewport);
   const venueLabelLayouts = createVenueLabelLayouts(map.venueMarkers, viewBox);
+  const mapPanelRef = useRef<HTMLElement | null>(null);
   const mapCanvasRef = useRef<HTMLDivElement | null>(null);
+  const mapCanvasRectRef = useRef<DOMRectReadOnly | null>(null);
   const mapSvgRef = useRef<SVGSVGElement | null>(null);
+  const openMapButtonRef = useRef<HTMLButtonElement | null>(null);
+  const closeMapButtonRef = useRef<HTMLButtonElement | null>(null);
+  const dragStateRef = useRef<MapDragState | null>(null);
+  const pinchStateRef = useRef<MapPinchState | null>(null);
+  const shouldReturnFocusRef = useRef(false);
   const venueMarkersRef = useRef(map.venueMarkers);
   const schedulePositionUpdateRef = useRef<(() => void) | null>(null);
   const [venueControlPositions, setVenueControlPositions] = useState<
     Readonly<Record<string, VenueControlPosition>>
   >({});
+  const currentViewBox = createCurrentMapViewBox(viewBox, mapViewport);
+  const activeVenues = map.venueMarkers.filter(
+    (venue) => venue.state === "selected" || venue.state === "highlighted",
+  );
+  const selectedVenue =
+    map.venueMarkers.find((venue) => venue.state === "selected") ?? activeVenues[0] ?? null;
+  const activeVenueCountLabel =
+    activeVenues.length > 0
+      ? `${activeVenues.length} ${activeVenues.length === 1 ? "venue" : "venues"}`
+      : "All venues";
+  const mapPanelAccessibilityProps = isExpanded
+    ? ({ "aria-labelledby": "map-expanded-title", "aria-modal": "true", role: "dialog" } as const)
+    : ({ "aria-label": "Map preview", role: "region" } as const);
 
+  isExpandedRef.current = isExpanded;
+  mapViewportRef.current = mapViewport;
   venueMarkersRef.current = map.venueMarkers;
 
   useLayoutEffect(() => {
     schedulePositionUpdateRef.current?.();
-  }, [map.venueMarkers]);
+  }, [map.venueMarkers, mapViewport]);
+
+  useLayoutEffect(() => {
+    if (isExpanded) {
+      refreshMapCanvasRect();
+      closeMapButtonRef.current?.focus();
+      return;
+    }
+
+    if (shouldReturnFocusRef.current) {
+      shouldReturnFocusRef.current = false;
+      openMapButtonRef.current?.focus();
+    }
+  }, [isExpanded]);
 
   useLayoutEffect(() => {
     const mapCanvas = mapCanvasRef.current;
@@ -87,13 +127,248 @@ export function MapView({ map, onAction }: MapViewProps) {
     };
   }, []);
 
+  const openExpandedMap = () => {
+    setIsExpanded(true);
+  };
+
+  const closeExpandedMap = () => {
+    dragStateRef.current = null;
+    pinchStateRef.current = null;
+    shouldReturnFocusRef.current = true;
+    setMapViewport(defaultMapViewportState);
+    setIsExpanded(false);
+  };
+
+  const refreshMapCanvasRect = () => {
+    const mapCanvas = mapCanvasRef.current;
+
+    mapCanvasRectRef.current = mapCanvas?.getBoundingClientRect() ?? null;
+
+    return mapCanvasRectRef.current;
+  };
+
+  const handleMapWheel = (event: WheelEvent) => {
+    if (!isExpandedRef.current) {
+      return;
+    }
+
+    event.preventDefault();
+    const nextScale = mapViewportRef.current.scale * (event.deltaY < 0 ? 1.14 : 0.88);
+    setMapViewport((previousViewport) => zoomMapViewport(viewBox, previousViewport, nextScale));
+  };
+
+  const handleMapMouseDown = (event: MouseEvent) => {
+    if (
+      !isExpandedRef.current ||
+      event.button !== 0 ||
+      dragStateRef.current ||
+      isVenueMarkerInteraction(event.target)
+    ) {
+      return;
+    }
+
+    dragStateRef.current = {
+      pointerId: mouseDragPointerId,
+      x: event.clientX,
+      y: event.clientY,
+    };
+    refreshMapCanvasRect();
+  };
+
+  const handleMapMouseMove = (event: MouseEvent) => {
+    if (dragStateRef.current?.pointerId !== mouseDragPointerId) {
+      return;
+    }
+
+    panMapFromClientDelta(event);
+  };
+
+  const handleMapMouseUp = () => {
+    if (dragStateRef.current?.pointerId === mouseDragPointerId) {
+      dragStateRef.current = null;
+    }
+  };
+
+  const handleMapTouchStart = (event: TouchEvent) => {
+    if (!isExpandedRef.current) {
+      return;
+    }
+
+    if (event.touches.length === 1) {
+      const touch = event.touches.item(0);
+
+      if (!touch || isVenueMarkerInteraction(event.target)) {
+        return;
+      }
+
+      dragStateRef.current = {
+        pointerId: touchDragPointerId,
+        x: touch.clientX,
+        y: touch.clientY,
+      };
+      refreshMapCanvasRect();
+      return;
+    }
+
+    if (event.touches.length !== 2) {
+      return;
+    }
+
+    dragStateRef.current = null;
+    refreshMapCanvasRect();
+    pinchStateRef.current = {
+      distance: getTouchDistance(event.touches),
+      scale: mapViewportRef.current.scale,
+    };
+  };
+
+  const handleMapTouchMove = (event: TouchEvent) => {
+    const pinchState = pinchStateRef.current;
+
+    if (
+      isExpandedRef.current &&
+      event.touches.length === 1 &&
+      dragStateRef.current?.pointerId === touchDragPointerId
+    ) {
+      const touch = event.touches.item(0);
+
+      if (!touch) {
+        return;
+      }
+
+      event.preventDefault();
+      panMapFromClientDelta(touch);
+      return;
+    }
+
+    if (!isExpandedRef.current || !pinchState || event.touches.length !== 2) {
+      return;
+    }
+
+    event.preventDefault();
+    const nextScale = pinchState.scale * (getTouchDistance(event.touches) / pinchState.distance);
+    setMapViewport((previousViewport) => zoomMapViewport(viewBox, previousViewport, nextScale));
+  };
+
+  const handleMapTouchEnd = (event: TouchEvent) => {
+    if (event.touches.length === 0 && dragStateRef.current?.pointerId === touchDragPointerId) {
+      dragStateRef.current = null;
+    }
+
+    if (event.touches.length < 2) {
+      pinchStateRef.current = null;
+    }
+  };
+
+  const panMapFromClientDelta = (point: Pick<MouseEvent | Touch, "clientX" | "clientY">) => {
+    const dragState = dragStateRef.current;
+    const canvasRect = mapCanvasRectRef.current ?? refreshMapCanvasRect();
+
+    if (!dragState || !canvasRect) {
+      return;
+    }
+
+    const deltaX = point.clientX - dragState.x;
+    const deltaY = point.clientY - dragState.y;
+
+    dragStateRef.current = {
+      ...dragState,
+      x: point.clientX,
+      y: point.clientY,
+    };
+    setMapViewport((previousViewport) =>
+      panMapViewport(viewBox, previousViewport, deltaX, deltaY, canvasRect),
+    );
+  };
+
+  useLayoutEffect(() => {
+    const mapCanvas = mapCanvasRef.current;
+
+    if (!mapCanvas) {
+      return;
+    }
+
+    mapCanvas.addEventListener("mousedown", handleMapMouseDown);
+    mapCanvas.addEventListener("touchend", handleMapTouchEnd);
+    mapCanvas.addEventListener("touchmove", handleMapTouchMove, { passive: false });
+    mapCanvas.addEventListener("touchstart", handleMapTouchStart, { passive: false });
+    mapCanvas.addEventListener("wheel", handleMapWheel, { passive: false });
+    window.addEventListener("mouseup", handleMapMouseUp);
+    window.addEventListener("mousemove", handleMapMouseMove);
+
+    return () => {
+      mapCanvas.removeEventListener("mousedown", handleMapMouseDown);
+      mapCanvas.removeEventListener("touchend", handleMapTouchEnd);
+      mapCanvas.removeEventListener("touchmove", handleMapTouchMove);
+      mapCanvas.removeEventListener("touchstart", handleMapTouchStart);
+      mapCanvas.removeEventListener("wheel", handleMapWheel);
+      window.removeEventListener("mouseup", handleMapMouseUp);
+      window.removeEventListener("mousemove", handleMapMouseMove);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isExpanded) {
+      return;
+    }
+
+    const handleExpandedMapKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeExpandedMap();
+        return;
+      }
+
+      const mapPanel = mapPanelRef.current;
+
+      if (mapPanel) {
+        trapFocusWithin(event, mapPanel);
+      }
+    };
+
+    window.addEventListener("keydown", handleExpandedMapKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleExpandedMapKeyDown);
+    };
+  }, [isExpanded]);
+
   return (
-    <section class="map-panel">
+    <section
+      ref={mapPanelRef}
+      id="map-panel"
+      class={classNames("map-panel", isExpanded && "is-map-expanded")}
+      {...mapPanelAccessibilityProps}
+    >
+      <div class="map-preview-summary">
+        <div>
+          <span>Map</span>
+          <strong>{activeVenueCountLabel}</strong>
+          <small>Venue markers, labels, and routes</small>
+        </div>
+        <button
+          ref={openMapButtonRef}
+          type="button"
+          aria-controls="map-panel"
+          aria-expanded={isExpanded}
+          onClick={openExpandedMap}
+        >
+          Open map
+        </button>
+      </div>
+      <div class="map-expanded-header">
+        <div>
+          <span id="map-expanded-title">Interactive map</span>
+          <strong>{activeVenueCountLabel}</strong>
+        </div>
+        <button ref={closeMapButtonRef} type="button" onClick={closeExpandedMap}>
+          Close
+        </button>
+      </div>
       <div ref={mapCanvasRef} class="map-canvas">
         <svg
           ref={mapSvgRef}
           class="map-svg"
-          viewBox={`${viewBox.minX} ${viewBox.minY} ${viewBox.width} ${viewBox.height}`}
+          viewBox={`${currentViewBox.minX} ${currentViewBox.minY} ${currentViewBox.width} ${currentViewBox.height}`}
           role="img"
           aria-label="Natural Earth map of North America with World Cup 2026 match venues"
         >
@@ -179,6 +454,8 @@ export function MapView({ map, onAction }: MapViewProps) {
           ))}
         </div>
       </div>
+      <MapLegend />
+      <MapVenueDetail venue={selectedVenue} venueCount={activeVenues.length} />
     </section>
   );
 }
@@ -205,6 +482,53 @@ function MapBackground({ features }: MapBackgroundProps) {
         MEXICO
       </text>
     </g>
+  );
+}
+
+function MapLegend() {
+  return (
+    <ul class="map-legend" aria-label="Map marker legend">
+      <li>
+        <span class="map-legend__marker is-selected" aria-hidden="true" />
+        Selected venue
+      </li>
+      <li>
+        <span class="map-legend__marker is-highlighted" aria-hidden="true" />
+        Venue with match
+      </li>
+      <li>
+        <span class="map-legend__marker is-normal" aria-hidden="true" />
+        Other venue
+      </li>
+    </ul>
+  );
+}
+
+type MapVenueDetailProps = {
+  readonly venue: VenueMarkerViewModel | null;
+  readonly venueCount: number;
+};
+
+function MapVenueDetail({ venue, venueCount }: MapVenueDetailProps) {
+  if (!venue) {
+    return (
+      <div class="map-venue-detail">
+        <span>Venues</span>
+        <strong>All host venues</strong>
+        <small>Open the map, then pan, pinch zoom, or tap a marker.</small>
+      </div>
+    );
+  }
+
+  return (
+    <div class="map-venue-detail">
+      <span>{venue.state === "selected" ? "Selected venue" : "Venue with match"}</span>
+      <strong>{venue.venueName}</strong>
+      <small>
+        {venue.stadiumName} · {venue.cityLabel} · {formatVenueMatchCount(venue.matchCount)}
+        {venueCount > 1 ? ` · ${venueCount} venues in selection` : ""}
+      </small>
+    </div>
   );
 }
 
@@ -253,6 +577,7 @@ type VenueMarkerControlProps = {
 
 function VenueMarkerControl({ positions, position, venue, onAction }: VenueMarkerControlProps) {
   function selectVenue(event: MouseEvent) {
+    event.stopPropagation();
     const nearestVenueId = findNearestVenueId(event, positions) ?? venue.venueId;
 
     onAction({ type: "selectVenue", venueId: nearestVenueId });
@@ -264,7 +589,7 @@ function VenueMarkerControl({ positions, position, venue, onAction }: VenueMarke
       type="button"
       data-venue-id={venue.venueId}
       title={venue.tooltipLabel}
-      aria-label={venue.ariaLabel}
+      aria-label={createVenueMarkerAriaLabel(venue)}
       aria-pressed={venue.state === "selected"}
       style={{
         left: position ? `${position.left}px` : undefined,
@@ -275,6 +600,24 @@ function VenueMarkerControl({ positions, position, venue, onAction }: VenueMarke
       <span class="venue-marker-control__dot" aria-hidden="true" />
     </button>
   );
+}
+
+function createVenueMarkerAriaLabel(venue: VenueMarkerViewModel): string {
+  return `${venue.ariaLabel}. ${createVenueMarkerStateLabel(venue)}. ${formatVenueMatchCount(
+    venue.matchCount,
+  )}.`;
+}
+
+function createVenueMarkerStateLabel(venue: VenueMarkerViewModel): string {
+  switch (venue.state) {
+    case "selected":
+      return "Selected venue";
+    case "highlighted":
+      return "Venue with match";
+    case "dimmed":
+    case "normal":
+      return "Other venue";
+  }
 }
 
 type VenueControlPosition = {
@@ -436,4 +779,128 @@ function clampMapLabelX(x: number, labelWidth: number, viewBox: ExplorerMapViewB
   const maxX = viewBox.minX + viewBox.width - labelWidth - venueLabelInset;
 
   return Math.min(Math.max(x, minX), maxX);
+}
+
+type MapViewportState = {
+  readonly scale: number;
+  readonly x: number;
+  readonly y: number;
+};
+
+type MapDragState = {
+  readonly pointerId: number;
+  readonly x: number;
+  readonly y: number;
+};
+
+type MapPinchState = {
+  readonly distance: number;
+  readonly scale: number;
+};
+
+const defaultMapViewportState: MapViewportState = {
+  scale: 1,
+  x: 0,
+  y: 0,
+};
+
+const minMapScale = 1;
+const maxMapScale = 3.2;
+const mouseDragPointerId = -1;
+const touchDragPointerId = -2;
+
+function createCurrentMapViewBox(
+  viewBox: ExplorerMapViewBox,
+  viewport: MapViewportState,
+): ExplorerMapViewBox {
+  const clampedViewport = clampMapViewport(viewBox, viewport);
+
+  return {
+    minX: viewBox.minX + clampedViewport.x,
+    minY: viewBox.minY + clampedViewport.y,
+    width: viewBox.width / clampedViewport.scale,
+    height: viewBox.height / clampedViewport.scale,
+  };
+}
+
+function zoomMapViewport(
+  viewBox: ExplorerMapViewBox,
+  viewport: MapViewportState,
+  nextScale: number,
+): MapViewportState {
+  const scale = clamp(nextScale, minMapScale, maxMapScale);
+  const currentWidth = viewBox.width / viewport.scale;
+  const currentHeight = viewBox.height / viewport.scale;
+  const centerX = viewport.x + currentWidth / 2;
+  const centerY = viewport.y + currentHeight / 2;
+  const nextWidth = viewBox.width / scale;
+  const nextHeight = viewBox.height / scale;
+
+  return clampMapViewport(viewBox, {
+    scale,
+    x: centerX - nextWidth / 2,
+    y: centerY - nextHeight / 2,
+  });
+}
+
+function panMapViewport(
+  viewBox: ExplorerMapViewBox,
+  viewport: MapViewportState,
+  deltaX: number,
+  deltaY: number,
+  canvasRect: DOMRect,
+): MapViewportState {
+  if (canvasRect.width === 0 || canvasRect.height === 0) {
+    return viewport;
+  }
+
+  const currentWidth = viewBox.width / viewport.scale;
+  const currentHeight = viewBox.height / viewport.scale;
+
+  return clampMapViewport(viewBox, {
+    ...viewport,
+    x: viewport.x - (deltaX / canvasRect.width) * currentWidth,
+    y: viewport.y - (deltaY / canvasRect.height) * currentHeight,
+  });
+}
+
+function clampMapViewport(
+  viewBox: ExplorerMapViewBox,
+  viewport: MapViewportState,
+): MapViewportState {
+  const scale = clamp(viewport.scale, minMapScale, maxMapScale);
+  const maxX = viewBox.width - viewBox.width / scale;
+  const maxY = viewBox.height - viewBox.height / scale;
+
+  return {
+    scale,
+    x: clamp(viewport.x, 0, Math.max(0, maxX)),
+    y: clamp(viewport.y, 0, Math.max(0, maxY)),
+  };
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
+}
+
+function getTouchDistance(touches: TouchList): number {
+  const firstTouch = touches.item(0);
+  const secondTouch = touches.item(1);
+
+  if (!firstTouch || !secondTouch) {
+    return 1;
+  }
+
+  return Math.hypot(
+    firstTouch.clientX - secondTouch.clientX,
+    firstTouch.clientY - secondTouch.clientY,
+  );
+}
+
+function isVenueMarkerInteraction(target: EventTarget | null): boolean {
+  return target instanceof Element && Boolean(target.closest(".venue-marker-control"));
+}
+
+function formatVenueMatchCount(matchCount: number): string {
+  return `${matchCount} ${matchCount === 1 ? "match" : "matches"}`;
 }

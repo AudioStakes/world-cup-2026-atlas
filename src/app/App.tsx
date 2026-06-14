@@ -64,6 +64,10 @@ export function App() {
       return;
     }
 
+    if (!shouldFetchMatchResultsSnapshot()) {
+      return;
+    }
+
     const abortController = new AbortController();
 
     void fetchMatchResultsSnapshot(abortController.signal).then((snapshot) => {
@@ -95,6 +99,22 @@ export function App() {
       onTimeZoneChange={setDisplayTimeZoneId}
     />
   );
+}
+
+type MatchResultsFetchEnv = Pick<ImportMetaEnv, "BASE_URL" | "DEV" | "MODE">;
+
+export function shouldFetchMatchResultsSnapshot(
+  env: MatchResultsFetchEnv = import.meta.env,
+): boolean {
+  if (env.MODE === "test") {
+    return true;
+  }
+
+  if (env.DEV) {
+    return false;
+  }
+
+  return env.BASE_URL === "/";
 }
 
 async function fetchMatchResultsSnapshot(

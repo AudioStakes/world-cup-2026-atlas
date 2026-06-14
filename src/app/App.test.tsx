@@ -6,7 +6,7 @@ import {
   EXPLORER_MAP_VIEWBOX,
 } from "../features/explorer/mapViewport";
 import type { MatchResultsSnapshot } from "../matchResults/types";
-import { App } from "./App";
+import { App, shouldFetchMatchResultsSnapshot } from "./App";
 
 const originalDateTimeFormatResolvedOptions = Intl.DateTimeFormat.prototype.resolvedOptions;
 
@@ -216,7 +216,7 @@ describe("App", () => {
 
     expect(screen.getByText("World Cup 2026 Atlas")).toBeInTheDocument();
     expect(screen.queryByText("/?date=2026-06-11")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /clear/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /clear/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Select Thu Jun 11/ })).toHaveAttribute(
       "aria-pressed",
       "true",
@@ -225,6 +225,37 @@ describe("App", () => {
       "aria-pressed",
       "false",
     );
+  });
+
+  it("only fetches live results when the serving mode supports the results endpoint", () => {
+    expect(
+      shouldFetchMatchResultsSnapshot({
+        BASE_URL: "/",
+        DEV: true,
+        MODE: "development",
+      }),
+    ).toBe(false);
+    expect(
+      shouldFetchMatchResultsSnapshot({
+        BASE_URL: "/world-cup-2026-atlas/",
+        DEV: false,
+        MODE: "production",
+      }),
+    ).toBe(false);
+    expect(
+      shouldFetchMatchResultsSnapshot({
+        BASE_URL: "/",
+        DEV: false,
+        MODE: "production",
+      }),
+    ).toBe(true);
+    expect(
+      shouldFetchMatchResultsSnapshot({
+        BASE_URL: "/world-cup-2026-atlas/",
+        DEV: false,
+        MODE: "test",
+      }),
+    ).toBe(true);
   });
 
   it("updates selection when a different team is clicked", () => {
@@ -296,9 +327,15 @@ describe("App", () => {
 
     selectJapan();
 
+    const header = screen.getByText("World Cup 2026 Atlas").closest("header");
+
     expect(window.location.search).toBe("?country=jpn");
     expect(screen.queryByText("/?country=jpn")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Clear" })).not.toBeInTheDocument();
+    expect(header).not.toBeNull();
+    expect(
+      within(header as HTMLElement).queryByRole("button", { name: "Clear" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Clear" })).toBeInTheDocument();
   });
 
   it("does not render an explorer search form", () => {
