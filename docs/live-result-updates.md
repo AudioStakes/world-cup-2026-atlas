@@ -121,16 +121,20 @@ fields first:
 Inspect the latest provider error through the Cloudflare dashboard, or with Wrangler:
 
 ```bash
-pnpm wrangler kv key get "match-results/provider-error/latest.json" --binding RESULTS_KV --remote --text --config wrangler.toml
-pnpm wrangler kv key get "match-results/poll-status/latest.json" --binding RESULTS_KV --remote --text --config wrangler.toml
+pnpm wrangler kv key get "match-results/provider-error/latest.json" --binding RESULTS_KV --remote --preview false --text --config wrangler.toml
+pnpm wrangler kv key get "match-results/poll-status/latest.json" --binding RESULTS_KV --remote --preview false --text --config wrangler.toml
 ```
 
 Inspect the polling guard and request count with:
 
 ```bash
-pnpm wrangler kv key get "match-results/last-fetched-at" --binding RESULTS_KV --remote --text --config wrangler.toml
-pnpm wrangler kv key get "match-results/request-count/YYYY-MM-DD" --binding RESULTS_KV --remote --text --config wrangler.toml
+pnpm wrangler kv key get "match-results/last-fetched-at" --binding RESULTS_KV --remote --preview false --text --config wrangler.toml
+pnpm wrangler kv key get "match-results/request-count/YYYY-MM-DD" --binding RESULTS_KV --remote --preview false --text --config wrangler.toml
 ```
+
+Because `wrangler.toml` has both a production `id` and `preview_id` for `RESULTS_KV`, production
+remote KV reads and writes must include `--preview false`. Use `--preview` intentionally only when
+inspecting or writing the preview namespace.
 
 Do not paste secret values into diagnostics. Provider error diagnostics should contain only the
 timestamp and failure message.
@@ -141,6 +145,10 @@ belongs to the expected Cloudflare account, and has `Workers KV Storage: Edit`. 
 `CLOUDFLARE_ACCOUNT_ID`, the `RESULTS_KV` binding, and the production namespace id in
 `wrangler.toml`. Do not paste API keys, Cloudflare tokens, headers, or full provider responses into
 issues, docs, PRs, comments, or logs.
+
+If Wrangler reports `RESULTS_KV has both a namespace ID and a preview ID`, add `--preview false` for
+production KV commands. The manual poll preflight detects this before API-FOOTBALL is called, so a
+preflight failure should not consume provider request count.
 
 ## Manual diagnostics and provider polling
 

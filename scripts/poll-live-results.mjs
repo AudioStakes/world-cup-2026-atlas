@@ -5,8 +5,13 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { createServer } from "vite";
+import {
+  createRemoteProductionKvGetArgs,
+  createRemoteProductionKvPutArgs,
+  DEFAULT_WRANGLER_CONFIG,
+} from "./remote-production-kv-args.mjs";
 
-const WRANGLER_CONFIG = "wrangler.toml";
+const WRANGLER_CONFIG = DEFAULT_WRANGLER_CONFIG;
 const DEFAULT_CRON = "*/5 * * * *";
 export const KV_WRITE_PREFLIGHT_KEY = "match-results/diagnostics/write-probe.json";
 export const WRANGLER_OUTPUT_PREVIEW_BYTES = 4096;
@@ -348,18 +353,9 @@ function createRemoteKv({ writable, runWranglerCommand = runWrangler }) {
 }
 
 function readRemoteKvText(key, { runWranglerCommand = runWrangler } = {}) {
-  const result = runWranglerCommand([
-    "kv",
-    "key",
-    "get",
-    key,
-    "--binding",
-    "RESULTS_KV",
-    "--remote",
-    "--text",
-    "--config",
-    WRANGLER_CONFIG,
-  ]);
+  const result = runWranglerCommand(
+    createRemoteProductionKvGetArgs(key, { config: WRANGLER_CONFIG }),
+  );
 
   if (!result.ok) {
     return null;
@@ -387,19 +383,9 @@ function writeRemoteKvText(key, value, { runWranglerCommand = runWrangler } = {}
   try {
     writeFileSync(tempPath, value);
 
-    const result = runWranglerCommand([
-      "kv",
-      "key",
-      "put",
-      key,
-      "--path",
-      tempPath,
-      "--binding",
-      "RESULTS_KV",
-      "--remote",
-      "--config",
-      WRANGLER_CONFIG,
-    ]);
+    const result = runWranglerCommand(
+      createRemoteProductionKvPutArgs(key, { config: WRANGLER_CONFIG, path: tempPath }),
+    );
 
     if (!result.ok) {
       throw new Error(createRemoteKvWriteFailureMessage(key, result));
