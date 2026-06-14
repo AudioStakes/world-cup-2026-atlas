@@ -133,15 +133,19 @@ describe("createResultViewModel production metadata", () => {
 
   it("adds group team FIFA codes to group result subtitles", () => {
     const result = createResultForGroup("F");
+    const standings = result.details?.type === "group" ? result.details.standings : [];
 
     expect(result.title).toBe("Group F");
     expect(result.subtitle).toBe("6 matches · NED · JPN · SWE · TUN");
+    expect(result.matchCount).toBe(6);
     expect(result.groupNavigation).toBeNull();
+    expect(standings.every((row) => row.form.length === 3)).toBe(true);
     expect(result.details).toMatchObject({
       type: "group",
       standings: expect.arrayContaining([
         expect.objectContaining({
           teamLabel: "🇯🇵 Japan",
+          teamPlainLabel: "Japan",
           teamCodeLabel: "JPN",
           played: 0,
           points: 0,
@@ -221,6 +225,7 @@ describe("createResultViewModel production metadata", () => {
         }),
       ]),
     );
+    expect(standings.every((row) => row.form.length === 3)).toBe(true);
   });
 
   it("renders live provider scores without folding them into group standings", () => {
@@ -280,17 +285,74 @@ describe("createResultViewModel production metadata", () => {
     );
   });
 
+  it("keeps scoreless live provider status available for match cards", () => {
+    const data = {
+      ...appData,
+      matches: appData.matches.map((match) =>
+        match.matchNumber === 11
+          ? {
+              ...match,
+              result: {
+                provider: "api-football" as const,
+                providerFixtureId: 1001,
+                status: "live" as const,
+                shortStatus: "1H",
+                elapsed: 12,
+                homeGoals: null,
+                awayGoals: null,
+                kickoffAt: "2026-06-14T20:00:00.000Z",
+                updatedAt: "2026-06-14T20:12:00.000Z",
+              },
+            }
+          : match,
+      ),
+    };
+    const liveIndexes = createIndexes(data);
+    const selectedGroupCode = groupCode("F");
+    const matches = data.matches.filter(
+      (match) =>
+        match.stage === "group" && "groupCode" in match && match.groupCode === selectedGroupCode,
+    );
+    const result = createResultViewModel(
+      data,
+      liveIndexes,
+      { ...emptyExplorerViewState, selectedGroupCode },
+      matches,
+    );
+    const liveMatch = result.matches.find((match) => match.matchNumberLabel === "Match 11");
+
+    expect(liveMatch).toMatchObject({
+      homeScoreLabel: null,
+      awayScoreLabel: null,
+      scoreLineLabel: null,
+      normalizedStatus: "live",
+      shortStatusLabel: "1H",
+      statusLabel: "Live",
+    });
+  });
+
   it("adds kickoff range and time-zone summary to multi-match date result subtitles", () => {
     const result = createResultForDate("2026-06-14");
     const scrollTargetIndex = result.matches.findIndex((match) => match.isInitialScrollTarget);
 
     expect(result.title).toBe("Jun 14");
     expect(result.subtitle).toBe("4 matches · 12:00–20:00 · CT/ET");
+    expect(result.matchCount).toBe(4);
     expect(result.details).toBeNull();
     expect(result.matches.length).toBeGreaterThan(4);
     expect(result.matches[0]?.dateHeadingLabel).toBe("Thursday 11 June 2026");
     expect(scrollTargetIndex).toBeGreaterThan(0);
     expect(result.matches[scrollTargetIndex]?.dateHeadingLabel).toBe("Sunday 14 June 2026");
+  });
+
+  it("keeps rest date selections empty instead of rendering the tournament timeline", () => {
+    const result = createResultForDate("2026-07-08");
+
+    expect(result.title).toBe("Jul 08");
+    expect(result.subtitle).toBe("0 matches");
+    expect(result.matchCount).toBe(0);
+    expect(result.emptyMessage).toBe("No matches found for the current selection.");
+    expect(result.matches).toEqual([]);
   });
 
   it("adds singular kickoff metadata to one-match date result subtitles", () => {
@@ -355,7 +417,7 @@ describe("createResultViewModel production metadata", () => {
       code: "JPN",
     });
     expect(japanMatch?.matchupText).toBe("🇳🇱 NED vs 🇯🇵 JPN");
-    expect(japanMatch?.matchupAriaLabel).toBe("🇳🇱 Netherlands vs 🇯🇵 Japan");
+    expect(japanMatch?.matchupAriaLabel).toBe("Netherlands vs Japan");
     expect(japanMatch?.kickoffLabel).toBe("15:00");
     expect(japanMatch?.secondaryText).toBe("15:00 CT");
     expect(japanMatch?.stageMetaLabel).toBe("First Stage");

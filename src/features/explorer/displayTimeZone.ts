@@ -102,22 +102,21 @@ export function createHeaderTimeZoneOptions(
   countries: readonly Country[],
   browserLocalTimeZone: string | null = null,
 ): readonly HeaderTimeZoneOptionViewModel[] {
+  const browserLocalOption: HeaderTimeZoneOptionViewModel = {
+    value: browserLocalDisplayTimeZoneId,
+    label: "Your local time",
+    detailLabel: browserLocalTimeZone ? createBrowserLocalDetailLabel(browserLocalTimeZone) : "",
+  };
+  const venueLocalOption: HeaderTimeZoneOptionViewModel = {
+    value: venueLocalDisplayTimeZoneId,
+    label: "Venue local",
+    detailLabel: "Use each stadium's local time",
+  };
+
   return [
-    ...(browserLocalTimeZone
-      ? [
-          {
-            value: browserLocalDisplayTimeZoneId,
-            label: "Your local time",
-            detailLabel: createBrowserLocalDetailLabel(browserLocalTimeZone),
-          },
-        ]
-      : []),
-    {
-      value: venueLocalDisplayTimeZoneId,
-      label: "Venue local",
-      detailLabel: "Use each stadium's local time",
-    },
-    ...countries.flatMap((country) => {
+    ...(browserLocalTimeZone ? [browserLocalOption] : []),
+    venueLocalOption,
+    ...countries.flatMap((country): HeaderTimeZoneOptionViewModel[] => {
       const timeZone = countryDisplayTimeZonesById.get(country.id);
 
       if (!timeZone) {
@@ -127,7 +126,7 @@ export function createHeaderTimeZoneOptions(
       return [
         {
           value: country.id,
-          label: `${country.flagEmoji} ${country.name}`,
+          label: country.name,
           detailLabel: timeZone.abbreviation,
         },
       ];

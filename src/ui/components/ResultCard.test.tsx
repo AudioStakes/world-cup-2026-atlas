@@ -28,7 +28,7 @@ const completedMatch: MatchListItemViewModel = {
     code: "PAR",
   },
   matchupText: "🇺🇸 USA vs 🇵🇾 PAR",
-  matchupAriaLabel: "🇺🇸 United States vs 🇵🇾 Paraguay",
+  matchupAriaLabel: "United States vs Paraguay",
   kickoffLabel: "12:00",
   homeScoreLabel: "2",
   awayScoreLabel: "1",
@@ -53,6 +53,7 @@ const completedResult: ExplorerResultViewModel = {
   icon: "D",
   title: "Group D",
   subtitle: "4 teams",
+  matchCount: 1,
   groupNavigation: null,
   details: null,
   emptyMessage: null,
@@ -167,6 +168,7 @@ describe("ResultCard", () => {
                 countryId: countryId("usa"),
                 position: 1,
                 teamLabel: "🇺🇸 United States",
+                teamPlainLabel: "United States",
                 teamCodeLabel: "USA",
                 teamFlagEmoji: "🇺🇸",
                 played: 1,
@@ -194,7 +196,7 @@ describe("ResultCard", () => {
     expect(document.querySelector(".result-card__header")).not.toBeInTheDocument();
     expect(screen.queryByText("4 teams")).not.toBeInTheDocument();
     expect(screen.getByText("USA")).toBeInTheDocument();
-    expect(screen.getByText("1. 🇺🇸 United States")).toHaveClass("visually-hidden");
+    expect(screen.getByText("1. United States")).toHaveClass("visually-hidden");
     expect(screen.queryByRole("columnheader", { name: "Matches" })).not.toBeInTheDocument();
     expect(document.querySelector(".group-standings__form-entry.is-win")).toHaveAttribute(
       "title",
@@ -274,5 +276,31 @@ describe("ResultCard", () => {
 
     expect(screen.getByText("1H")).toBeInTheDocument();
     expect(screen.queryByText("FT")).not.toBeInTheDocument();
+  });
+
+  it("renders scoreless non-scheduled statuses instead of kickoff", () => {
+    render(
+      <ResultCard
+        result={{
+          ...completedResult,
+          matches: [
+            {
+              ...completedMatch,
+              normalizedStatus: "postponed",
+              shortStatusLabel: "PST",
+              statusLabel: "Postponed",
+              homeScoreLabel: null,
+              awayScoreLabel: null,
+              scoreLineLabel: null,
+            },
+          ],
+        }}
+        onAction={() => {}}
+        onMatchVenueFocusChange={() => {}}
+      />,
+    );
+
+    expect(screen.getByText("PST")).toBeInTheDocument();
+    expect(screen.queryByText("12:00")).not.toBeInTheDocument();
   });
 });

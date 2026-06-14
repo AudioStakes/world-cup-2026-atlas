@@ -1955,6 +1955,12 @@ select:focus-visible,
   }
 }
 
+@media (min-width: 721px) and (max-width: 900px) {
+  .groups-section .group-team-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 720px) {
   .groups-section .group-team-grid {
     --group-team-card-gap: 3px;
@@ -1982,10 +1988,12 @@ select:focus-visible,
     --group-team-label-size: 30px;
     --group-team-flag-size: 24px;
     --group-team-flag-font-size: 19px;
+
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .groups-section .group-team-rows {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
@@ -2004,6 +2012,10 @@ select:focus-visible,
 
     grid-template-columns: repeat(2, minmax(0, 1fr));
     padding-block-end: 0;
+  }
+
+  .groups-section .group-team-rows {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

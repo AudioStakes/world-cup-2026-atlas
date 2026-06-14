@@ -4,6 +4,7 @@ import {
   getMatchCountryIds,
   getOpponentCountryId,
   getParticipantCountryId,
+  getParticipantSlotId,
 } from "../../data/matchParticipants";
 import type { CountryId, GroupCode } from "../../domain/ids";
 import type {
@@ -45,7 +46,6 @@ import type {
 } from "./types";
 
 const timeZoneDisplayOrder = ["PT", "MT", "CT", "ET"] as const;
-const groupStandingFormSlotCount = 5;
 
 export function createResultViewModel(
   data: AppData,
@@ -68,6 +68,7 @@ export function createResultViewModel(
       icon: "🧭",
       title: "Start exploring",
       subtitle: "",
+      matchCount: 0,
       groupNavigation: null,
       details: null,
       emptyMessage: "Select a group, team, date, or venue pin to see matching fixtures here.",
@@ -83,6 +84,7 @@ export function createResultViewModel(
     icon: title.icon,
     title: title.title,
     subtitle: title.subtitle,
+    matchCount: matchingMatches.length,
     groupNavigation: title.groupNavigation,
     details: createDetails(data, indexes, viewState, matchingMatches, resultType),
     emptyMessage:
@@ -109,10 +111,14 @@ function createResultMatches(
   resultType: ExplorerResultType,
   displayTimeZone: DisplayTimeZonePreference,
 ): readonly MatchListItemViewModel[] {
-  const matches =
-    resultType === "date" && viewState.selectedDate
-      ? sortMatchesChronologically(data.matches, indexes, displayTimeZone)
-      : matchingMatches;
+  const matches = createDisplayMatches(
+    data,
+    indexes,
+    viewState,
+    matchingMatches,
+    resultType,
+    displayTimeZone,
+  );
   const initialScrollTargetMatchId =
     resultType === "date" && viewState.selectedDate
       ? (matches.find((match) => match.date === viewState.selectedDate)?.id ?? null)
@@ -127,6 +133,25 @@ function createResultMatches(
       match.id === initialScrollTargetMatchId,
     ),
   );
+}
+
+function createDisplayMatches(
+  data: AppData,
+  indexes: Indexes,
+  viewState: NormalizedExplorerViewState,
+  matchingMatches: readonly Match[],
+  resultType: ExplorerResultType,
+  displayTimeZone: DisplayTimeZonePreference,
+): readonly Match[] {
+  if (resultType !== "date" || !viewState.selectedDate) {
+    return matchingMatches;
+  }
+
+  if (matchingMatches.length === 0) {
+    return [];
+  }
+
+  return sortMatchesChronologically(data.matches, indexes, displayTimeZone);
 }
 
 function shouldShowCountryRouteSummary(
@@ -544,6 +569,7 @@ function createGroupStandings(
     return {
       countryId: country?.id ?? null,
       teamLabel: country ? `${country.flagEmoji} ${country.name}` : slotEntry.slotId,
+      teamPlainLabel: country?.name ?? slotEntry.slotId,
       teamCodeLabel: country?.fifaCode ?? slotEntry.slotId,
       teamFlagEmoji: country?.flagEmoji ?? null,
       played: 0,
@@ -553,7 +579,7 @@ function createGroupStandings(
       goalsFor: 0,
       goalsAgainst: 0,
       points: 0,
-      form: createTeamForm(data, groupCode, country?.id ?? null),
+      form: createTeamForm(data, groupCode, slotEntry),
     };
   });
   const rowsByCountryId = new Map(
@@ -641,32 +667,42 @@ function applyGroupResult(
 function createTeamForm(
   data: AppData,
   groupCode: GroupCode,
-  countryId: CountryId | null,
+  slotEntry: SlotEntry,
 ): readonly GroupStandingFormEntryViewModel[] {
-  if (!countryId) {
-    return createPendingForm();
-  }
-
-  const entries = data.matches
+  return data.matches
     .filter(
       (match) =>
         match.stage === "group" &&
         "groupCode" in match &&
         match.groupCode === groupCode &&
-        getMatchCountryIds(match).includes(countryId),
+        isMatchForGroupSlot(match, slotEntry),
     )
     .sort(
       (left, right) => left.date.localeCompare(right.date) || left.matchNumber - right.matchNumber,
     )
-    .map((match): GroupStandingFormEntryViewModel => createTeamFormEntry(match, countryId));
-
-  return padFormEntries(entries.slice(0, groupStandingFormSlotCount));
+    .map(
+      (match): GroupStandingFormEntryViewModel => createTeamFormEntry(match, slotEntry.countryId),
+    );
 }
 
-function createTeamFormEntry(match: Match, countryId: CountryId): GroupStandingFormEntryViewModel {
+function isMatchForGroupSlot(match: Match, slotEntry: SlotEntry): boolean {
+  if (slotEntry.countryId && getMatchCountryIds(match).includes(slotEntry.countryId)) {
+    return true;
+  }
+
+  return (
+    getParticipantSlotId(match.homeParticipant) === slotEntry.slotId ||
+    getParticipantSlotId(match.awayParticipant) === slotEntry.slotId
+  );
+}
+
+function createTeamFormEntry(
+  match: Match,
+  countryId: CountryId | undefined,
+): GroupStandingFormEntryViewModel {
   const result = match.result;
 
-  if (!hasFinishedScore(result)) {
+  if (!countryId || !hasFinishedScore(result)) {
     return {
       result: "pending",
       label: "Fixture pending",
@@ -697,25 +733,6 @@ function createTeamFormEntry(match: Match, countryId: CountryId): GroupStandingF
     result: "draw",
     label: `Draw ${scoreLabel}`,
   };
-}
-
-function padFormEntries(
-  entries: readonly GroupStandingFormEntryViewModel[],
-): readonly GroupStandingFormEntryViewModel[] {
-  if (entries.length >= groupStandingFormSlotCount) {
-    return entries;
-  }
-
-  return [...entries, ...createPendingForm(groupStandingFormSlotCount - entries.length)];
-}
-
-function createPendingForm(
-  count = groupStandingFormSlotCount,
-): readonly GroupStandingFormEntryViewModel[] {
-  return Array.from({ length: count }, () => ({
-    result: "pending",
-    label: "Fixture pending",
-  }));
 }
 
 function formatGoalDifference(goalDifference: number): string {
@@ -771,7 +788,7 @@ function createMatchupText(indexes: Indexes, match: Match): string {
 }
 
 function createMatchupAriaLabel(indexes: Indexes, match: Match): string {
-  return `${formatParticipant(indexes, match.homeParticipant)} vs ${formatParticipant(
+  return `${formatParticipantPlain(indexes, match.homeParticipant)} vs ${formatParticipantPlain(
     indexes,
     match.awayParticipant,
   )}`;
@@ -853,6 +870,17 @@ function formatParticipant(indexes: Indexes, participant: Match["homeParticipant
 
   if (country) {
     return `${country.flagEmoji} ${country.name}`;
+  }
+
+  return formatParticipantLabel(participant);
+}
+
+function formatParticipantPlain(indexes: Indexes, participant: Match["homeParticipant"]): string {
+  const countryId = getParticipantCountryId(participant);
+  const country = getMatchCountry(indexes, countryId ?? undefined);
+
+  if (country) {
+    return country.name;
   }
 
   return formatParticipantLabel(participant);

@@ -27,7 +27,7 @@ const header: ExplorerHeaderViewModel = {
       },
       {
         value: countryId("jpn"),
-        label: "🇯🇵 Japan",
+        label: "Japan",
         detailLabel: "JST",
       },
     ],
@@ -59,5 +59,12 @@ describe("Header", () => {
     });
 
     expect(onTimeZoneChange).not.toHaveBeenCalled();
+  });
+
+  it("renders native option text without flag emoji", () => {
+    render(<Header header={header} onTimeZoneChange={() => {}} />);
+
+    expect(screen.getByRole("option", { name: "Japan · JST" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "🇯🇵 Japan · JST" })).not.toBeInTheDocument();
   });
 });

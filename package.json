@@ -19,15 +19,17 @@
     "lint": "biome lint .",
     "check:test-policy": "node scripts/check-test-policy.mjs",
     "check:policy": "pnpm check:test-policy",
+    "check:worker-config": "wrangler deploy --dry-run --config wrangler.toml",
     "typecheck": "tsc -p tsconfig.app.json --noEmit --pretty false --noErrorTruncation && tsc -p tsconfig.node.json --noEmit --pretty false --noErrorTruncation && tsc -p tsconfig.worker.json --noEmit --pretty false --noErrorTruncation",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:coverage:workers": "vitest run --coverage --coverage.include=workers/results/src/**/*.{ts,tsx} --coverage.exclude=workers/results/src/**/*.test.{ts,tsx} --coverage.exclude=workers/results/src/**/*.spec.{ts,tsx} --coverage.exclude=workers/results/src/**/*.contract.test.{ts,tsx} --coverage.exclude=workers/results/src/**/*.integration.test.{ts,tsx} --coverage.exclude=workers/results/src/test/** --coverage.thresholds.lines=85 --coverage.thresholds.statements=85 --coverage.thresholds.functions=85 --coverage.thresholds.branches=63 workers/results/src",
     "e2e": "playwright test",
     "e2e:verbose": "PLAYWRIGHT_VERBOSE=true playwright test",
     "e2e:ui": "playwright test --ui",
-    "verify": "pnpm check && pnpm check:policy && pnpm typecheck && pnpm test && pnpm build",
-    "verify:full": "pnpm verify && pnpm test:coverage && pnpm e2e",
+    "verify": "pnpm check && pnpm check:policy && pnpm typecheck && pnpm test && pnpm build && pnpm check:worker-config && pnpm test:coverage && pnpm test:coverage:workers",
+    "verify:full": "pnpm verify && pnpm e2e",
     "ready": "pnpm fix && pnpm verify"
   },
   "dependencies": {
@@ -45,6 +47,7 @@
     "jsdom": "^26.1.0",
     "typescript": "^5.9.2",
     "vite": "^7.1.7",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "wrangler": "4.50.0"
   }
 }

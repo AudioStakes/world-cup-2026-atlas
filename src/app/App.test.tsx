@@ -408,7 +408,7 @@ describe("App", () => {
     expect(matchCard.querySelector(".match-card__meta-line")).toHaveTextContent(
       "First Stage·Group A·Estadio Azteca (Mexico City)",
     );
-    expect(matchScope.getByText("🇲🇽 Mexico vs 🇿🇦 South Africa")).toHaveClass("visually-hidden");
+    expect(matchScope.getByText("Mexico vs South Africa")).toHaveClass("visually-hidden");
     expect(matchScope.queryByText(/Estadio Azteca · Mexico City, Mexico/)).not.toBeInTheDocument();
   });
 
@@ -455,7 +455,9 @@ describe("App", () => {
 
     const matchScope = within(getFirstMatchCard());
     expect(timeZoneSelect).toHaveValue("jpn");
-    expect(screen.getByText("Japan · JST")).toBeInTheDocument();
+    expect(
+      screen.getByText("Japan · JST", { selector: ".atlas-header__data-status span" }),
+    ).toBeInTheDocument();
     expect(matchScope.getByText("04:00")).toBeInTheDocument();
     expect(matchScope.queryByText("13:00")).not.toBeInTheDocument();
   });

@@ -326,7 +326,13 @@ function MatchCenter({ match }: { readonly match: MatchListItemViewModel }) {
 
   return (
     <span class="match-card__center">
-      <span class="match-card__kickoff">{match.kickoffLabel}</span>
+      {match.normalizedStatus === "scheduled" ? (
+        <span class="match-card__kickoff">{match.kickoffLabel}</span>
+      ) : (
+        <span class="match-card__status match-card__status--scoreless">
+          {match.shortStatusLabel ?? match.statusLabel}
+        </span>
+      )}
     </span>
   );
 }
@@ -336,7 +342,7 @@ function createResultStatusLabel(result: ExplorerResultViewModel): string {
     return result.title;
   }
 
-  return `${result.title}, ${result.matches.length} ${result.matches.length === 1 ? "match" : "matches"}`;
+  return `${result.title}, ${result.matchCount} ${result.matchCount === 1 ? "match" : "matches"}`;
 }
 
 function ResultDetails({ details }: { readonly details: ExplorerDetailViewModel | null }) {
@@ -408,7 +414,7 @@ function GroupStandings({ details }: { readonly details: GroupDetailViewModel })
                     {row.teamCodeLabel}
                   </span>
                   <span class="visually-hidden">
-                    {row.position}. {row.teamLabel}
+                    {row.position}. {row.teamPlainLabel}
                   </span>
                 </span>
               </th>
@@ -422,7 +428,7 @@ function GroupStandings({ details }: { readonly details: GroupDetailViewModel })
               <td>{row.points}</td>
               <td>
                 <span class="group-standings__form">
-                  <span class="visually-hidden">{row.teamLabel} form:</span>
+                  <span class="visually-hidden">{row.teamPlainLabel} form:</span>
                   {row.form.map((entry, index) => (
                     <GroupStandingFormEntry entry={entry} index={index} key={index} />
                   ))}

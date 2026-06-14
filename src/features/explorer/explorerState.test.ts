@@ -79,12 +79,33 @@ describe("explorer URL state", () => {
     expect(viewState).toEqual(makeState({ selectedDate: localDate("2026-06-14") }));
   });
 
+  it("falls back to the default date when URL date parameters are malformed calendar dates", () => {
+    const viewState = resolveInitialExplorerViewState(
+      "?date=2026-99-99",
+      indexes,
+      localDate("2026-06-14"),
+    );
+
+    expect(viewState).toEqual(makeState({ selectedDate: localDate("2026-06-14") }));
+  });
+
   it("drops invalid ids while normalizing state", () => {
     const normalized = normalizeExplorerViewState(
       makeState({
         selectedCountryId: countryId("not-a-country"),
         selectedGroupCode: groupCode("not-a-group"),
         selectedVenueId: venueId("not-a-venue"),
+      }),
+      indexes,
+    );
+
+    expect(normalized).toEqual(emptyExplorerViewState);
+  });
+
+  it("drops malformed calendar dates while normalizing state", () => {
+    const normalized = normalizeExplorerViewState(
+      makeState({
+        selectedDate: localDate("2026-99-99"),
       }),
       indexes,
     );

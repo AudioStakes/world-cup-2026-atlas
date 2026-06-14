@@ -151,6 +151,7 @@ export type ExplorerResultViewModel = {
   readonly icon: string;
   readonly title: string;
   readonly subtitle: string;
+  readonly matchCount: number;
   readonly groupNavigation: ResultGroupNavigationViewModel | null;
   readonly details: ExplorerDetailViewModel | null;
   readonly emptyMessage: string | null;
@@ -203,6 +204,7 @@ export type GroupStandingRowViewModel = {
   readonly countryId: CountryId | null;
   readonly position: number;
   readonly teamLabel: string;
+  readonly teamPlainLabel: string;
   readonly teamCodeLabel: string;
   readonly teamFlagEmoji: string | null;
   readonly played: number;
