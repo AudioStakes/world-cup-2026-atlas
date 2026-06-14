@@ -20,3 +20,8 @@
 - During active TypeScript fixes, run `rtk proxy pnpm typecheck` when you need full compiler
   diagnostics. The compressed `rtk pnpm typecheck` summary can hide the individual errors that
   `pnpm verify` will later surface.
+
+## Focused Tests
+
+- To run one Vitest file, use `rtk test pnpm exec vitest run <path>`. Avoid `pnpm test -- <path>`
+  for focused runs; it can execute the full test suite instead of filtering to the file.
