@@ -112,7 +112,7 @@ fields first:
 - `decision.shouldPoll`, `decision.reason`, and `decision.activeDates`: why polling did or did not
   proceed
 - `attemptedProviderRequests`: date-level provider calls made by this invocation
-- `writtenMatches`: matches written into the latest snapshot
+- `writtenMatches`: provider matches normalized and written by this invocation
 - `requestCountBefore`: daily request count before the invocation
 - `latestSnapshotProvider` and `latestSnapshotFetchedAt`: snapshot visible after the invocation
 - `errorMessage`: sanitized provider error message, or `null`

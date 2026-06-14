@@ -187,7 +187,7 @@ Read `match-results/poll-status/latest.json` as the latest scheduled/manual poll
 - `checkedAt`, `result`, `decision.shouldPoll`, `decision.reason`, and `activeDates` explain the
   polling decision.
 - `attemptedProviderRequests`, `requestCountBefore`, and `writtenMatches` show request-budget and
-  snapshot write effects.
+  current-invocation normalized match write effects.
 - `latestSnapshotProvider` and `latestSnapshotFetchedAt` distinguish the bundled manual fallback
   from an empty API-FOOTBALL snapshot.
 - `errorMessage` is sanitized and should never contain API keys, Cloudflare tokens, headers, or full
