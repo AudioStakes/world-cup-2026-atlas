@@ -3,107 +3,155 @@ import { spawnSync } from "node:child_process";
 import { appendFileSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { createServer } from "vite";
 
 const WRANGLER_CONFIG = "wrangler.toml";
 const DEFAULT_CRON = "*/5 * * * *";
-
-const options = parseArgs(process.argv.slice(2));
-
-if (options.help) {
-  printHelp();
-  process.exit(0);
-}
-
-if (options.writeKv && !options.allowProviderRequest) {
-  fail("--write-kv requires --allow-provider-request.");
-}
-
-if (options.writeKv) {
-  options.remoteKv = true;
-}
-
-const now = readNow(options.now ?? process.env.PROVIDER_POLL_NOW);
-const nowIso = now.toISOString();
+export const KV_WRITE_PREFLIGHT_KEY = "match-results/diagnostics/write-probe.json";
+export const WRANGLER_OUTPUT_PREVIEW_BYTES = 4096;
 const summaryLines = [];
-const server = await createServer({
-  appType: "custom",
-  logLevel: "error",
-  server: {
-    middlewareMode: true,
-  },
-});
 
-try {
-  const {
-    appData,
-    createPollingDecision,
-    createRequestCountKey,
-    lastFetchedAtKey,
-    latestSnapshotKey,
-    pollStatusKey,
-    providerErrorKey,
-    refreshResultsSnapshot,
-  } = await loadRuntimeModules(server);
-  const today = nowIso.slice(0, 10);
-  const requestCountKey = createRequestCountKey(today);
-  const baseKv = options.remoteKv ? createRemoteKv({ writable: false }) : createMemoryKv();
-  const [lastFetchedAtValue, requestCountValue] = await Promise.all([
-    baseKv.get(lastFetchedAtKey),
-    baseKv.get(requestCountKey),
-  ]);
-  const decision = createPollingDecision({
-    matches: appData.matches,
-    venues: appData.venues,
-    now,
-    lastFetchedAt: parseDate(lastFetchedAtValue),
-    requestCountToday: parseRequestCount(requestCountValue),
+export async function main(
+  argv = process.argv.slice(2),
+  { createViteServer = createServer, runWranglerCommand = runWrangler } = {},
+) {
+  summaryLines.length = 0;
+  const options = parseArgs(argv);
+
+  if (options.help) {
+    printHelp();
+    return;
+  }
+
+  if (options.writeKv && !options.allowProviderRequest) {
+    fail("--write-kv requires --allow-provider-request.");
+  }
+
+  if (options.writeKv) {
+    options.remoteKv = true;
+  }
+
+  const now = readNow(options.now ?? process.env.PROVIDER_POLL_NOW);
+  const nowIso = now.toISOString();
+  const summaryFile = options.summaryFile ?? process.env.GITHUB_STEP_SUMMARY;
+  const server = await createViteServer({
+    appType: "custom",
+    logLevel: "error",
+    server: {
+      middlewareMode: true,
+    },
   });
 
-  emit("# Live results provider poll");
-  emit("");
-  emit(`mode: ${options.writeKv ? "real-run" : "dry-run"}`);
-  emit(`remoteKv: ${String(options.remoteKv)}`);
-  emit(`now: ${nowIso}`);
-  emit(`cron: ${options.cron}`);
-  emit(`decision.shouldPoll: ${String(decision.shouldPoll)}`);
-  emit(`decision.reason: ${decision.reason}`);
-  emit(`decision.activeDates: ${decision.activeDates.join(", ") || "(none)"}`);
-  emit(`lastFetchedAt: ${lastFetchedAtValue ?? "(missing)"}`);
-  emit(`requestCountKey: ${requestCountKey}`);
-  emit(`requestCountToday: ${parseRequestCount(requestCountValue)}`);
-  emit("");
+  try {
+    const {
+      appData,
+      createPollingDecision,
+      createRequestCountKey,
+      lastFetchedAtKey,
+      latestSnapshotKey,
+      pollStatusKey,
+      providerErrorKey,
+      refreshResultsSnapshot,
+    } = await loadRuntimeModules(server);
+    const today = nowIso.slice(0, 10);
+    const requestCountKey = createRequestCountKey(today);
+    const baseKv = options.remoteKv
+      ? createRemoteKv({ writable: false, runWranglerCommand })
+      : createMemoryKv();
+    const [lastFetchedAtValue, requestCountValue] = await Promise.all([
+      baseKv.get(lastFetchedAtKey),
+      baseKv.get(requestCountKey),
+    ]);
+    const decision = createPollingDecision({
+      matches: appData.matches,
+      venues: appData.venues,
+      now,
+      lastFetchedAt: parseDate(lastFetchedAtValue),
+      requestCountToday: parseRequestCount(requestCountValue),
+    });
 
-  if (!options.allowProviderRequest) {
-    emit("Provider request: skipped; pass --allow-provider-request to consume API-FOOTBALL quota.");
-    writeStepSummary(options.summaryFile ?? process.env.GITHUB_STEP_SUMMARY, summaryLines);
-    process.exit(0);
-  }
+    emit("# Live results provider poll");
+    emit("");
+    emit(`mode: ${options.writeKv ? "real-run" : "dry-run"}`);
+    emit(`remoteKv: ${String(options.remoteKv)}`);
+    emit(`now: ${nowIso}`);
+    emit(`cron: ${options.cron}`);
+    emit(`decision.shouldPoll: ${String(decision.shouldPoll)}`);
+    emit(`decision.reason: ${decision.reason}`);
+    emit(`decision.activeDates: ${decision.activeDates.join(", ") || "(none)"}`);
+    emit(`lastFetchedAt: ${lastFetchedAtValue ?? "(missing)"}`);
+    emit(`requestCountKey: ${requestCountKey}`);
+    emit(`requestCountToday: ${parseRequestCount(requestCountValue)}`);
+    emit("");
 
-  if (!process.env.API_FOOTBALL_KEY) {
-    fail("API_FOOTBALL_KEY is required for --allow-provider-request; the value is never printed.");
-  }
+    if (!options.allowProviderRequest) {
+      emit(
+        "Provider request: skipped; pass --allow-provider-request to consume API-FOOTBALL quota.",
+      );
+      writeStepSummary(summaryFile, summaryLines);
+      return;
+    }
 
-  const kv = options.writeKv
-    ? createRemoteKv({ writable: true })
-    : createDryRunKv({ fallbackKv: baseKv });
-  const env = {
-    RESULTS_KV: kv,
-    API_FOOTBALL_KEY: process.env.API_FOOTBALL_KEY ?? "",
-    API_FOOTBALL_BASE_URL: process.env.API_FOOTBALL_BASE_URL,
-    API_FOOTBALL_LEAGUE_ID: process.env.API_FOOTBALL_LEAGUE_ID,
-    API_FOOTBALL_SEASON: process.env.API_FOOTBALL_SEASON,
-    ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS,
-  };
+    if (!process.env.API_FOOTBALL_KEY) {
+      fail(
+        "API_FOOTBALL_KEY is required for --allow-provider-request; the value is never printed.",
+      );
+    }
 
-  if (!decision.shouldPoll) {
+    if (options.writeKv) {
+      try {
+        writeRemoteKvPreflight({ nowIso, runWranglerCommand });
+        emit("KV write preflight: passed");
+      } catch (error) {
+        emit("KV write preflight: failed");
+        throw error;
+      }
+      emit("");
+    }
+
+    const kv = options.writeKv
+      ? createRemoteKv({ writable: true, runWranglerCommand })
+      : createDryRunKv({ fallbackKv: baseKv });
+    const env = {
+      RESULTS_KV: kv,
+      API_FOOTBALL_KEY: process.env.API_FOOTBALL_KEY ?? "",
+      API_FOOTBALL_BASE_URL: process.env.API_FOOTBALL_BASE_URL,
+      API_FOOTBALL_LEAGUE_ID: process.env.API_FOOTBALL_LEAGUE_ID,
+      API_FOOTBALL_SEASON: process.env.API_FOOTBALL_SEASON,
+      ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS,
+    };
+
+    if (!decision.shouldPoll) {
+      await refreshResultsSnapshot({
+        env,
+        now,
+      });
+
+      emit(`Provider request: skipped by polling policy (${decision.reason}).`);
+      emit(`KV writes: ${options.writeKv ? "remote poll-status" : "dry-run only"}`);
+      emit("");
+      emit("## Resulting diagnostics");
+      emit("");
+      await emitResultingDiagnostics({
+        kv,
+        latestSnapshotKey,
+        pollStatusKey,
+        providerErrorKey,
+        requestCountKey,
+        nowIso,
+      });
+      writeStepSummary(summaryFile, summaryLines);
+      return;
+    }
+
     await refreshResultsSnapshot({
       env,
       now,
     });
 
-    emit(`Provider request: skipped by polling policy (${decision.reason}).`);
-    emit(`KV writes: ${options.writeKv ? "remote poll-status" : "dry-run only"}`);
+    emit(`Provider request dates attempted: ${decision.activeDates.length}`);
+    emit(`KV writes: ${options.writeKv ? "remote" : "dry-run only"}`);
     emit("");
     emit("## Resulting diagnostics");
     emit("");
@@ -115,31 +163,20 @@ try {
       requestCountKey,
       nowIso,
     });
-    writeStepSummary(options.summaryFile ?? process.env.GITHUB_STEP_SUMMARY, summaryLines);
-    process.exit(0);
+    writeStepSummary(summaryFile, summaryLines);
+  } catch (error) {
+    writeStepSummary(summaryFile, summaryLines);
+    throw error;
+  } finally {
+    await server.close();
   }
+}
 
-  await refreshResultsSnapshot({
-    env,
-    now,
+if (isMainModule()) {
+  await main().catch((error) => {
+    console.error(createSafeCliErrorMessage(error));
+    process.exit(1);
   });
-
-  emit(`Provider request dates attempted: ${decision.activeDates.length}`);
-  emit(`KV writes: ${options.writeKv ? "remote" : "dry-run only"}`);
-  emit("");
-  emit("## Resulting diagnostics");
-  emit("");
-  await emitResultingDiagnostics({
-    kv,
-    latestSnapshotKey,
-    pollStatusKey,
-    providerErrorKey,
-    requestCountKey,
-    nowIso,
-  });
-  writeStepSummary(options.summaryFile ?? process.env.GITHUB_STEP_SUMMARY, summaryLines);
-} finally {
-  await server.close();
 }
 
 function parseArgs(args) {
@@ -289,10 +326,10 @@ function createDryRunKv({ fallbackKv }) {
   };
 }
 
-function createRemoteKv({ writable }) {
+function createRemoteKv({ writable, runWranglerCommand = runWrangler }) {
   return {
     async get(key, type) {
-      const value = readRemoteKvText(key);
+      const value = readRemoteKvText(key, { runWranglerCommand });
 
       if (value === null || type !== "json") {
         return value;
@@ -305,13 +342,13 @@ function createRemoteKv({ writable }) {
         throw new Error("Remote KV writes require --write-kv.");
       }
 
-      writeRemoteKvText(key, value);
+      writeRemoteKvText(key, value, { runWranglerCommand });
     },
   };
 }
 
-function readRemoteKvText(key) {
-  const result = runWrangler([
+function readRemoteKvText(key, { runWranglerCommand = runWrangler } = {}) {
+  const result = runWranglerCommand([
     "kv",
     "key",
     "get",
@@ -331,14 +368,26 @@ function readRemoteKvText(key) {
   return result.stdout.trim();
 }
 
-function writeRemoteKvText(key, value) {
+export function writeRemoteKvPreflight({ nowIso, runWranglerCommand = runWrangler }) {
+  writeRemoteKvText(
+    KV_WRITE_PREFLIGHT_KEY,
+    JSON.stringify({
+      schemaVersion: 1,
+      checkedAt: nowIso,
+      purpose: "live-results-kv-write-preflight",
+    }),
+    { runWranglerCommand },
+  );
+}
+
+function writeRemoteKvText(key, value, { runWranglerCommand = runWrangler } = {}) {
   const tempDir = mkdtempSync(path.join(tmpdir(), "live-results-kv-"));
   const tempPath = path.join(tempDir, "value.txt");
 
   try {
     writeFileSync(tempPath, value);
 
-    const result = runWrangler([
+    const result = runWranglerCommand([
       "kv",
       "key",
       "put",
@@ -353,24 +402,120 @@ function writeRemoteKvText(key, value) {
     ]);
 
     if (!result.ok) {
-      throw new Error(`Failed to write remote KV key ${key}.`);
+      throw new Error(createRemoteKvWriteFailureMessage(key, result));
     }
   } finally {
     rmSync(tempDir, { force: true, recursive: true });
   }
 }
 
-function runWrangler(args) {
-  const result = spawnSync("pnpm", ["wrangler", ...args], {
+export function runWrangler(
+  args,
+  { env = process.env, previewBytes = WRANGLER_OUTPUT_PREVIEW_BYTES, spawn = spawnSync } = {},
+) {
+  const command = ["pnpm", "wrangler", ...args];
+  const secrets = getSecretValues(env);
+  const result = spawn(command[0], command.slice(1), {
     encoding: "utf8",
-    env: process.env,
+    env,
     maxBuffer: 5 * 1024 * 1024,
   });
+  const stdout = redactSecrets(result.stdout ?? "", secrets);
+  const stderr = redactSecrets(result.stderr ?? "", secrets);
+  const errorMessage = result.error ? redactSecrets(result.error.message, secrets) : null;
+  const status = typeof result.status === "number" ? result.status : null;
+  const signal = typeof result.signal === "string" ? result.signal : null;
 
   return {
-    ok: result.status === 0,
-    stdout: result.stdout ?? "",
+    ok: status === 0,
+    command,
+    commandText: redactSecrets(formatCommand(command), secrets),
+    status,
+    signal,
+    stdout,
+    stderr,
+    stdoutPreview: createOutputPreview(stdout, previewBytes),
+    stderrPreview: createOutputPreview(stderr, previewBytes),
+    errorMessage,
   };
+}
+
+export function createRemoteKvWriteFailureMessage(key, result) {
+  const lines = [
+    `Failed to write remote KV key ${key}.`,
+    `wrangler command: ${result.commandText ?? "(unavailable)"}`,
+    `wrangler exit status: ${formatNullableProcessField(result.status)}`,
+    `wrangler signal: ${formatNullableProcessField(result.signal)}`,
+  ];
+
+  if (result.errorMessage) {
+    lines.push(`wrangler spawn error: ${result.errorMessage}`);
+  }
+
+  lines.push(
+    "wrangler stdout:",
+    result.stdoutPreview || "(empty)",
+    "wrangler stderr:",
+    result.stderrPreview || "(empty)",
+  );
+
+  return lines.join("\n");
+}
+
+export function createSafeCliErrorMessage(error, env = process.env) {
+  const message = error instanceof Error ? error.message : String(error ?? "Unknown error");
+
+  return redactSecrets(message.length > 0 ? message : "Unknown error", getSecretValues(env));
+}
+
+export function redactSecrets(value, secrets = getSecretValues()) {
+  let redacted = value;
+
+  for (const secret of secrets) {
+    if (secret && secret.length > 0) {
+      redacted = redacted.split(secret).join("[redacted]");
+    }
+  }
+
+  return redacted;
+}
+
+function createOutputPreview(value, maxBytes) {
+  const text = value.trimEnd();
+
+  if (Buffer.byteLength(text, "utf8") <= maxBytes) {
+    return text;
+  }
+
+  let end = Math.min(text.length, maxBytes);
+
+  while (end > 0 && Buffer.byteLength(text.slice(0, end), "utf8") > maxBytes) {
+    end -= 1;
+  }
+
+  return `${text.slice(0, end)}\n[truncated after ${maxBytes} bytes]`;
+}
+
+function formatCommand(command) {
+  return command.map(formatCommandArg).join(" ");
+}
+
+function formatCommandArg(arg) {
+  if (/^[\w./:=@+-]+$/.test(arg)) {
+    return arg;
+  }
+
+  return `'${arg.replaceAll("'", "'\\''")}'`;
+}
+
+function formatNullableProcessField(value) {
+  return value === null || value === undefined ? "(none)" : String(value);
+}
+
+function getSecretValues(env = process.env) {
+  return [env.API_FOOTBALL_KEY, env.CLOUDFLARE_API_TOKEN, env.GITHUB_TOKEN].filter(
+    (value) => typeof value === "string" && value.length > 0,
+  );
 }
 
 function readNow(value) {
@@ -544,12 +689,15 @@ function writeStepSummary(summaryFile, lines) {
 }
 
 function fail(message) {
-  console.error(message);
-  process.exit(1);
+  throw new Error(message);
 }
 
 function isRecord(input) {
   return typeof input === "object" && input !== null && !Array.isArray(input);
+}
+
+function isMainModule() {
+  return Boolean(process.argv[1]) && import.meta.url === pathToFileURL(process.argv[1]).href;
 }
 
 function printHelp() {

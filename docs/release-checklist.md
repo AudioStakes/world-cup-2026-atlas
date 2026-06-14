@@ -17,6 +17,10 @@ Use this immediately before promoting the Cloudflare Worker release.
 - [ ] `provider: "api-football"` with `matches: []` was treated as provider poll success with possible empty or unmapped fixture mapping, not as a provider failure by itself
 - [ ] `Diagnose Live Results` was run without `run_provider_poll` first
 - [ ] `run_provider_poll` was set to `true` only if consuming API-FOOTBALL request count was intentional
+- [ ] Manual provider poll was not repeated while any `Failed to write remote KV key ...` failure was present
+- [ ] KV write preflight passed before any manual provider poll real run
+- [ ] `CLOUDFLARE_API_TOKEN` was confirmed to target the correct account and include `Workers KV Storage: Edit`
+- [ ] `RESULTS_KV` binding and production namespace id were confirmed before manual provider poll
 - [ ] Manual provider poll was blocked or skipped if `API_FOOTBALL_KEY` was not configured as a GitHub repository secret
 - [ ] No `KV binding missing` error is present
 - [ ] No `API key missing` error is present

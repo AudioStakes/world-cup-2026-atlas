@@ -119,39 +119,85 @@ export async function refreshResultsSnapshot(input: {
     ]);
   } catch (error) {
     const errorMessage = createSafeErrorMessage(error, [input.env.API_FOOTBALL_KEY]);
-    const latestSnapshot = await readLatestSnapshot(input.env);
-    const failedPollWrites: Promise<void>[] = [
-      input.env.RESULTS_KV.put(
-        providerErrorKey,
-        JSON.stringify({
-          at: nowIso,
-          message: errorMessage,
+    let latestSnapshot: MatchResultsSnapshot | null = null;
+    const diagnosticsWriteFailures: string[] = [];
+
+    try {
+      latestSnapshot = await readLatestSnapshot(input.env);
+    } catch (latestSnapshotError) {
+      diagnosticsWriteFailures.push(
+        `latest snapshot read: ${createSafeErrorMessage(latestSnapshotError, [
+          input.env.API_FOOTBALL_KEY,
+        ])}`,
+      );
+    }
+
+    const failedPollWrites: { readonly label: string; readonly promise: Promise<void> }[] = [
+      {
+        label: "provider error",
+        promise: input.env.RESULTS_KV.put(
+          providerErrorKey,
+          JSON.stringify({
+            at: nowIso,
+            message: errorMessage,
+          }),
+        ),
+      },
+      {
+        label: "poll status",
+        promise: writePollStatus(input.env, {
+          checkedAt: nowIso,
+          result: "provider-error",
+          decision,
+          requestCountKey,
+          requestCountBefore,
+          attemptedProviderRequests,
+          writtenMatches: 0,
+          latestSnapshot,
+          errorMessage,
         }),
-      ),
-      writePollStatus(input.env, {
-        checkedAt: nowIso,
-        result: "provider-error",
-        decision,
-        requestCountKey,
-        requestCountBefore,
-        attemptedProviderRequests,
-        writtenMatches: 0,
-        latestSnapshot,
-        errorMessage,
-      }),
+      },
     ];
 
     if (attemptedProviderRequests > 0) {
       failedPollWrites.push(
-        input.env.RESULTS_KV.put(lastFetchedAtKey, nowIso),
-        input.env.RESULTS_KV.put(
-          requestCountKey,
-          String(requestCountBefore + attemptedProviderRequests),
-        ),
+        {
+          label: "last fetched at",
+          promise: input.env.RESULTS_KV.put(lastFetchedAtKey, nowIso),
+        },
+        {
+          label: "request count",
+          promise: input.env.RESULTS_KV.put(
+            requestCountKey,
+            String(requestCountBefore + attemptedProviderRequests),
+          ),
+        },
       );
     }
 
-    await Promise.all(failedPollWrites);
+    const failedPollWriteResults = await Promise.allSettled(
+      failedPollWrites.map((write) => write.promise),
+    );
+
+    failedPollWriteResults.forEach((writeResult, index) => {
+      if (writeResult.status === "rejected") {
+        diagnosticsWriteFailures.push(
+          `${failedPollWrites[index]?.label ?? "diagnostics"}: ${createSafeErrorMessage(
+            writeResult.reason,
+            [input.env.API_FOOTBALL_KEY],
+          )}`,
+        );
+      }
+    });
+
+    if (diagnosticsWriteFailures.length > 0) {
+      throw new Error(
+        [
+          `Provider poll failed: ${errorMessage}`,
+          `Failed to write provider error diagnostics: ${diagnosticsWriteFailures.join("; ")}`,
+        ].join("\n"),
+      );
+    }
   }
 }
 
