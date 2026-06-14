@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { fallbackMatchResultsSnapshot } from "../../../src/matchResults/fallbackSnapshot";
+import { parseMatchResultsSnapshot } from "../../../src/matchResults/parseMatchResultsSnapshot";
 import { handleRequest } from "./index";
 import { latestSnapshotKey } from "./kvKeys";
 import { createFakeEnv, createFakeKv } from "./testHelpers";
@@ -24,8 +25,10 @@ describe("results Worker public endpoint", () => {
   it("returns the bundled fallback snapshot when KV is empty", async () => {
     const env = createFakeEnv(createFakeKv());
     const response = await handleRequest(new Request("https://atlas.example/api/results"), env);
+    const body = await response.json();
 
-    await expect(response.json()).resolves.toEqual(fallbackMatchResultsSnapshot);
+    expect(body).toEqual(fallbackMatchResultsSnapshot);
+    expect(parseMatchResultsSnapshot(body)).toEqual(fallbackMatchResultsSnapshot);
   });
 
   it("allows only configured CORS origins", async () => {

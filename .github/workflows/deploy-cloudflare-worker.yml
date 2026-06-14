@@ -54,14 +54,8 @@ jobs:
 
       - name: Smoke check /api/results
         if: steps.deploy.outputs.worker_url != ''
-        run: |
-          set -euo pipefail
-
-          curl --fail --silent --show-error --location \
-            --header "Accept: application/json" \
-            "$WORKER_URL/api/results" \
-            --output /tmp/results.json
-
-          node -e 'const fs = require("node:fs"); const data = JSON.parse(fs.readFileSync("/tmp/results.json", "utf8")); if (!data || typeof data !== "object" || !Array.isArray(data.matches)) { throw new Error("Expected /api/results JSON snapshot with matches array"); }'
+        run: pnpm smoke:worker
         env:
           WORKER_URL: ${{ steps.deploy.outputs.worker_url }}
+          SMOKE_CHECK_ATTEMPTS: '6'
+          SMOKE_CHECK_INTERVAL_MS: '10000'

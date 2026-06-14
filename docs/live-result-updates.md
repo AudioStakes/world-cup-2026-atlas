@@ -53,6 +53,29 @@ the daily request budget.
 - `match-results/request-count/YYYY-MM-DD`: daily request budget guard
 - `match-results/provider-error/latest.json`: latest provider error diagnostics
 
+## Provider diagnostics
+
+When provider polling fails after at least one attempted provider request, the Worker writes
+`match-results/provider-error/latest.json`. Failed provider calls also update
+`match-results/last-fetched-at` and increment `match-results/request-count/YYYY-MM-DD` for the
+attempted date-level requests, so outages do not bypass the polling interval or request budget.
+
+Inspect the latest provider error through the Cloudflare dashboard, or with Wrangler:
+
+```bash
+pnpm wrangler kv key get "match-results/provider-error/latest.json" --binding RESULTS_KV --remote --text --config wrangler.toml
+```
+
+Inspect the polling guard and request count with:
+
+```bash
+pnpm wrangler kv key get "match-results/last-fetched-at" --binding RESULTS_KV --remote --text --config wrangler.toml
+pnpm wrangler kv key get "match-results/request-count/YYYY-MM-DD" --binding RESULTS_KV --remote --text --config wrangler.toml
+```
+
+Do not paste secret values into diagnostics. Provider error diagnostics should contain only the
+timestamp and failure message.
+
 ## Deployment Notes
 
 Set `API_FOOTBALL_KEY` as a Cloudflare Worker secret. Do not expose it through Vite env vars,
