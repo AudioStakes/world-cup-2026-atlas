@@ -77,4 +77,46 @@ describe("API-FOOTBALL adapter", () => {
       }),
     ]);
   });
+
+  it("ignores unknown provider fixture ids", () => {
+    const results = normalizeApiFootballFixturesResponse({
+      appData: {
+        countries: [],
+        groups: [],
+        slotEntries: [],
+        venues: [],
+        matches: [
+          {
+            id: matchId("match-001"),
+            matchNumber: 1,
+            stage: "group",
+            date: "2026-06-11" as never,
+            kickoffLocal: "13:00" as never,
+            groupCode: "A" as never,
+            venueId: "mexico-city" as never,
+            homeParticipant: { type: "slot", slotId: "A1" as never, countryId: "mex" as never },
+            awayParticipant: { type: "slot", slotId: "A2" as never, countryId: "rsa" as never },
+            dataStatus: "provisional",
+          },
+        ],
+      },
+      fixtureIdToMatchId: new Map([[1001, matchId("match-001")]]),
+      response: {
+        errors: [],
+        response: [
+          {
+            fixture: {
+              id: 9999,
+              date: "2026-06-11T19:00:00+00:00",
+              status: { short: "FT", elapsed: 90 },
+            },
+            goals: { home: 2, away: 0 },
+          },
+        ],
+      },
+      updatedAt: "2026-06-11T21:00:00.000Z",
+    });
+
+    expect(results).toEqual([]);
+  });
 });
