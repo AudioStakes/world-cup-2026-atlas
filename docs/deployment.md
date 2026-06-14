@@ -108,14 +108,43 @@ Run it from GitHub Actions by selecting `Deploy Cloudflare Worker`, choosing the
 starting the workflow. The workflow uses `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` from
 GitHub repository secrets.
 
-After deploy, confirm:
+Cloudflare may briefly return 404 for `/api/results` immediately after deploy while the Worker
+update propagates. The workflow accounts for this with a retrying smoke check: six attempts, ten
+seconds apart, logging the attempt number, target URL, and HTTP status. A successful smoke check
+requires HTTP 200 and a JSON object with a `matches` array. If all attempts fail, the workflow prints
+the last status, response headers, and the first few KB of the response body for diagnosis.
 
-- `/` returns the app
-- `/api/results` returns HTTP 200
-- `/api/results` returns JSON
+After the workflow succeeds, confirm these production URLs:
+
+- `https://world-cup-2026-atlas.audiostakes.workers.dev/`
+- `https://world-cup-2026-atlas.audiostakes.workers.dev/api/results`
 
 `/api/results` returns a JSON snapshot with a `matches` array. Before the tournament starts, or while
-fixture mappings are not configured, `matches` can be empty.
+fixture mappings are not configured, this response is allowed:
+
+```json
+{
+  "schemaVersion": 1,
+  "provider": "manual",
+  "fetchedAt": "2026-06-11T00:00:00.000Z",
+  "matches": [],
+  "isFallback": true
+}
+```
+
+This fallback state confirms the Worker endpoint is healthy, but it does not mean live results are
+ready. Live results require populated API-FOOTBALL fixture mappings.
+
+## CORS and allowed origins
+
+`ALLOWED_ORIGINS` only affects browser requests from a different origin. When the Worker serves both
+the app and `/api/results` from `https://world-cup-2026-atlas.audiostakes.workers.dev`, the browser
+request is same-origin and does not need a CORS allow-list entry for the workers.dev URL.
+
+Add a production origin to `ALLOWED_ORIGINS` only when a separate frontend origin, such as GitHub
+Pages or a custom static host, needs to fetch `https://world-cup-2026-atlas.audiostakes.workers.dev/api/results`.
+Adding more origins makes the public results endpoint readable from those sites, which is usually
+acceptable for public match data but should still be kept intentional and minimal.
 
 ## Fixture mapping status
 
@@ -124,8 +153,9 @@ If the mapping is empty, provider responses can be fetched and normalized, but u
 fixture ids are ignored because they cannot be attached to an internal match. In that state, live
 results do not appear in the UI.
 
-API-FOOTBALL fixture ids are still a release task until the provider ids are confirmed and the mapping
-is populated.
+API-FOOTBALL fixture ids are still a release task until the provider ids are confirmed and the
+mapping is populated. Use [API-FOOTBALL Fixture Mapping](api-football-fixture-mapping.md) for the
+mapping workflow and validation commands.
 
 ## Production release checklist
 
