@@ -523,7 +523,7 @@
 
     .root .groupTeamGrid {
       --group-team-card-gap: 3px;
-      --group-team-label-size: 17px;
+      --group-team-label-size: 12px;
       --group-team-row-gap: 0;
       --group-team-row-padding: 1px;
       --group-team-target-size: 21px;
