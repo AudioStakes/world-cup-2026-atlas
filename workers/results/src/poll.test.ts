@@ -113,6 +113,64 @@ describe("refreshResultsSnapshot", () => {
     });
   });
 
+  it("counts only matches written by the current provider poll", async () => {
+    const existingSnapshot = {
+      schemaVersion: 1,
+      provider: "api-football",
+      fetchedAt: "2026-06-11T19:00:00.000Z",
+      matches: [
+        {
+          matchId: "match-001",
+          provider: "api-football",
+          providerFixtureId: 1001,
+          status: "finished",
+          shortStatus: "FT",
+          elapsed: 90,
+          homeTeamId: null,
+          awayTeamId: null,
+          homeScore: 2,
+          awayScore: 0,
+          kickoffAt: "2026-06-11T19:00:00.000Z",
+          updatedAt: "2026-06-11T21:00:00.000Z",
+        },
+      ],
+    };
+    const kv = createFakeKv(new Map([[latestSnapshotKey, JSON.stringify(existingSnapshot)]]));
+    const fetchFixturesByDate = vi.fn(async () => ({
+      errors: [],
+      response: [
+        {
+          fixture: {
+            id: 9999,
+            date: "2026-06-11T19:00:00+00:00",
+            status: { short: "1H", elapsed: 12 },
+          },
+          goals: { home: 0, away: 0 },
+        },
+      ],
+    }));
+
+    await refreshResultsSnapshot({
+      env: createFakeEnv(kv),
+      now: new Date("2026-06-11T19:30:00.000Z"),
+      fetchFixturesByDate,
+      fixtureIdToMatchId: new Map(),
+    });
+
+    expect(JSON.parse(kv.values.get(latestSnapshotKey) ?? "{}")).toMatchObject({
+      provider: "api-football",
+      fetchedAt: "2026-06-11T19:30:00.000Z",
+      matches: existingSnapshot.matches,
+    });
+    expect(JSON.parse(kv.values.get(pollStatusKey) ?? "{}")).toMatchObject({
+      result: "success",
+      attemptedProviderRequests: 1,
+      writtenMatches: 0,
+      latestSnapshotProvider: "api-football",
+      latestSnapshotFetchedAt: "2026-06-11T19:30:00.000Z",
+    });
+  });
+
   it("skips provider calls outside active match windows", async () => {
     const kv = createFakeKv();
     const fetchFixturesByDate = vi.fn(async () => ({ errors: [], response: [] }));

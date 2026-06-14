@@ -112,7 +112,7 @@ export async function refreshResultsSnapshot(input: {
         requestCountKey,
         requestCountBefore,
         attemptedProviderRequests,
-        writtenMatches: snapshot.matches.length,
+        writtenMatches: nextResults.length,
         latestSnapshot: snapshot,
         errorMessage: null,
       }),
