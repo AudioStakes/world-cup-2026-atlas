@@ -368,10 +368,10 @@ describe("createResultViewModel production metadata", () => {
     const japanMatch = result.matches.find((match) => match.matchNumberLabel === "Match 36");
 
     expect(result.subtitle).toBe("4 matches · 02:00–13:00 · JST");
-    expect(scrollTargetMatch?.matchNumberLabel).toBe("Match 35");
-    expect(scrollTargetMatch?.dateHeadingLabel).toBe("Sunday 21 June 2026");
-    expect(scrollTargetMatch?.kickoffLabel).toBe("02:00");
-    expect(scrollTargetMatch?.secondaryText).toBe("02:00 JST");
+    expect(scrollTargetMatch?.matchNumberLabel).toBe("Match 31");
+    expect(scrollTargetMatch?.dateHeadingLabel).toBe("Saturday 20 June 2026");
+    expect(scrollTargetMatch?.kickoffLabel).toBe("04:00");
+    expect(scrollTargetMatch?.secondaryText).toBe("04:00 JST");
     expect(japanMatch?.kickoffLabel).toBe("13:00");
     expect(japanMatch?.dateLabel).toBe("Sun Jun 21");
   });
@@ -382,12 +382,21 @@ describe("createResultViewModel production metadata", () => {
     const japanMatch = result.matches.find((match) => match.matchNumberLabel === "Match 36");
 
     expect(result.subtitle).toBe("4 matches · 02:00–13:00 · JST");
-    expect(scrollTargetMatch?.matchNumberLabel).toBe("Match 35");
-    expect(scrollTargetMatch?.dateHeadingLabel).toBe("Sunday 21 June 2026");
-    expect(scrollTargetMatch?.kickoffLabel).toBe("02:00");
-    expect(scrollTargetMatch?.secondaryText).toBe("02:00 JST");
+    expect(scrollTargetMatch?.matchNumberLabel).toBe("Match 31");
+    expect(scrollTargetMatch?.dateHeadingLabel).toBe("Saturday 20 June 2026");
+    expect(scrollTargetMatch?.kickoffLabel).toBe("04:00");
+    expect(scrollTargetMatch?.secondaryText).toBe("04:00 JST");
     expect(japanMatch?.kickoffLabel).toBe("13:00");
     expect(japanMatch?.dateLabel).toBe("Sun Jun 21");
+  });
+
+  it("starts browser-local date timelines on the selected displayed date", () => {
+    const result = createResultForDate("2026-06-14", browserLocalDisplayTimeZoneId, "Asia/Tokyo");
+    const scrollTargetMatch = result.matches.find((match) => match.isInitialScrollTarget);
+
+    expect(scrollTargetMatch?.matchNumberLabel).toBe("Match 5");
+    expect(scrollTargetMatch?.dateHeadingLabel).toBe("Sunday 14 June 2026");
+    expect(scrollTargetMatch?.kickoffLabel).toBe("04:00");
   });
 
   it("adds host country metadata to country result subtitles", () => {

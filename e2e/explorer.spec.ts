@@ -115,16 +115,17 @@ test.describe("World Cup 2026 Atlas explorer", () => {
 
       return {
         firstKickoff: document.querySelector(".match-card__kickoff")?.textContent?.trim() ?? "",
-        headerSummary:
-          document.querySelector(".atlas-header__data-status span")?.textContent?.trim() ?? "",
+        hasHeaderStatus: Boolean(document.querySelector(".atlas-header__data-status")),
         selectedOptionText: selectedOption?.textContent?.trim() ?? "",
+        selectWidth: select?.getBoundingClientRect().width ?? 0,
         selectValue: select?.value ?? "",
       };
     });
 
     expect(timeZoneState.selectValue).toBe("browser-local");
     expect(timeZoneState.selectedOptionText).toBe("Your local time · JST · Asia/Tokyo");
-    expect(timeZoneState.headerSummary).toBe("Your local time · JST");
+    expect(timeZoneState.selectWidth).toBeLessThanOrEqual(360);
+    expect(timeZoneState.hasHeaderStatus).toBe(false);
     expect(timeZoneState.firstKickoff).toBe("05:00");
   });
 
@@ -158,6 +159,37 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     await expect(panel.getByRole("heading", { name: "Round of 32" })).toBeVisible();
     await expect(panel.getByText("Match 73", { exact: true })).toBeVisible();
     await expect(panel.getByText("Runner-up Group A vs Runner-up Group B")).toBeVisible();
+
+    const tabVisualState = await page.evaluate(() => {
+      const selectedTab = document.querySelector<HTMLElement>(
+        ".group-panel-tab[aria-selected='true']",
+      );
+      const inactiveTab = document.querySelector<HTMLElement>(
+        ".group-panel-tab[aria-selected='false']",
+      );
+      const tabPanel = document.querySelector<HTMLElement>(".groups-section [role='tabpanel']");
+      const selectedRect = selectedTab?.getBoundingClientRect();
+      const panelRect = tabPanel?.getBoundingClientRect();
+      const selectedStyles = selectedTab ? getComputedStyle(selectedTab) : null;
+      const inactiveStyles = inactiveTab ? getComputedStyle(inactiveTab) : null;
+      const selectedIndicator = selectedTab ? getComputedStyle(selectedTab, "::before") : null;
+
+      return {
+        activeIndicatorColor: selectedIndicator?.backgroundColor ?? "",
+        activeTabBackground: selectedStyles?.backgroundColor ?? "",
+        inactiveTabBackground: inactiveStyles?.backgroundColor ?? "",
+        selectedLabel: selectedTab?.textContent?.trim() ?? "",
+        tabPanelSeamGap:
+          selectedRect && panelRect ? Math.round(panelRect.top - selectedRect.bottom) : null,
+      };
+    });
+
+    expect(tabVisualState.selectedLabel).toBe("Tournament");
+    expect(tabVisualState.activeIndicatorColor).toBe("rgb(47, 125, 240)");
+    expect(tabVisualState.activeTabBackground).not.toBe(tabVisualState.inactiveTabBackground);
+    expect(
+      Math.abs(tabVisualState.tabPanelSeamGap ?? Number.POSITIVE_INFINITY),
+    ).toBeLessThanOrEqual(1);
   });
 
   test("@smoke keeps a selected filter active when clicked again", async ({ page }) => {
@@ -244,7 +276,7 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     expect(targetSize.flagWidth).toBeGreaterThanOrEqual(24);
   });
 
-  test("@smoke keeps Groups & Teams tappable when panels stack", async ({ page }) => {
+  test("@smoke keeps Groups & Teams compact when panels stack", async ({ page }) => {
     await page.setViewportSize({ width: 596, height: 1451 });
     await page.goto("/?date=2026-06-20");
 
@@ -283,15 +315,74 @@ test.describe("World Cup 2026 Atlas explorer", () => {
       };
     });
 
-    expect(stackedLayout.columns).toBe(2);
-    expect(stackedLayout.rowCount).toBeLessThanOrEqual(6);
+    expect(stackedLayout.columns).toBe(3);
+    expect(stackedLayout.rowCount).toBeLessThanOrEqual(4);
     expect(stackedLayout.copyDisplay).toBe("block");
     expect(stackedLayout.nameWidth).toBeGreaterThan(0);
-    expect(stackedLayout.buttonHeight).toBeGreaterThanOrEqual(44);
-    expect(stackedLayout.buttonWidth).toBeGreaterThanOrEqual(44);
-    expect(stackedLayout.sectionHeight).toBeLessThanOrEqual(380);
+    expect(stackedLayout.buttonHeight).toBeGreaterThanOrEqual(20);
+    expect(stackedLayout.buttonWidth).toBeGreaterThanOrEqual(40);
+    expect(stackedLayout.sectionHeight).toBeLessThanOrEqual(180);
     expect(stackedLayout.flagCount).toBe(48);
     expect(stackedLayout.hiddenFlags).toBe(0);
+  });
+
+  test("@smoke keeps the narrow mobile dashboard within one viewport", async ({ page }) => {
+    const viewports = [
+      { height: 1451, minMapHeight: 320, minResultsHeight: 520, width: 537 },
+      { height: 844, minMapHeight: 180, minResultsHeight: 300, width: 390 },
+      { height: 568, minMapHeight: 90, minResultsHeight: 190, width: 320 },
+    ];
+
+    for (const viewport of viewports) {
+      await page.setViewportSize(viewport);
+      await page.goto("/");
+
+      const dashboard = await page.evaluate(() => {
+        const rectFor = (selector: string) => {
+          const element = document.querySelector<HTMLElement>(selector);
+          const rect = element?.getBoundingClientRect();
+
+          return rect
+            ? {
+                bottom: rect.bottom,
+                height: rect.height,
+                top: rect.top,
+              }
+            : null;
+        };
+        const viewportBottom = window.innerHeight;
+        const regions = {
+          dates: rectFor(".date-section"),
+          groups: rectFor(".groups-section"),
+          header: rectFor(".atlas-header"),
+          map: rectFor(".map-panel"),
+          results: rectFor(".result-card"),
+        };
+        const insideViewport = Object.values(regions).every(
+          (rect) => rect && rect.height > 0 && rect.top >= 0 && rect.bottom <= viewportBottom,
+        );
+        const scrollingElement = document.scrollingElement ?? document.documentElement;
+
+        return {
+          datesHeight: regions.dates?.height ?? 0,
+          groupsHeight: regions.groups?.height ?? 0,
+          headerHeight: regions.header?.height ?? 0,
+          insideViewport,
+          mapHeight: regions.map?.height ?? 0,
+          pageScrollHeight: scrollingElement.scrollHeight,
+          resultsHeight: regions.results?.height ?? 0,
+          viewportHeight: viewportBottom,
+        };
+      });
+
+      expect(dashboard.headerHeight).toBeLessThanOrEqual(52);
+      expect(dashboard.datesHeight).toBeLessThanOrEqual(110);
+      expect(dashboard.groupsHeight).toBeLessThanOrEqual(180);
+      expect(dashboard.resultsHeight).toBeGreaterThanOrEqual(viewport.minResultsHeight);
+      expect(dashboard.mapHeight).toBeGreaterThanOrEqual(viewport.minMapHeight);
+      expect(dashboard.insideViewport).toBe(true);
+      expect(dashboard.pageScrollHeight).toBeLessThanOrEqual(dashboard.viewportHeight);
+    }
   });
 
   test("@smoke selects a date and starts the fixture timeline on that date", async ({ page }) => {

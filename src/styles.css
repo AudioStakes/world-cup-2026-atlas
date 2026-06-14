@@ -117,18 +117,6 @@ select:focus-visible,
   font-weight: 650;
 }
 
-.atlas-header__data-status {
-  flex: 0 1 260px;
-  min-width: 160px;
-  max-width: 260px;
-  margin: 0;
-  color: rgba(23, 32, 42, 0.68);
-  font-size: 11px;
-  font-weight: 800;
-  line-height: 1.25;
-  text-align: right;
-}
-
 .atlas-header__controls {
   display: flex;
   flex: 1 1 430px;
@@ -140,15 +128,12 @@ select:focus-visible,
   margin-inline-start: auto;
 }
 
-.atlas-header__data-status span {
-  display: block;
-}
-
 .time-zone-control {
   display: grid;
-  flex: 1 1 230px;
+  flex: 0 1 340px;
   gap: 3px;
   min-width: min(100%, 230px);
+  width: min(100%, 340px);
 }
 
 .time-zone-control__label {
@@ -191,13 +176,9 @@ select:focus-visible,
     margin-inline-start: 0;
   }
 
-  .atlas-header__data-status {
-    max-width: none;
-    text-align: left;
-  }
-
   .time-zone-control {
     min-width: 0;
+    width: 100%;
   }
 
   .time-zone-control__label {
@@ -343,36 +324,59 @@ select:focus-visible,
 }
 
 .group-panel-tabs {
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 4px;
-  padding: 8px 8px 6px;
+  align-items: end;
+  gap: 6px;
+  padding: 8px 8px 0;
 }
 
 .group-panel-tab {
+  position: relative;
+  z-index: 1;
   min-width: 0;
   min-height: 32px;
-  padding: 7px 10px;
+  padding: 8px 10px;
   border: 1px solid rgba(23, 32, 42, 0.08);
-  border-radius: 10px;
+  border-radius: 10px 10px 0 0;
   color: rgba(23, 32, 42, 0.7);
-  background: rgba(255, 255, 255, 0.62);
+  background: rgba(232, 239, 246, 0.76);
   font-size: 12px;
   font-weight: 950;
   line-height: 1;
+  box-shadow: inset 0 -1px 0 rgba(23, 32, 42, 0.06);
   cursor: pointer;
 }
 
+.group-panel-tab::before {
+  position: absolute;
+  inset: -1px 10px auto;
+  height: 4px;
+  border-radius: 10px 10px 0 0;
+  background: transparent;
+  content: "";
+}
+
 .group-panel-tab:hover {
-  border-color: rgba(181, 31, 31, 0.22);
-  color: var(--color-red);
+  color: #2f6fdd;
+  background: rgba(239, 245, 252, 0.92);
 }
 
 .group-panel-tab[aria-selected="true"] {
-  border-color: var(--color-red-line);
-  color: var(--color-red);
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 4px 12px rgba(181, 31, 31, 0.12);
+  z-index: 2;
+  margin-bottom: -1px;
+  border-color: rgba(23, 32, 42, 0.08);
+  border-bottom-color: transparent;
+  color: #2f6fdd;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 -4px 14px rgba(47, 111, 221, 0.1);
+}
+
+.group-panel-tab[aria-selected="true"]::before {
+  inset-inline: -1px;
+  background: #2f7df0;
 }
 
 .group-team-grid {
@@ -402,6 +406,8 @@ select:focus-visible,
 .groups-section .group-team-grid,
 .tournament-rounds {
   grid-row: 2;
+  border-top: 1px solid rgba(23, 32, 42, 0.08);
+  background: rgba(255, 255, 255, 0.7);
 }
 
 .group-team-card {
@@ -1270,6 +1276,27 @@ select:focus-visible,
   white-space: normal;
 }
 
+.match-card__group-button {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 22px;
+  padding: 2px 7px;
+  border: 1px solid rgba(47, 111, 221, 0.28);
+  border-radius: 6px;
+  color: #2f6fdd;
+  background: rgba(47, 125, 240, 0.08);
+  font-weight: 900;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.match-card__group-button:hover {
+  border-color: rgba(47, 111, 221, 0.52);
+  color: #2157b8;
+  background: rgba(47, 125, 240, 0.14);
+  text-decoration: none;
+}
+
 .match-card__meta-separator {
   flex: 0 0 auto;
   color: rgba(68, 82, 104, 0.68);
@@ -1811,13 +1838,13 @@ select:focus-visible,
     margin-inline-start: 0;
   }
 
-  .atlas-header__data-status,
   .time-zone-control__label {
     text-align: left;
   }
 
   .time-zone-control {
     min-width: 0;
+    width: 100%;
   }
 
   .time-zone-control select {
@@ -2173,18 +2200,134 @@ select:focus-visible,
 }
 
 @media (max-width: 720px) {
+  html,
+  body,
+  #app {
+    block-size: 100dvh;
+    overflow: hidden;
+  }
+
+  body {
+    min-height: 100dvh;
+  }
+
+  .atlas-shell {
+    block-size: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+    padding: 8px;
+  }
+
+  .atlas-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(142px, 42%);
+    grid-template-rows: auto;
+    align-items: center;
+    gap: 4px 8px;
+    height: auto;
+    max-height: 50px;
+    min-height: 0;
+    overflow: hidden;
+    padding: 7px 9px;
+    border-radius: 14px;
+  }
+
+  .atlas-header > div:first-child {
+    min-width: 0;
+    align-self: center;
+    flex: 0 1 auto;
+  }
+
+  .atlas-header__title {
+    overflow: hidden;
+    font-size: 0.86rem;
+    line-height: 1.1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .atlas-header__subtitle {
+    overflow: hidden;
+    margin-top: 2px;
+    font-size: 0.66rem;
+    line-height: 1.1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .atlas-header__controls {
+    flex: 0 1 auto;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-end;
+    width: auto;
+    height: auto;
+    max-height: 34px;
+    margin-inline-start: 0;
+  }
+
+  .time-zone-control {
+    display: block;
+    flex: 0 1 100%;
+    height: 32px;
+    max-height: 32px;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .time-zone-control__label {
+    display: none;
+  }
+
+  .time-zone-control select {
+    height: 32px;
+    max-height: 32px;
+    min-height: 32px;
+    padding-inline: 8px 28px;
+    border-radius: 9px;
+    font-size: 0.72rem;
+    line-height: 1.1;
+  }
+
+  .atlas-body {
+    block-size: 100%;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: clamp(78px, 7vh, 104px) clamp(126px, 11vh, 154px) minmax(0, 1fr);
+    grid-template-areas:
+      "controls"
+      "groups"
+      "output";
+    gap: 7px;
+    min-height: 0;
+    overflow: hidden;
+    padding-top: 7px;
+  }
+
+  .explore-panel {
+    min-height: 0;
+    padding: 0;
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .panel-section {
+    overflow: hidden;
+    border-radius: 16px;
+  }
+
   .date-months {
     display: grid;
-    gap: 5px;
-    padding: 0 8px 8px;
-    overflow: visible;
+    gap: 2px;
+    padding: 5px 7px;
+    overflow: hidden;
   }
 
   .date-month {
     display: grid;
-    grid-template-columns: 2.25rem minmax(0, 1fr);
+    grid-template-columns: 2rem minmax(0, 1fr);
     align-items: center;
-    gap: 4px;
+    gap: 3px;
     margin: 0;
   }
 
@@ -2208,23 +2351,198 @@ select:focus-visible,
   }
 
   .date-chip {
-    min-width: 24px;
-    min-height: 30px;
-    min-inline-size: 24px;
-    min-block-size: 30px;
+    min-width: 23px;
+    min-height: 24px;
+    min-inline-size: 23px;
+    min-block-size: 24px;
     padding: 3px 2px;
     border-radius: 7px;
   }
 
   .date-chip__date {
-    font-size: 0.78rem;
+    font-size: 0.72rem;
+  }
+
+  .groups-section {
+    min-height: 0;
+    border-radius: 16px;
+  }
+
+  .group-panel-tabs {
+    gap: 4px;
+    padding: 5px 6px 0;
+  }
+
+  .group-panel-tab {
+    min-height: 25px;
+    padding: 5px 8px;
+    font-size: 0.7rem;
+  }
+
+  .groups-section .group-team-grid {
+    --group-team-card-gap: 3px;
+    --group-team-label-size: 17px;
+    --group-team-row-gap: 0;
+    --group-team-row-padding: 1px;
+    --group-team-target-size: 21px;
+    --group-team-flag-size: 15px;
+    --group-team-flag-font-size: 12px;
+
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--group-team-card-gap);
+    padding: 0 6px 5px;
+    overflow: hidden;
   }
 
   .group-team-header-button {
     min-height: var(--group-team-target-size);
+    font-size: 0.56rem;
   }
 
   .group-team-row-button {
     min-height: var(--group-team-target-size);
+  }
+
+  .group-team-name {
+    font-size: 0.5rem;
+  }
+
+  .explorer-output {
+    display: grid;
+    grid-template-rows: minmax(210px, 1.2fr) minmax(150px, 0.8fr);
+    gap: 7px;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .result-card {
+    min-height: 0;
+    border-radius: 16px;
+  }
+
+  .match-list--date-timeline {
+    gap: 8px;
+    padding: 8px;
+    overflow: auto;
+  }
+
+  .match-list__date-row {
+    margin-bottom: 4px;
+  }
+
+  .match-list__date-row h3 {
+    font-size: 0.96rem;
+  }
+
+  .match-card {
+    gap: 5px;
+    padding: 10px 8px;
+  }
+
+  .map-panel {
+    flex: none;
+    min-block-size: 0;
+    min-height: 0;
+    border-radius: 16px;
+  }
+}
+
+@media (max-width: 720px) and (max-height: 700px) {
+  .atlas-shell {
+    padding: 6px;
+  }
+
+  .atlas-header {
+    max-height: 44px;
+    padding: 6px 8px;
+  }
+
+  .atlas-header__subtitle {
+    display: none;
+  }
+
+  .time-zone-control,
+  .time-zone-control select {
+    height: 30px;
+    max-height: 30px;
+  }
+
+  .time-zone-control select {
+    min-height: 30px;
+    font-size: 0.68rem;
+  }
+
+  .atlas-body {
+    grid-template-rows: 62px 112px minmax(0, 1fr);
+    gap: 5px;
+    padding-top: 5px;
+  }
+
+  .date-months {
+    padding: 4px 6px;
+  }
+
+  .date-month {
+    grid-template-columns: 1.7rem minmax(0, 1fr);
+  }
+
+  .date-chip {
+    min-width: 20px;
+    min-height: 20px;
+    min-inline-size: 20px;
+    min-block-size: 20px;
+    padding: 2px;
+  }
+
+  .date-chip__date {
+    font-size: 0.65rem;
+  }
+
+  .group-panel-tabs {
+    gap: 3px;
+    padding: 4px 5px 0;
+  }
+
+  .group-panel-tab {
+    min-height: 22px;
+    padding: 4px 7px;
+    font-size: 0.64rem;
+  }
+
+  .groups-section .group-team-grid {
+    --group-team-card-gap: 2px;
+    --group-team-label-size: 15px;
+    --group-team-target-size: 18px;
+    --group-team-flag-size: 13px;
+    --group-team-flag-font-size: 11px;
+
+    padding: 0 5px 4px;
+  }
+
+  .group-team-header-button {
+    font-size: 0.5rem;
+  }
+
+  .group-team-name {
+    font-size: 0.46rem;
+  }
+
+  .explorer-output {
+    grid-template-rows: minmax(150px, 1.35fr) minmax(92px, 0.65fr);
+    gap: 5px;
+  }
+
+  .match-list--date-timeline {
+    gap: 6px;
+    padding: 7px;
+  }
+
+  .match-list__date-row h3 {
+    font-size: 0.9rem;
+  }
+
+  .match-card {
+    gap: 4px;
+    padding: 8px 6px;
   }
 }

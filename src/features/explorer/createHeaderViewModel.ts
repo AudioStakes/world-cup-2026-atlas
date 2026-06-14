@@ -26,9 +26,5 @@ export function createHeaderViewModel(
       selectedValue: displayTimeZone.id,
       options: createHeaderTimeZoneOptions(countries, browserLocalTimeZone),
     },
-    statusItems: [
-      { key: "selectedTimeZone", label: displayTimeZone.summaryLabel },
-      { key: "dataSource", label: "Official/trusted sources · direct distances derived" },
-    ],
   };
 }

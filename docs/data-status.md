@@ -59,5 +59,7 @@ Do not use `placeholder` for visible teams, fixtures, venues, dates, or route da
 
 ## UI disclosure
 
-The app header exposes a compact data-status note: official/trusted sources are used where
-available, and direct distances are marked as derived.
+Design decision: do not expose data-status or derived-distance summary text in the app header.
+The header should stay focused on the title and match-time selector because these status notes are
+not needed for the primary exploration workflow. Keep data provenance in repository docs and
+guardrail tests instead of adding visible header chrome.

@@ -54,12 +54,6 @@ export type ExplorerHeaderViewModel = {
   readonly title: string;
   readonly subtitle: string;
   readonly timeZoneSelector: HeaderTimeZoneSelectorViewModel;
-  readonly statusItems: readonly ExplorerHeaderStatusItemViewModel[];
-};
-
-export type ExplorerHeaderStatusItemViewModel = {
-  readonly key: "selectedTimeZone" | "dataSource";
-  readonly label: string;
 };
 
 export type HeaderTimeZoneSelectorViewModel = {
