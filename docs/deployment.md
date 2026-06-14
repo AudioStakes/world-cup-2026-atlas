@@ -1,6 +1,11 @@
 # Deployment
 
-World Cup 2026 Atlas is a static Vite SPA. The static-only build can be deployed to GitHub Pages.
+World Cup 2026 Atlas can be deployed in two modes:
+
+- GitHub Pages publishes a static-only release.
+- Cloudflare Worker publishes the primary live-results release with static assets, `/api/results`,
+  `RESULTS_KV`, and API-FOOTBALL polling.
+
 Live match result updates require the Cloudflare Worker described in
 [Live Result Updates](live-result-updates.md).
 
@@ -23,6 +28,9 @@ Workflow steps:
 3. build the app with `GITHUB_PAGES=true`
 4. upload `dist`
 5. deploy to GitHub Pages
+
+GitHub Pages is a static-only fallback. It does not serve `/api/results` and does not use
+API-FOOTBALL live results.
 
 ## Vite base path
 
@@ -60,13 +68,65 @@ The local preview uses `/` as the base path unless `GITHUB_PAGES=true` is set.
 
 ## Cloudflare Worker for live results
 
-`wrangler.toml` configures a Worker that serves `/api/results` and static assets. Before deploying:
+`wrangler.toml` configures the Worker that serves the app and `/api/results`. This is the intended
+production release path when live results should be available.
 
-1. create a KV namespace for `RESULTS_KV`
-2. replace the placeholder namespace ids in `wrangler.toml`
-3. set the `API_FOOTBALL_KEY` Worker secret
-4. confirm `ALLOWED_ORIGINS` for the production hostname
-5. populate API-FOOTBALL fixture mappings after provider fixture ids are confirmed
+The Worker requires:
+
+- a production `RESULTS_KV` namespace id in `wrangler.toml`
+- a preview `RESULTS_KV` namespace id in `wrangler.toml`
+- `API_FOOTBALL_KEY` registered as a Cloudflare Worker secret
+- `CLOUDFLARE_API_TOKEN` registered as a GitHub repository secret
+- `CLOUDFLARE_ACCOUNT_ID` registered as a GitHub repository secret
+
+Do not write `API_FOOTBALL_KEY` or Cloudflare API token values in `wrangler.toml`, docs, comments,
+or workflow logs. The workflow only reads GitHub Secrets and the Worker only reads the Cloudflare
+Worker secret.
+
+Before production release, also confirm `ALLOWED_ORIGINS` for the production hostname and populate
+API-FOOTBALL fixture mappings after provider fixture ids are confirmed.
 
 The Worker cron is configured to run every five minutes. Provider calls are still guarded in code by
 the 20-minute interval, match polling window, and daily request budget.
+
+## Cloudflare Worker deploy workflow
+
+The workflow is defined in:
+
+```txt
+.github/workflows/deploy-cloudflare-worker.yml
+```
+
+It runs on manual `workflow_dispatch` and deploys only when the selected ref is `main`. The workflow:
+
+1. installs dependencies with `pnpm install --frozen-lockfile`
+2. runs `pnpm verify`
+3. deploys with `pnpm wrangler deploy --config wrangler.toml`
+4. smoke-checks `/api/results` when the Worker URL can be read from Wrangler output
+
+Run it from GitHub Actions by selecting `Deploy Cloudflare Worker`, choosing the `main` branch, and
+starting the workflow. The workflow uses `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` from
+GitHub repository secrets.
+
+After deploy, confirm:
+
+- `/` returns the app
+- `/api/results` returns HTTP 200
+- `/api/results` returns JSON
+
+`/api/results` returns a JSON snapshot with a `matches` array. Before the tournament starts, or while
+fixture mappings are not configured, `matches` can be empty.
+
+## Fixture mapping status
+
+`workers/results/src/apiFootballFixtureMap.ts` maps API-FOOTBALL fixture ids to internal match ids.
+If the mapping is empty, provider responses can be fetched and normalized, but unknown provider
+fixture ids are ignored because they cannot be attached to an internal match. In that state, live
+results do not appear in the UI.
+
+API-FOOTBALL fixture ids are still a release task until the provider ids are confirmed and the mapping
+is populated.
+
+## Production release checklist
+
+Use [Release Checklist](release-checklist.md) for the final human checks before release.
