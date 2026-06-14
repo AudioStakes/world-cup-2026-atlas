@@ -85,23 +85,20 @@ body {
     min-width: 0;
     height: auto;
     min-height: 100%;
-    overflow-x: hidden;
-    overflow-y: auto;
+    overflow: hidden auto;
   }
 
   body {
     min-width: 0;
     height: auto;
     min-height: 100%;
-    overflow-x: hidden;
-    overflow-y: auto;
+    overflow: hidden auto;
   }
 
   #app {
     min-width: 0;
     height: auto;
     min-height: 100%;
-    overflow-x: hidden;
-    overflow-y: visible;
+    overflow: hidden visible;
   }
 }

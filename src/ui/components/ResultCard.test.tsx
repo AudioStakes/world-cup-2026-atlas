@@ -202,12 +202,13 @@ describe("ResultCard", () => {
 
   it("renders completed fixtures with a FIFA-style scoreline", () => {
     const onAction = vi.fn();
+    const onMatchVenueFocusChange = vi.fn();
 
     render(
       <ResultCard
         result={completedResult}
         onAction={onAction}
-        onMatchVenueFocusChange={() => {}}
+        onMatchVenueFocusChange={onMatchVenueFocusChange}
       />,
     );
 
@@ -237,7 +238,12 @@ describe("ResultCard", () => {
 
     fireEvent.click(matchScope.getByRole("button", { name: "Select country United States" }));
     fireEvent.click(matchScope.getByRole("button", { name: "Select group Group D" }));
-    fireEvent.click(matchScope.getByRole("button", { name: "Select match venue Los Angeles" }));
+    const venueButton = matchScope.getByRole("button", { name: "Select match venue Los Angeles" });
+    fireEvent.mouseEnter(venueButton);
+    fireEvent.mouseLeave(venueButton);
+    fireEvent.focus(venueButton);
+    fireEvent.blur(venueButton);
+    fireEvent.click(venueButton);
 
     expect(onAction).toHaveBeenNthCalledWith(1, {
       type: "selectCountry",
@@ -248,6 +254,10 @@ describe("ResultCard", () => {
       groupCode: groupCode("D"),
     });
     expect(onAction).toHaveBeenCalledWith({ type: "selectVenue", venueId: venueId("los-angeles") });
+    expect(onMatchVenueFocusChange).toHaveBeenNthCalledWith(1, venueId("los-angeles"));
+    expect(onMatchVenueFocusChange).toHaveBeenNthCalledWith(2, null);
+    expect(onMatchVenueFocusChange).toHaveBeenNthCalledWith(3, venueId("los-angeles"));
+    expect(onMatchVenueFocusChange).toHaveBeenNthCalledWith(4, null);
   });
 
   it("renders the ViewModel short status instead of hardcoding full time", () => {

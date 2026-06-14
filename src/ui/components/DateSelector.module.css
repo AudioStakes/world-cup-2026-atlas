@@ -220,8 +220,7 @@
       gap: 10px;
       min-height: 0;
       padding: 8px 9px;
-      overflow-x: auto;
-      overflow-y: hidden;
+      overflow: auto hidden;
       overscroll-behavior-inline: contain;
       scroll-padding-inline: 9px;
       scroll-snap-type: x proximity;
