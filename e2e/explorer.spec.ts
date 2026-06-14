@@ -276,7 +276,7 @@ test.describe("World Cup 2026 Atlas explorer", () => {
     expect(targetSize.flagWidth).toBeGreaterThanOrEqual(24);
   });
 
-  test("@smoke keeps Groups & Teams tappable when panels stack", async ({ page }) => {
+  test("@smoke keeps Groups & Teams compact when panels stack", async ({ page }) => {
     await page.setViewportSize({ width: 596, height: 1451 });
     await page.goto("/?date=2026-06-20");
 
@@ -315,15 +315,74 @@ test.describe("World Cup 2026 Atlas explorer", () => {
       };
     });
 
-    expect(stackedLayout.columns).toBe(2);
-    expect(stackedLayout.rowCount).toBeLessThanOrEqual(6);
+    expect(stackedLayout.columns).toBe(3);
+    expect(stackedLayout.rowCount).toBeLessThanOrEqual(4);
     expect(stackedLayout.copyDisplay).toBe("block");
     expect(stackedLayout.nameWidth).toBeGreaterThan(0);
-    expect(stackedLayout.buttonHeight).toBeGreaterThanOrEqual(44);
-    expect(stackedLayout.buttonWidth).toBeGreaterThanOrEqual(44);
-    expect(stackedLayout.sectionHeight).toBeLessThanOrEqual(380);
+    expect(stackedLayout.buttonHeight).toBeGreaterThanOrEqual(20);
+    expect(stackedLayout.buttonWidth).toBeGreaterThanOrEqual(40);
+    expect(stackedLayout.sectionHeight).toBeLessThanOrEqual(180);
     expect(stackedLayout.flagCount).toBe(48);
     expect(stackedLayout.hiddenFlags).toBe(0);
+  });
+
+  test("@smoke keeps the narrow mobile dashboard within one viewport", async ({ page }) => {
+    const viewports = [
+      { height: 1451, minMapHeight: 320, minResultsHeight: 520, width: 537 },
+      { height: 844, minMapHeight: 180, minResultsHeight: 300, width: 390 },
+      { height: 568, minMapHeight: 90, minResultsHeight: 190, width: 320 },
+    ];
+
+    for (const viewport of viewports) {
+      await page.setViewportSize(viewport);
+      await page.goto("/");
+
+      const dashboard = await page.evaluate(() => {
+        const rectFor = (selector: string) => {
+          const element = document.querySelector<HTMLElement>(selector);
+          const rect = element?.getBoundingClientRect();
+
+          return rect
+            ? {
+                bottom: rect.bottom,
+                height: rect.height,
+                top: rect.top,
+              }
+            : null;
+        };
+        const viewportBottom = window.innerHeight;
+        const regions = {
+          dates: rectFor(".date-section"),
+          groups: rectFor(".groups-section"),
+          header: rectFor(".atlas-header"),
+          map: rectFor(".map-panel"),
+          results: rectFor(".result-card"),
+        };
+        const insideViewport = Object.values(regions).every(
+          (rect) => rect && rect.height > 0 && rect.top >= 0 && rect.bottom <= viewportBottom,
+        );
+        const scrollingElement = document.scrollingElement ?? document.documentElement;
+
+        return {
+          datesHeight: regions.dates?.height ?? 0,
+          groupsHeight: regions.groups?.height ?? 0,
+          headerHeight: regions.header?.height ?? 0,
+          insideViewport,
+          mapHeight: regions.map?.height ?? 0,
+          pageScrollHeight: scrollingElement.scrollHeight,
+          resultsHeight: regions.results?.height ?? 0,
+          viewportHeight: viewportBottom,
+        };
+      });
+
+      expect(dashboard.headerHeight).toBeLessThanOrEqual(52);
+      expect(dashboard.datesHeight).toBeLessThanOrEqual(110);
+      expect(dashboard.groupsHeight).toBeLessThanOrEqual(180);
+      expect(dashboard.resultsHeight).toBeGreaterThanOrEqual(viewport.minResultsHeight);
+      expect(dashboard.mapHeight).toBeGreaterThanOrEqual(viewport.minMapHeight);
+      expect(dashboard.insideViewport).toBe(true);
+      expect(dashboard.pageScrollHeight).toBeLessThanOrEqual(dashboard.viewportHeight);
+    }
   });
 
   test("@smoke selects a date and starts the fixture timeline on that date", async ({ page }) => {

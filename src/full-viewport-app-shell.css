@@ -148,3 +148,49 @@ body {
     padding-top: 10px;
   }
 }
+
+@media (max-width: 720px) {
+  html,
+  body,
+  #app {
+    height: 100vh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .atlas-shell {
+    height: 100vh;
+    max-height: 100vh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .atlas-body,
+  .explore-panel,
+  .explorer-output {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .date-section,
+  .groups-section,
+  .panel-section,
+  .result-card,
+  .map-panel {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .date-months,
+  .group-team-grid,
+  .match-list {
+    min-height: 0;
+    overscroll-behavior: contain;
+  }
+
+  .date-months,
+  .match-list {
+    overflow: auto;
+  }
+}
