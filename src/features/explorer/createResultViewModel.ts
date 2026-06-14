@@ -6,7 +6,7 @@ import {
   getParticipantCountryId,
   getParticipantSlotId,
 } from "../../data/matchParticipants";
-import type { CountryId, GroupCode } from "../../domain/ids";
+import type { CountryId, GroupCode, LocalDateString } from "../../domain/ids";
 import type {
   AppData,
   Country,
@@ -121,7 +121,7 @@ function createResultMatches(
   );
   const initialScrollTargetMatchId =
     resultType === "date" && viewState.selectedDate
-      ? (matches.find((match) => match.date === viewState.selectedDate)?.id ?? null)
+      ? findInitialDateTimelineMatchId(indexes, matches, viewState.selectedDate, displayTimeZone)
       : null;
 
   return matches.map((match) =>
@@ -132,6 +132,19 @@ function createResultMatches(
       displayTimeZone,
       match.id === initialScrollTargetMatchId,
     ),
+  );
+}
+
+function findInitialDateTimelineMatchId(
+  indexes: Indexes,
+  matches: readonly Match[],
+  selectedDate: LocalDateString,
+  displayTimeZone: DisplayTimeZonePreference,
+): Match["id"] | null {
+  return (
+    matches.find(
+      (match) => createDisplayDateTime(indexes, match, displayTimeZone).date === selectedDate,
+    )?.id ?? null
   );
 }
 
