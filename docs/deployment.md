@@ -135,6 +135,42 @@ fixture mappings are not configured, this response is allowed:
 This fallback state confirms the Worker endpoint is healthy, but it does not mean live results are
 ready. Live results require populated API-FOOTBALL fixture mappings.
 
+## Live results diagnostics workflow
+
+The workflow is defined in:
+
+```txt
+.github/workflows/diagnose-live-results.yml
+```
+
+It runs on manual `workflow_dispatch` and only on `main`. The default run is diagnostics-only:
+
+1. installs dependencies with `pnpm install --frozen-lockfile`
+2. runs `pnpm typecheck`
+3. runs focused Worker result tests
+4. checks that a Worker deployment exists
+5. checks whether these remote KV keys exist:
+   - `match-results/latest.json`
+   - `match-results/last-known-good.json`
+   - `match-results/provider-error/latest.json`
+6. fetches `/api/results`
+7. writes a GitHub Actions summary with only provider, timestamp, match count, fallback status, and
+   provider error timestamp/message
+
+The workflow input `run_provider_poll` defaults to `false`. Set it to `true` only when you intend to
+consume API-FOOTBALL request count and write remote `RESULTS_KV`. When enabled, the workflow runs
+`pnpm poll:live-results` with explicit provider-request and KV-write flags, then diagnoses
+`/api/results` again.
+
+Diagnostics-only runs use `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` from GitHub repository
+secrets for Wrangler access. Provider poll runs also require `API_FOOTBALL_KEY` as a GitHub
+repository secret because that optional request is made from GitHub Actions.
+
+The optional `now` input is an ISO timestamp used by the polling decision. Use a timestamp inside a
+known match polling window when testing before natural cron timing would poll. Do not paste
+`API_FOOTBALL_KEY`, `CLOUDFLARE_API_TOKEN`, or any other secret value into workflow inputs, logs,
+issues, docs, or PR text.
+
 ## CORS and allowed origins
 
 `ALLOWED_ORIGINS` only affects browser requests from a different origin. When the Worker serves both
@@ -145,6 +181,11 @@ Add a production origin to `ALLOWED_ORIGINS` only when a separate frontend origi
 Pages or a custom static host, needs to fetch `https://world-cup-2026-atlas.audiostakes.workers.dev/api/results`.
 Adding more origins makes the public results endpoint readable from those sites, which is usually
 acceptable for public match data but should still be kept intentional and minimal.
+
+The current release policy is that Cloudflare Worker deployment is the live-results release path.
+GitHub Pages is static-only and should not call the Worker API. If that fallback policy changes,
+add the GitHub Pages origin to `ALLOWED_ORIGINS`; do not add the workers.dev origin just for
+same-origin Worker requests.
 
 ## Fixture mapping status
 

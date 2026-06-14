@@ -5,11 +5,14 @@ Use this immediately before promoting the Cloudflare Worker release.
 - [ ] GitHub Actions CI is passing
 - [ ] `Deploy Cloudflare Worker` workflow succeeded
 - [ ] Cloudflare Worker deployment succeeded
+- [ ] `Diagnose Live Results` workflow succeeded on `main`
 - [ ] `https://world-cup-2026-atlas.audiostakes.workers.dev/` displays the app
 - [ ] `https://world-cup-2026-atlas.audiostakes.workers.dev/api/results` returns HTTP 200
 - [ ] `/api/results` returns JSON with a `matches` array
+- [ ] `/api/results` `provider`, `isFallback`, and `matches.length` were checked in diagnostics
 - [ ] Any immediate post-deploy `/api/results` 404 was resolved by the workflow retrying smoke check
 - [ ] `provider: "manual"`, `isFallback: true`, and `matches: []` are accepted only while fixture mapping is not populated
+- [ ] `provider: "api-football"` with `matches: []` was treated as possible empty fixture mapping, not as a provider failure by itself
 - [ ] No `KV binding missing` error is present
 - [ ] No `API key missing` error is present
 - [ ] No provider error is present, or the cause is understood

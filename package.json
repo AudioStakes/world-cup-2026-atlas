@@ -21,6 +21,8 @@
     "check:fixture-mapping": "node scripts/check-fixture-mapping.mjs",
     "check:policy": "pnpm check:test-policy",
     "check:worker-config": "wrangler deploy --dry-run --config wrangler.toml",
+    "diagnose:live-results": "node scripts/diagnose-live-results.mjs",
+    "poll:live-results": "node scripts/poll-live-results.mjs",
     "smoke:worker": "node scripts/smoke-check-worker.mjs",
     "typecheck": "tsc -p tsconfig.app.json --noEmit --pretty false --noErrorTruncation && tsc -p tsconfig.node.json --noEmit --pretty false --noErrorTruncation && tsc -p tsconfig.worker.json --noEmit --pretty false --noErrorTruncation",
     "lint:css": "stylelint \"src/**/*.css\"",
