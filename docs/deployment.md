@@ -133,7 +133,15 @@ fixture mappings are not configured, this response is allowed:
 ```
 
 This fallback state confirms the Worker endpoint is healthy, but it does not mean live results are
-ready. Live results require populated API-FOOTBALL fixture mappings.
+ready. Live results require a successful provider poll and populated API-FOOTBALL fixture mappings.
+If the endpoint stays on the bundled fallback, inspect `match-results/latest.json`,
+`match-results/last-known-good.json`, `match-results/poll-status/latest.json`, and
+`match-results/provider-error/latest.json` in that order.
+
+An API-FOOTBALL snapshot with `provider: "api-football"` and `matches: []` means provider polling
+succeeded but no returned fixtures were mapped into internal matches. That is different from
+`provider: "manual"` with `isFallback: true`, which means the public endpoint is healthy but live
+results have not been reflected from KV.
 
 ## Live results diagnostics workflow
 
@@ -152,10 +160,11 @@ It runs on manual `workflow_dispatch` and only on `main`. The default run is dia
 5. checks whether these remote KV keys exist:
    - `match-results/latest.json`
    - `match-results/last-known-good.json`
+   - `match-results/poll-status/latest.json`
    - `match-results/provider-error/latest.json`
 6. fetches `/api/results`
 7. writes a GitHub Actions summary with only provider, timestamp, match count, fallback status, and
-   provider error timestamp/message
+   poll status/provider error fields
 
 The workflow input `run_provider_poll` defaults to `false`. Set it to `true` only when you intend to
 consume API-FOOTBALL request count and write remote `RESULTS_KV`. When enabled, the workflow runs
@@ -164,12 +173,25 @@ consume API-FOOTBALL request count and write remote `RESULTS_KV`. When enabled, 
 
 Diagnostics-only runs use `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` from GitHub repository
 secrets for Wrangler access. Provider poll runs also require `API_FOOTBALL_KEY` as a GitHub
-repository secret because that optional request is made from GitHub Actions.
+repository secret because that optional request is made from GitHub Actions. The Cloudflare Worker
+secret named `API_FOOTBALL_KEY` is used by deployed Worker cron polling; it is separate from GitHub
+repository secrets and is not available to GitHub Actions.
 
 The optional `now` input is an ISO timestamp used by the polling decision. Use a timestamp inside a
 known match polling window when testing before natural cron timing would poll. Do not paste
 `API_FOOTBALL_KEY`, `CLOUDFLARE_API_TOKEN`, or any other secret value into workflow inputs, logs,
 issues, docs, or PR text.
+
+Read `match-results/poll-status/latest.json` as the latest scheduled/manual poll trace:
+
+- `checkedAt`, `result`, `decision.shouldPoll`, `decision.reason`, and `activeDates` explain the
+  polling decision.
+- `attemptedProviderRequests`, `requestCountBefore`, and `writtenMatches` show request-budget and
+  snapshot write effects.
+- `latestSnapshotProvider` and `latestSnapshotFetchedAt` distinguish the bundled manual fallback
+  from an empty API-FOOTBALL snapshot.
+- `errorMessage` is sanitized and should never contain API keys, Cloudflare tokens, headers, or full
+  provider response bodies.
 
 ## CORS and allowed origins
 

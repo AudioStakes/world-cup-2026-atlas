@@ -41,6 +41,7 @@ try {
     createRequestCountKey,
     lastFetchedAtKey,
     latestSnapshotKey,
+    pollStatusKey,
     providerErrorKey,
     refreshResultsSnapshot,
   } = await loadRuntimeModules(server);
@@ -79,12 +80,6 @@ try {
     process.exit(0);
   }
 
-  if (!decision.shouldPoll) {
-    emit(`Provider request: skipped by polling policy (${decision.reason}).`);
-    writeStepSummary(options.summaryFile ?? process.env.GITHUB_STEP_SUMMARY, summaryLines);
-    process.exit(0);
-  }
-
   if (!process.env.API_FOOTBALL_KEY) {
     fail("API_FOOTBALL_KEY is required for --allow-provider-request; the value is never printed.");
   }
@@ -94,12 +89,35 @@ try {
     : createDryRunKv({ fallbackKv: baseKv });
   const env = {
     RESULTS_KV: kv,
-    API_FOOTBALL_KEY: process.env.API_FOOTBALL_KEY,
+    API_FOOTBALL_KEY: process.env.API_FOOTBALL_KEY ?? "",
     API_FOOTBALL_BASE_URL: process.env.API_FOOTBALL_BASE_URL,
     API_FOOTBALL_LEAGUE_ID: process.env.API_FOOTBALL_LEAGUE_ID,
     API_FOOTBALL_SEASON: process.env.API_FOOTBALL_SEASON,
     ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS,
   };
+
+  if (!decision.shouldPoll) {
+    await refreshResultsSnapshot({
+      env,
+      now,
+    });
+
+    emit(`Provider request: skipped by polling policy (${decision.reason}).`);
+    emit(`KV writes: ${options.writeKv ? "remote poll-status" : "dry-run only"}`);
+    emit("");
+    emit("## Resulting diagnostics");
+    emit("");
+    await emitResultingDiagnostics({
+      kv,
+      latestSnapshotKey,
+      pollStatusKey,
+      providerErrorKey,
+      requestCountKey,
+      nowIso,
+    });
+    writeStepSummary(options.summaryFile ?? process.env.GITHUB_STEP_SUMMARY, summaryLines);
+    process.exit(0);
+  }
 
   await refreshResultsSnapshot({
     env,
@@ -111,14 +129,14 @@ try {
   emit("");
   emit("## Resulting diagnostics");
   emit("");
-
-  const latestSnapshot = await kv.get(latestSnapshotKey);
-  const providerError = await kv.get(providerErrorKey);
-  const requestCountAfter = await kv.get(requestCountKey);
-
-  emit(formatSnapshotSummary("latest snapshot", latestSnapshot));
-  emit(formatProviderErrorSummary(providerError, nowIso));
-  emit(`requestCountTodayAfter: ${parseRequestCount(requestCountAfter)}`);
+  await emitResultingDiagnostics({
+    kv,
+    latestSnapshotKey,
+    pollStatusKey,
+    providerErrorKey,
+    requestCountKey,
+    nowIso,
+  });
   writeStepSummary(options.summaryFile ?? process.env.GITHUB_STEP_SUMMARY, summaryLines);
 } finally {
   await server.close();
@@ -225,6 +243,7 @@ async function loadRuntimeModules(viteServer) {
     createRequestCountKey: kvKeysModule.createRequestCountKey,
     lastFetchedAtKey: kvKeysModule.lastFetchedAtKey,
     latestSnapshotKey: kvKeysModule.latestSnapshotKey,
+    pollStatusKey: kvKeysModule.pollStatusKey,
     providerErrorKey: kvKeysModule.providerErrorKey,
     refreshResultsSnapshot: pollModule.refreshResultsSnapshot,
   };
@@ -384,6 +403,27 @@ function parseRequestCount(value) {
   return Number.isInteger(parsedValue) && parsedValue >= 0 ? parsedValue : 0;
 }
 
+async function emitResultingDiagnostics({
+  kv,
+  latestSnapshotKey,
+  pollStatusKey,
+  providerErrorKey,
+  requestCountKey,
+  nowIso,
+}) {
+  const [latestSnapshot, pollStatus, providerError, requestCountAfter] = await Promise.all([
+    kv.get(latestSnapshotKey),
+    kv.get(pollStatusKey),
+    kv.get(providerErrorKey),
+    kv.get(requestCountKey),
+  ]);
+
+  emit(formatSnapshotSummary("latest snapshot", latestSnapshot));
+  emitPollStatusSummary(pollStatus);
+  emit(formatProviderErrorSummary(providerError, nowIso));
+  emit(`requestCountTodayAfter: ${parseRequestCount(requestCountAfter)}`);
+}
+
 function formatSnapshotSummary(label, value) {
   if (!value) {
     return `${label}: missing`;
@@ -407,6 +447,47 @@ function formatSnapshotSummary(label, value) {
   }
 }
 
+function emitPollStatusSummary(value) {
+  if (!value) {
+    emit("poll status: missing");
+    return;
+  }
+
+  try {
+    const parsed = JSON.parse(value);
+
+    if (!isRecord(parsed)) {
+      emit("poll status: invalid");
+      return;
+    }
+
+    const decision = isRecord(parsed.decision) ? parsed.decision : {};
+    const activeDates = Array.isArray(decision.activeDates)
+      ? decision.activeDates.filter((date) => typeof date === "string").join(", ")
+      : "";
+
+    emit(`poll status result: ${formatStringField(parsed.result)}`);
+    emit(`poll status checkedAt: ${formatStringField(parsed.checkedAt)}`);
+    emit(`poll status decision.shouldPoll: ${formatBooleanField(decision.shouldPoll)}`);
+    emit(`poll status decision.reason: ${formatStringField(decision.reason)}`);
+    emit(`poll status activeDates: ${activeDates || "(none)"}`);
+    emit(
+      `poll status attemptedProviderRequests: ${formatNumberField(parsed.attemptedProviderRequests)}`,
+    );
+    emit(`poll status writtenMatches: ${formatNumberField(parsed.writtenMatches)}`);
+    emit(`poll status requestCountBefore: ${formatNumberField(parsed.requestCountBefore)}`);
+    emit(
+      `poll status latestSnapshotProvider: ${formatNullableStringField(parsed.latestSnapshotProvider)}`,
+    );
+    emit(
+      `poll status latestSnapshotFetchedAt: ${formatNullableStringField(parsed.latestSnapshotFetchedAt)}`,
+    );
+    emit(`poll status errorMessage: ${formatNullableStringField(parsed.errorMessage)}`);
+  } catch {
+    emit("poll status: invalid-json");
+  }
+}
+
 function formatProviderErrorSummary(value, nowIso) {
   if (!value) {
     return "provider error: missing";
@@ -427,6 +508,26 @@ function formatProviderErrorSummary(value, nowIso) {
   } catch {
     return "provider error: invalid-json";
   }
+}
+
+function formatStringField(value) {
+  return typeof value === "string" ? value : "-";
+}
+
+function formatNullableStringField(value) {
+  if (value === null) {
+    return "null";
+  }
+
+  return formatStringField(value);
+}
+
+function formatBooleanField(value) {
+  return typeof value === "boolean" ? String(value) : "-";
+}
+
+function formatNumberField(value) {
+  return typeof value === "number" && Number.isFinite(value) ? String(value) : "-";
 }
 
 function emit(line) {
