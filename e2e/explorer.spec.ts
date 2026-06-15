@@ -496,6 +496,7 @@ test.describe("World Cup 2026 Atlas explorer", () => {
   });
 
   test("@smoke selects a date and starts the fixture timeline on that date", async ({ page }) => {
+    await setBrowserToday(page, "2026-06-12");
     await disableBrowserLocalTimeZone(page);
     await page.goto("/");
 
