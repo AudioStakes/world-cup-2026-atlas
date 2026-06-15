@@ -54,6 +54,8 @@ export function DateSelector({ dateSelector, onAction }: DateSelectorProps) {
 }
 
 function DateChip({ dateOption, onAction }: DateChipProps) {
+  const visibleStatus = createVisibleDateStatus(dateOption);
+
   return (
     <button
       class={classNames(
@@ -64,6 +66,7 @@ function DateChip({ dateOption, onAction }: DateChipProps) {
         dateOption.availability === "outsideCurrentFilter" && s.isOutsideCurrentFilter,
       )}
       type="button"
+      aria-current={dateOption.isSelected ? "date" : undefined}
       aria-pressed={dateOption.isSelected}
       aria-label={createDateChipAriaLabel(dateOption)}
       onClick={() => onAction({ type: "selectDate", date: dateOption.date })}
@@ -72,6 +75,11 @@ function DateChip({ dateOption, onAction }: DateChipProps) {
       <span class={s.dateChipMeta} aria-hidden="true">
         {createVisibleDateMeta(dateOption)}
       </span>
+      {visibleStatus ? (
+        <span class={s.dateChipStatus} aria-hidden="true">
+          {visibleStatus}
+        </span>
+      ) : null}
     </button>
   );
 }
@@ -104,6 +112,10 @@ function getWeekdayIndex(date: string): number {
 
 function createDateChipAriaLabel(dateOption: DateOptionViewModel): string {
   const parts = [`Select ${formatWeekday(dateOption.date)} ${dateOption.label}`];
+
+  if (dateOption.isSelected) {
+    parts.push("selected");
+  }
 
   if (dateOption.matchCountLabel) {
     parts.push(dateOption.matchCountLabel);
@@ -138,4 +150,16 @@ function createVisibleDateMeta(dateOption: DateOptionViewModel): string {
 
   const matchCount = dateOption.matchCountLabel?.match(/^\d+/)?.[0];
   return matchCount ?? "Match";
+}
+
+function createVisibleDateStatus(dateOption: DateOptionViewModel): string | null {
+  if (dateOption.isSelected) {
+    return "Selected";
+  }
+
+  if (dateOption.isToday) {
+    return "Today";
+  }
+
+  return null;
 }

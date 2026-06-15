@@ -83,25 +83,22 @@ body {
 @media (width <= 720px) {
   html {
     min-width: 0;
-    block-size: 100dvh;
-    height: 100vh;
-    min-height: 0;
-    overflow: hidden;
+    height: auto;
+    min-height: 100%;
+    overflow: hidden auto;
   }
 
   body {
     min-width: 0;
-    block-size: 100dvh;
-    height: 100vh;
-    min-height: 0;
-    overflow: hidden;
+    height: auto;
+    min-height: 100%;
+    overflow: hidden auto;
   }
 
   #app {
     min-width: 0;
-    block-size: 100dvh;
-    height: 100vh;
-    min-height: 0;
-    overflow: hidden;
+    height: auto;
+    min-height: 100%;
+    overflow: hidden visible;
   }
 }

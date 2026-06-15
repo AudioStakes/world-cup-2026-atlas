@@ -1,10 +1,12 @@
 declare const styles: {
   readonly groupPanelTab: string;
   readonly groupPanelTabs: string;
+  readonly groupPanelContent: string;
   readonly groupTeamCard: string;
   readonly groupTeamCode: string;
   readonly groupTeamCopy: string;
   readonly groupTeamFlag: string;
+  readonly groupTeamFullName: string;
   readonly groupTeamGrid: string;
   readonly groupTeamHeaderButton: string;
   readonly groupTeamMeta: string;
@@ -12,10 +14,20 @@ declare const styles: {
   readonly groupTeamRowButton: string;
   readonly groupTeamRows: string;
   readonly isOutsideCurrentFilter: string;
+  readonly isExpanded: string;
   readonly isPlaceholder: string;
   readonly isRelated: string;
   readonly isSelected: string;
+  readonly mobileSheetBackdrop: string;
+  readonly mobileSheetCloseButton: string;
+  readonly mobileSheetHeader: string;
+  readonly mobileSheetHeading: string;
+  readonly mobileSummaryButton: string;
+  readonly mobileSummaryEyebrow: string;
+  readonly mobileSummaryMeta: string;
+  readonly mobileSummaryTitle: string;
   readonly root: string;
+  readonly selectionCue: string;
   readonly tournamentMatch: string;
   readonly tournamentMatchDate: string;
   readonly tournamentMatchList: string;

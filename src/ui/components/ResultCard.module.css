@@ -424,6 +424,15 @@
     white-space: nowrap;
   }
 
+  .matchCardTeamCode {
+    display: none;
+    color: rgb(20 30 44 / 92%);
+    font-size: 0.78rem;
+    font-weight: 950;
+    letter-spacing: 0;
+    line-height: 1;
+  }
+
   .matchCardTeamButton {
     display: inline-flex;
     min-width: 0;
@@ -528,6 +537,10 @@
     white-space: normal;
   }
 
+  .matchCardVenueButton {
+    text-align: inherit;
+  }
+
   .matchCardGroupButton {
     display: inline-flex;
     align-items: center;
@@ -582,7 +595,8 @@
 
   @container match-card (inline-size <= 390px) {
     .matchCard {
-      padding-inline: 8px;
+      gap: 3px;
+      padding: 7px 8px;
     }
 
     .matchCardScoreRow {
@@ -594,17 +608,44 @@
       display: none;
     }
 
+    .matchCardTeamCode {
+      display: block;
+    }
+
     .matchCardTeamButton {
-      gap: 0;
+      gap: 5px;
     }
 
     .matchCardTeamCopy {
-      gap: 0;
+      gap: 5px;
     }
 
     .matchCardFlag {
-      min-inline-size: 28px;
-      font-size: 1.35rem;
+      min-inline-size: 22px;
+      font-size: 1.12rem;
+    }
+
+    .matchCardCenter {
+      min-inline-size: 62px;
+    }
+
+    .matchCardKickoff {
+      font-size: 1.46rem;
+    }
+
+    .matchCardScore {
+      font-size: 1.46rem;
+    }
+
+    .matchCardMetaLine {
+      gap: 2px 0.36em;
+      font-size: 0.72rem;
+      line-height: 1.15;
+    }
+
+    .matchCardVenueButton {
+      flex-basis: 100%;
+      max-width: 100%;
     }
   }
 
@@ -703,8 +744,8 @@
 
   @media (width <= 720px) {
     .matchListDateTimeline {
-      gap: 8px;
-      padding: 8px;
+      gap: 7px;
+      padding: 7px;
       overflow: auto;
     }
 
@@ -777,6 +818,7 @@
 
   @media (width <= 720px) {
     .root {
+      block-size: min(48dvh, 430px);
       border-radius: 16px;
       min-height: 0;
       overflow: hidden;

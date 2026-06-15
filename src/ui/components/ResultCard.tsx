@@ -221,6 +221,11 @@ function MatchTeam({
       {team.flagEmoji}
     </span>
   ) : null;
+  const code = team.code ? (
+    <span class={s.matchCardTeamCode} aria-hidden="true">
+      {team.code}
+    </span>
+  ) : null;
   const countryId = team.countryId;
   const content =
     side === "home" ? (
@@ -228,11 +233,13 @@ function MatchTeam({
         <span class={s.matchCardTeamName} data-testid="match-card-team-name">
           {team.displayName}
         </span>
+        {code}
         {flag}
       </>
     ) : (
       <>
         {flag}
+        {code}
         <span class={s.matchCardTeamName} data-testid="match-card-team-name">
           {team.displayName}
         </span>
@@ -296,7 +303,7 @@ function MatchFixtureMeta({
         ·
       </span>
       <button
-        class={classNames(s.matchCardAction, s.matchCardMetaButton)}
+        class={classNames(s.matchCardAction, s.matchCardMetaButton, s.matchCardVenueButton)}
         type="button"
         aria-label={`Select match venue ${match.venueLabel}`}
         onBlur={() => onMatchVenueFocusChange(null)}

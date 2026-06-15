@@ -5,6 +5,7 @@ declare const styles: {
   readonly dateChip: string;
   readonly dateChipDate: string;
   readonly dateChipMeta: string;
+  readonly dateChipStatus: string;
   readonly dateMonth: string;
   readonly dateMonthLabel: string;
   readonly dateMonths: string;

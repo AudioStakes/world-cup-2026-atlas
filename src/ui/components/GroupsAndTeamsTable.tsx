@@ -1,4 +1,4 @@
-import { useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import type {
   ExplorerAction,
   GroupsAndTeamsViewModel,
@@ -8,54 +8,195 @@ import type {
   TournamentRoundViewModel,
 } from "../../features/explorer/types";
 import { classNames } from "./classNames";
+import { trapFocusWithin } from "./focusTrap";
 import s from "./GroupsAndTeamsTable.module.css";
 
 type GroupsAndTeamsTableProps = {
   readonly groupsAndTeams: GroupsAndTeamsViewModel;
+  readonly matchCount: number;
   readonly onAction: (action: ExplorerAction) => void;
 };
 
 type GroupPanelTab = "group" | "tournament";
 
-export function GroupsAndTeamsTable({ groupsAndTeams, onAction }: GroupsAndTeamsTableProps) {
+export function GroupsAndTeamsTable({
+  groupsAndTeams,
+  matchCount,
+  onAction,
+}: GroupsAndTeamsTableProps) {
   const [activeTab, setActiveTab] = useState<GroupPanelTab>("group");
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isMobileSheetLayout, setIsMobileSheetLayout] = useState(() => isMobileSheetViewport());
+  const openerRef = useRef<HTMLButtonElement>(null);
+  const sheetRef = useRef<HTMLElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const shouldReturnFocusRef = useRef(false);
+  const summary = createGroupFilterSummary(groupsAndTeams, matchCount);
+  const sheetDialogProps = isExpanded ? ({ "aria-modal": "true", role: "dialog" } as const) : {};
+  const closedMobileSheetStyle =
+    isMobileSheetLayout && !isExpanded
+      ? ({
+          opacity: 0,
+          pointerEvents: "none",
+          transform: "translateY(calc(100% + 24px))",
+          visibility: "hidden",
+        } as const)
+      : undefined;
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia("(width <= 720px)");
+    const handleMediaQueryChange = () => setIsMobileSheetLayout(mediaQuery.matches);
+
+    handleMediaQueryChange();
+    mediaQuery.addEventListener("change", handleMediaQueryChange);
+
+    return () => mediaQuery.removeEventListener("change", handleMediaQueryChange);
+  }, []);
+
+  useEffect(() => {
+    if (isExpanded) {
+      const frame = requestAnimationFrame(() => closeButtonRef.current?.focus());
+
+      return () => window.cancelAnimationFrame(frame);
+    }
+
+    if (shouldReturnFocusRef.current) {
+      shouldReturnFocusRef.current = false;
+      openerRef.current?.focus();
+    }
+  }, [isExpanded]);
+
+  const closeExpandedPanel = () => {
+    shouldReturnFocusRef.current = true;
+    setIsExpanded(false);
+  };
+
+  useEffect(() => {
+    if (!isExpanded) {
+      return;
+    }
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeExpandedPanel();
+        return;
+      }
+
+      const sheet = sheetRef.current;
+
+      if (sheet) {
+        trapFocusWithin(event, sheet);
+      }
+    };
+
+    window.addEventListener("keydown", handleEscape);
+
+    return () => {
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [isExpanded]);
+
+  const handleAction = (action: ExplorerAction) => {
+    onAction(action);
+
+    if (action.type === "selectCountry" || action.type === "selectGroup") {
+      closeExpandedPanel();
+    }
+  };
 
   return (
     <section
-      class={classNames("panel-section", s.root)}
+      class={classNames("panel-section", s.root, isExpanded && s.isExpanded)}
       aria-label="Group and Tournament"
       data-testid="groups-section"
     >
-      <div class={s.groupPanelTabs} role="tablist" aria-label="Group and Tournament">
-        <GroupPanelTabButton
-          tab="group"
-          label="Group"
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
+      <button
+        ref={openerRef}
+        class={s.mobileSummaryButton}
+        type="button"
+        aria-controls="group-filter-sheet"
+        aria-expanded={isExpanded}
+        onClick={() => setIsExpanded(true)}
+      >
+        <span class={s.mobileSummaryEyebrow}>Filters</span>
+        <span class={s.mobileSummaryTitle}>{summary.title}</span>
+        <span class={s.mobileSummaryMeta}>{summary.meta}</span>
+      </button>
+      {isExpanded ? (
+        <button
+          class={s.mobileSheetBackdrop}
+          type="button"
+          aria-label="Close filters"
+          onClick={closeExpandedPanel}
         />
-        <GroupPanelTabButton
-          tab="tournament"
-          label="Tournament"
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-        />
-      </div>
-      {activeTab === "group" ? (
-        <div
-          id="group-panel-group"
-          class={s.groupTeamGrid}
-          role="tabpanel"
-          aria-labelledby="group-panel-tab-group"
-          data-testid="group-team-grid"
-        >
-          {groupsAndTeams.groups.map((group) => (
-            <GroupTeamCard key={group.groupCode} group={group} onAction={onAction} />
-          ))}
+      ) : null}
+      <section
+        ref={sheetRef}
+        id="group-filter-sheet"
+        class={s.groupPanelContent}
+        aria-labelledby="group-filter-sheet-title"
+        data-expanded={isExpanded}
+        style={closedMobileSheetStyle}
+        {...sheetDialogProps}
+      >
+        <div class={s.mobileSheetHeader}>
+          <div class={s.mobileSheetHeading}>
+            <span class={s.mobileSummaryEyebrow}>Filters</span>
+            <h2 id="group-filter-sheet-title">Teams and groups</h2>
+            <p>{summary.detail}</p>
+          </div>
+          <button
+            ref={closeButtonRef}
+            class={s.mobileSheetCloseButton}
+            type="button"
+            onClick={closeExpandedPanel}
+          >
+            Close
+          </button>
         </div>
-      ) : (
-        <TournamentPanel tournamentRounds={groupsAndTeams.tournamentRounds} />
-      )}
+        <div class={s.groupPanelTabs} role="tablist" aria-label="Group and Tournament">
+          <GroupPanelTabButton
+            tab="group"
+            label="Group"
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
+          <GroupPanelTabButton
+            tab="tournament"
+            label="Tournament"
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
+        </div>
+        {activeTab === "group" ? (
+          <div
+            id="group-panel-group"
+            class={s.groupTeamGrid}
+            role="tabpanel"
+            aria-labelledby="group-panel-tab-group"
+            data-testid="group-team-grid"
+          >
+            {groupsAndTeams.groups.map((group) => (
+              <GroupTeamCard key={group.groupCode} group={group} onAction={handleAction} />
+            ))}
+          </div>
+        ) : (
+          <TournamentPanel tournamentRounds={groupsAndTeams.tournamentRounds} />
+        )}
+      </section>
     </section>
+  );
+}
+
+function isMobileSheetViewport(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(width <= 720px)").matches
   );
 }
 
@@ -118,7 +259,12 @@ function GroupTeamCard({ group, onAction }: GroupTeamCardProps) {
         aria-label={`Select ${group.groupName}`}
         onClick={() => onAction({ type: "selectGroup", groupCode: group.groupCode })}
       >
-        {group.groupCode}
+        <span>{group.groupCode}</span>
+        {group.isSelected ? (
+          <span class={s.selectionCue} aria-hidden="true">
+            ✓
+          </span>
+        ) : null}
       </button>
       <div class={s.groupTeamRows}>
         {group.teams.map((team) => (
@@ -179,6 +325,12 @@ function GroupTeamRow({ team, onAction }: GroupTeamRowProps) {
         <span class={s.groupTeamName} data-testid="group-team-name">
           {team.countryCode}
         </span>
+        <span class={s.groupTeamFullName}>{team.countryName}</span>
+        {team.isSelected ? (
+          <span class={s.selectionCue} aria-hidden="true">
+            ✓
+          </span>
+        ) : null}
       </span>
     </button>
   );
@@ -242,4 +394,43 @@ function TournamentMatch({ match }: TournamentMatchProps) {
 
 function createTournamentRoundHeadingId(stageLabel: string): string {
   return `tournament-round-${stageLabel.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-")}`;
+}
+
+type GroupFilterSummary = {
+  readonly detail: string;
+  readonly meta: string;
+  readonly title: string;
+};
+
+function createGroupFilterSummary(
+  groupsAndTeams: GroupsAndTeamsViewModel,
+  matchCount: number,
+): GroupFilterSummary {
+  const selectedTeam = groupsAndTeams.groups
+    .flatMap((group) => group.teams)
+    .find((team) => team.isSelected);
+  const selectedGroup = groupsAndTeams.groups.find((group) => group.isSelected);
+  const matchCountLabel = `${matchCount} ${matchCount === 1 ? "match" : "matches"}`;
+
+  if (selectedTeam) {
+    return {
+      title: `${selectedTeam.flagEmoji} ${selectedTeam.countryCode}`,
+      meta: selectedTeam.countryName,
+      detail: `${selectedTeam.countryName} · ${matchCountLabel}`,
+    };
+  }
+
+  if (selectedGroup) {
+    return {
+      title: `Group ${selectedGroup.groupCode}`,
+      meta: selectedGroup.teams.map((team) => team.countryCode).join(" · "),
+      detail: `${selectedGroup.groupName} · ${matchCountLabel}`,
+    };
+  }
+
+  return {
+    title: "All groups",
+    meta: "Choose teams or tournament rounds",
+    detail: `${matchCountLabel} in the current selection`,
+  };
 }
